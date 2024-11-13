@@ -1,17 +1,19 @@
 ### A Pluto.jl notebook ###
-# v0.19.46
+# v0.20.3
 
 using Markdown
 using InteractiveUtils
 
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
+    #! format: off
     quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
+    #! format: on
 end
 
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
@@ -19,7 +21,9 @@ using PlutoUI, Plots, Distributions, QuadGK
 
 # ╔═╡ fad8a8e2-141a-4f54-a822-150ecdcbde5a
 md"# edumodels 0.1
-this pluto.jl notebook provide a toy model of a system of education. it can be used to theorise about fair chances in a system of education. we begin by setting the ability for the individuals A and B...
+this pluto.jl notebook provide a toy model of a system of education. it can be used to theorise about fair chances in a system of education. 
+
+we begin by setting the ability for the individuals A and B...
 "
 
 # ╔═╡ a3a348bf-6e2c-4775-b1c6-26fa602b319a
@@ -30,10 +34,22 @@ md"ability setting for B:"
 
 # ╔═╡ 22598207-1e0f-444b-9064-5cc818305d83
 # set the baseline distribution of opportunities 
-@bind baseline_ NumberField(0:200, default=60)
+@bind baseline_ NumberField(0:200, default=50)
 
 # ╔═╡ 97bad24c-f88a-4709-9130-7187536fb99b
 md"## trade-offs"
+
+# ╔═╡ b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
+md"### weighing interests
+
+start by choosing any policy you like using the policy 1 slider. what you can now see is how that policy looks, from the point of view of A and B when compared to all the other available policies (all the other available policies that distribute the same total number of opportunities). 
+
+could A object that this policy is unfair? well, look to the left of the line, where A's interests improve, and then look at the weighted balance. is it negative? then A can hardly object, because A's potential improvements at this point do not outweigh the costs B would have to bear. but suppose now that it is slighly positive. suppose we let A object if it is even slightly positive. then we can rule out all policies to the right. 
+
+the same reasoning for B's point of view (that is, looking right) will lead us to the policy option where the balance is not above zero on either side of the line. 
+
+
+"
 
 # ╔═╡ 64e21cb5-b9f3-49ec-8cef-5f8ab7caa8da
 md"set the distributions for policy1 and policy2..."
@@ -46,7 +62,21 @@ baseline = (baseline_,baseline_)
 md"baseline distribution of opportunities: $baseline"
 
 # ╔═╡ b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
-md"## ability settings"
+md"## ability settings
+
+here is where we can change the ability settings available for the model.
+
+"
+
+# ╔═╡ 80a29446-d7c7-47c1-8cfa-697745abc3a9
+function highabilitylinear(n)
+	n
+end
+
+# ╔═╡ 6645cf3a-7875-4868-a8db-ff4668da787c
+function midabilitylinear(n)
+	(n * 0.75) + 12.5
+end
 
 # ╔═╡ ee515f09-6dc2-4baa-a151-67bfb7136a61
 outm = 0.8
@@ -65,20 +95,18 @@ totalopportunities = totalopportunities_
 # ╔═╡ 6128347f-8029-45ff-a47a-2ef21f090561
 @bind policy2_ Slider(0:0.1:totalopportunities, default=0)
 
+# ╔═╡ abea362f-28e6-47e9-b7c0-8d3295d0138b
+# let's work out the opportunity costs, as we move from giving B the highest possible amount of opportunities to the lowest possible 
+
+
+policyrange = range(baseline[2],totalopportunities + baseline[2], step=0.1) # the range from B's opportunities to A's opportunities, e.g. 40, 70
+
+# ╔═╡ ec526f2a-a990-4ea5-b1ba-43a0c56cef60
+totalops = totalopportunities + baseline[1] + baseline[2]
+
 # ╔═╡ d861ef63-4ac2-46dc-9c6f-7221393b7277
 # distribution under policy 1
 policy1 = (totalopportunities - policy1_, policy1_)
-
-# ╔═╡ b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
-md"### weighing interests
-
-start by choosing any policy you like using the policy 1 slider. you have currently chosen: $policy1. what you can now see is how that policy looks, from the point of view of A and B when compared to all the other available policies (all the other available policies that distribute the same total number of opportunities). could A object that this policy is unfair? well, look to the left of the line, where A's interests improve, and then look at the weighted balance. is it negative? then A can hardly object, because A's potential improvements at this point do not outweigh the costs B would have to bear. but suppose now that it is slighly positive. suppose we let A object if it is even slightly positive. then we can rule out all policies to the right. The same reasoning for B's point of view (that is, looking right) will lead us to the policy option where the balance is not above zero on either side of the line. 
-
-
-"
-
-# ╔═╡ dfe2f957-53b5-4d2b-be90-1b60f28f730a
-md"setting for policy1: $policy1"
 
 # ╔═╡ f84727eb-011d-4679-912a-beb99afb25bc
 # distribution under policy 2
@@ -89,7 +117,7 @@ md"setting for policy2: $policy2"
 
 # ╔═╡ bc753593-51e5-4492-bf13-145643b77802
 function chancesanddiffs(xs) 
-	map(x -> (x.chances_b_2,x.w_diffs,x.w_sum),xs) 
+	map(x -> (x.chances_b_2,x.w_diffs,x.w_sum,x.a_claim,x.b_claim),xs) 
 end
 
 # ╔═╡ 10bb2145-4069-4e88-8852-bd2d892a2627
@@ -174,41 +202,51 @@ function logistic(n, L, k, x0)
     return L / (1 + exp(-k * (n - x0)))
 end
 
-# ╔═╡ 02d51a56-26ea-423b-a60c-c50c75cec26c
-function lowlogistic(n)
-	L = 85  # Maximum outcome
-    k = 0.09  # Steepness of the curve
-    x0 = 50  # Midpoint of the logistic function
+# ╔═╡ cdd1fc12-2027-45df-8867-fe7fe3265999
+function lowability(n)
+	L = 60 # Maximum outcome
+    k = 0.08  # Steepness of the curve
+    x0 = 40  # Midpoint of the logistic function
 	logistic(n, L, k, x0)
 end
 
-# ╔═╡ 457f9e33-3cd3-4c87-b1bc-f2ee6d56ecf5
-low = lowlogistic
-
-# ╔═╡ cdd1fc12-2027-45df-8867-fe7fe3265999
-function vlowlogistic(n)
-	L = 75  # Maximum outcome
-    k = 0.08  # Steepness of the curve
-    x0 = 60  # Midpoint of the logistic function
+# ╔═╡ 02d51a56-26ea-423b-a60c-c50c75cec26c
+function midability(n)
+	L = 70  # Maximum outcome
+    k = 0.07  # Steepness of the curve
+    x0 = 45  # Midpoint of the logistic function
 	logistic(n, L, k, x0)
 end
 
 # ╔═╡ b96458b3-6f68-4071-bb82-6b3e1dcff8f7
-function highlogistic(n)
+function highability(n)
 	L = 100  # Maximum outcome
-    k = 0.1  # Steepness of the curve
+    k = 0.11  # Steepness of the curve
     x0 = 50  # Midpoint of the logistic function
 	logistic(n, L, k, x0)
 end
 
-# ╔═╡ 1adfc99c-1183-4c7c-8425-9cc59aa8b05d
-high = highlogistic
-
 # ╔═╡ a7923940-392f-4ee5-a9a3-126c5b8ba9c3
-@bind A Select([high,low])
+@bind A Select([highability,midability,lowability])
 
 # ╔═╡ 6a1a187e-2f6c-4acf-98e6-744cbb1f5873
-@bind B Select([high,low,vlowlogistic], default=vlowlogistic)
+@bind B Select([highability,midability,lowability], default=midability)
+
+# ╔═╡ e0a98746-4c8d-4ccc-9086-61429452521c
+opportunitycosts = [(B(i) + A((totalops - i ))) for i in policyrange]
+
+# ╔═╡ be77278e-f197-4a1e-9a9f-20c765a12e93
+begin 
+	plot(policyrange, opportunitycosts, label="total outcomes", size=(800, 600))
+	# Add titles and labels
+	# vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
+	vline!([policy1[2]+baseline[2]], label="B's opportunities", color=:green)
+	# annotate!([policy1[1]+baseline[1]-0.5] , maximum(opportunitycosts), "A")
+	annotate!([policy1[2]+baseline[2]-0.5] , maximum(opportunitycosts), "B")
+	title!("opportunity costs")
+	xlabel!("B's opportunities")
+	ylabel!("total outcomes")
+end
 
 # ╔═╡ 965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
 # Function to model educational outcomes for high ability
@@ -217,7 +255,7 @@ function educational_outcome_high(n)
     logistic_value = A(n)
 
     # Create a normal distribution centered on the logistic value
-    sigma = 10  # Standard deviation
+    sigma = 20  # Standard deviation
     distribution = Truncated(Normal(logistic_value, sigma),0,Inf)
 
     return distribution
@@ -230,7 +268,7 @@ function educational_outcome_low(n)
     logistic_value = B(n)
 
     # Create a normal distribution centered on the logistic value
-    sigma = 10  # Standard deviation
+    sigma = 20  # Standard deviation
     distribution = Truncated(Normal(logistic_value, sigma),0,Inf)
 
     return distribution
@@ -241,33 +279,9 @@ oprange = 0:100
 
 # ╔═╡ 3803eba4-a40d-4849-888f-2f3cd0ecc7d1
 begin
-	plot(oprange, [highlogistic(i) for i in oprange], label="high average", size=(800, 600))
-	plot!(oprange, [lowlogistic(i) for i in oprange], label="low average" )
-	plot!(oprange, [vlowlogistic(i) for i in oprange], label="vlow average" )
-	# Add titles and labels
-	title!("ability")
-	xlabel!("opportunities")
-	ylabel!("outcomes")
-	vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
-	vline!([policy1[2]+baseline[2]], label="B's opportunities", color=:green)
-end
-
-# ╔═╡ be77278e-f197-4a1e-9a9f-20c765a12e93
-begin
-	plot(oprange, [((A(i) + B(i)) - (i * 2)) for i in oprange], label="outcomes/opportunities", size=(800, 600))
-	# Add titles and labels
-	title!("outcomes/opportunities")
-	xlabel!("opportunities")
-	ylabel!("outcomes")
-	vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
-	vline!([policy1[2]+baseline[2]], label="B's opportunities", color=:green)
-end
-
-# ╔═╡ e27ab3f3-a0f5-48b9-a0df-0974523c5ad8
-begin
-	plot(oprange, [(highlogistic(i) - (i)) for i in oprange], label="high average", size=(800, 600))
-	plot!(oprange, [(lowlogistic(i) - (i)) for i in oprange], label="low average" )
-	plot!(oprange, [(vlowlogistic(i) - (i)) for i in oprange], label="vlow average" )
+	plot(oprange, [highability(i) for i in oprange], label="high average", size=(800, 600))
+	plot!(oprange, [midability(i) for i in oprange], label="mid average" )
+	plot!(oprange, [lowability(i) for i in oprange], label="low average" )
 	# Add titles and labels
 	title!("ability")
 	xlabel!("opportunities")
@@ -299,6 +313,8 @@ begin
 	ylabel!("outcomes")
 	vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
 	vline!([policy1[2]+baseline[2]], label="B's opportunities", color=:green)
+	annotate!([policy1[1]+baseline[1]-1.5] , 120, "A")
+	annotate!([policy1[2]+baseline[2]-1.5] , 120, "B")
 end
 
 # ╔═╡ e552a0a9-0f56-4456-8395-f12ef677835c
@@ -373,6 +389,8 @@ struct Report
 	uw_diffs::Tuple{Float64, Float64}
 	w_diffs::Tuple{Float64, Float64} 
 	w_sum::Float64
+	a_claim::Float64
+	b_claim::Float64
 end
 	
 
@@ -396,6 +414,14 @@ function runmodel(d1,d2) # d1 is the baseline
 	uwdiffs = getuwdiffs(d1lpA,d2lpA,d1lpB,d2lpB) 
 	wdiffs = getwdiffs(d1lpA,d2lpA,d1lpB,d2lpB) 
 	wsum =  wdiffs[2] + wdiffs[1]
+	bclaim = if ((wdiffs[2] > 0) && ((wdiffs[2] + wdiffs[1]) > 0))
+		(wdiffs[2] + wdiffs[1])
+	    else 0 
+	end 
+	aclaim = if ((wdiffs[1] > 0) && ((wdiffs[1] + wdiffs[2]) > 0 ))
+		(wdiffs[1] + wdiffs[2])
+	    else 0 
+	end
 	return (Report(
 		      d1 
 		    , d2 
@@ -416,12 +442,19 @@ function runmodel(d1,d2) # d1 is the baseline
 		    , uwdiffs
 		    , wdiffs
 		    , wsum
+		    , bclaim 
+		    , aclaim
 		)
 	)
 end
 
 # ╔═╡ 99a7a989-c37b-46d8-9d72-87d67b9d5d9f
 report1 = runmodel(policy1,policy2)
+
+# ╔═╡ dfe2f957-53b5-4d2b-be90-1b60f28f730a
+md"setting for policy1: $policy1
+  * A's prospects: $(report1.prospects_a_1)
+  * B's prospects: $(report1.prospects_b_1)"
 
 # ╔═╡ 722f971d-d8a7-4ea8-81e9-09bba8db8a90
 md"## report 
@@ -461,9 +494,18 @@ y_b_compare = map(x -> x[2][2],compareagainstpolicy1)
 # ╔═╡ ae26ace3-377d-44e7-83c3-96aedac697d4
 y_sum_compare = map(x -> x[3],compareagainstpolicy1)
 
+# ╔═╡ 1ebb005c-a121-4eec-9d09-1ad035068524
+a_claim_compare = map(x -> x[4],compareagainstpolicy1)
+
+# ╔═╡ ab262803-6f5e-4b42-9bb4-d7fd31d042e5
+b_claim_compare = map(x -> x[5],compareagainstpolicy1)
+
 # ╔═╡ 44469bb4-f9cf-4014-bbca-e91e34a98aac
 currentchances = 
 	(runmodel(policy1,policy1)).chances_b_1 
+
+# ╔═╡ c9440555-0f0e-4356-9a92-fcf0ad4398f0
+currentchances2 = (runmodel(policy2,policy2)).chances_b_1 
 
 # ╔═╡ e7ad6c9a-b112-4f43-a78a-71370e989553
 function runmodels(xs) 
@@ -494,12 +536,15 @@ lf2 = map(x -> x[1][4],lll2)
 
 # ╔═╡ 6bb004ee-fe76-4760-8feb-d6f21153afc8
 begin
-	plot(x_compare, y_a_compare, label="A weighted", colour="green", ylim=(-0.04, 0.04), size=(800, 600))
-	plot!(x_compare, y_b_compare, label="B weighted", colour="red")
-	plot!(x_compare, y_sum_compare, label="Balance", colour="dark orange")
+	plot(x_compare, y_a_compare, label="A's weighted interests", colour="green", ylim=(-0.04, 0.04), size=(800, 600))
+	plot!(x_compare, y_b_compare, label="B's weighted interests", colour="red")
+	# plot!(x_compare, y_sum_compare, label="balance of interets", colour="dark orange")
+	plot!(x_compare, a_claim_compare, label="B's claim against") 
+	plot!(x_compare, b_claim_compare, label="A's claim against")
 	vspan!([minimum(lf),maximum(lf)], label="loosely fair", color="light grey", opacity=0.2)
-	vspan!([minimum(lf2) - 0.005,maximum(lf2) + 0.005], label="strictly fair", color="light green", opacity=0.3)
-	vline!([currentchances], label="B's chances on policy", color=:grey)
+	vline!(lf2, label="strictly fair", opacity=0.9)
+	vline!([currentchances], label="B's chances on policy1", color=:grey)
+	vline!([currentchances2], label="B's chances on policy2", color=:grey)
 	
 	
 	# Add titles and labels
@@ -521,7 +566,7 @@ QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.5"
+julia_version = "1.11.1"
 manifest_format = "2.0"
 project_hash = "09c17342b0d7303fc3366dcaa34aab76b94b748d"
 
@@ -539,13 +584,15 @@ version = "1.1.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
-version = "1.1.1"
+version = "1.1.2"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+version = "1.11.0"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+version = "1.11.0"
 
 [[deps.BitFlags]]
 git-tree-sha1 = "0691e34b3bb8be9307330f88d1a3c3f25466c24d"
@@ -638,6 +685,7 @@ version = "0.18.20"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+version = "1.11.0"
 
 [[deps.Dbus_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
@@ -710,6 +758,7 @@ version = "4.4.4+1"
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
+version = "1.11.0"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra"]
@@ -832,6 +881,7 @@ version = "0.2.5"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+version = "1.11.0"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
@@ -915,16 +965,17 @@ version = "0.6.4"
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "8.4.0+0"
+version = "8.6.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "LibGit2_jll", "NetworkOptions", "Printf", "SHA"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
+version = "1.11.0"
 
 [[deps.LibGit2_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll"]
 uuid = "e37daf67-58a4-590a-8e99-b0245dd2ffc5"
-version = "1.6.4+0"
+version = "1.7.2+0"
 
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
@@ -933,6 +984,7 @@ version = "1.11.0+1"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+version = "1.11.0"
 
 [[deps.Libffi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -985,6 +1037,7 @@ version = "2.40.1+0"
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+version = "1.11.0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
@@ -1004,6 +1057,7 @@ version = "0.3.28"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+version = "1.11.0"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
@@ -1025,6 +1079,7 @@ version = "0.5.13"
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+version = "1.11.0"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "MozillaCACerts_jll", "NetworkOptions", "Random", "Sockets"]
@@ -1035,7 +1090,7 @@ version = "1.1.9"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.2+1"
+version = "2.28.6+0"
 
 [[deps.Measures]]
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
@@ -1050,10 +1105,11 @@ version = "1.2.0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+version = "1.11.0"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2023.1.10"
+version = "2023.12.12"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
@@ -1074,7 +1130,7 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.23+4"
+version = "0.3.27+1"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1145,9 +1201,13 @@ uuid = "30392449-352a-5448-841d-b1acce4e97dc"
 version = "0.43.4+0"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.10.0"
+version = "1.11.0"
+weakdeps = ["REPL"]
+
+    [deps.Pkg.extensions]
+    REPLExt = "REPL"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]
@@ -1202,6 +1262,7 @@ version = "1.4.3"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+version = "1.11.0"
 
 [[deps.PtrArrays]]
 git-tree-sha1 = "77a42d78b6a92df47ab37e177b2deac405e1c88f"
@@ -1245,12 +1306,14 @@ version = "2.11.1"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
 [[deps.REPL]]
-deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
+deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+version = "1.11.0"
 
 [[deps.Random]]
 deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+version = "1.11.0"
 
 [[deps.RecipesBase]]
 deps = ["PrecompileTools"]
@@ -1305,6 +1368,7 @@ version = "1.2.1"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+version = "1.11.0"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -1319,6 +1383,7 @@ version = "1.2.0"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+version = "1.11.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
@@ -1329,7 +1394,7 @@ version = "1.2.1"
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-version = "1.10.0"
+version = "1.11.0"
 
 [[deps.SpecialFunctions]]
 deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
@@ -1350,9 +1415,14 @@ uuid = "860ef19b-820b-49d6-a774-d7a799459cd3"
 version = "1.0.2"
 
 [[deps.Statistics]]
-deps = ["LinearAlgebra", "SparseArrays"]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "ae3bb1eb3bba077cd276bc5cfc337cc65c3075c0"
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-version = "1.10.0"
+version = "1.11.1"
+weakdeps = ["SparseArrays"]
+
+    [deps.Statistics.extensions]
+    SparseArraysExt = ["SparseArrays"]
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
@@ -1380,6 +1450,10 @@ version = "1.3.2"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
     InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
 
+[[deps.StyledStrings]]
+uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
+version = "1.11.0"
+
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
@@ -1387,7 +1461,7 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "7.2.1+1"
+version = "7.7.0+0"
 
 [[deps.TOML]]
 deps = ["Dates"]
@@ -1408,6 +1482,7 @@ version = "0.1.1"
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+version = "1.11.0"
 
 [[deps.TranscodingStreams]]
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
@@ -1427,9 +1502,11 @@ version = "1.5.1"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+version = "1.11.0"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+version = "1.11.0"
 
 [[deps.UnicodeFun]]
 deps = ["REPL"]
@@ -1733,7 +1810,7 @@ version = "1.1.6+0"
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
-version = "1.52.0+1"
+version = "1.59.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1767,28 +1844,30 @@ version = "1.4.1+1"
 # ╟─a8c8c80a-2e0f-4f34-92b5-3f872a4249c6
 # ╟─6a1a187e-2f6c-4acf-98e6-744cbb1f5873
 # ╟─e7b6f564-a08e-43b1-b602-b10a935ad94a
-# ╟─22598207-1e0f-444b-9064-5cc818305d83
+# ╠═22598207-1e0f-444b-9064-5cc818305d83
 # ╟─97bad24c-f88a-4709-9130-7187536fb99b
 # ╟─b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
-# ╟─6bb004ee-fe76-4760-8feb-d6f21153afc8
+# ╠═6bb004ee-fe76-4760-8feb-d6f21153afc8
 # ╟─dfe2f957-53b5-4d2b-be90-1b60f28f730a
 # ╟─e94755e2-b707-4a16-a751-9e5cc04f1b29
 # ╟─65e3c95a-e330-4fab-903f-bcf81d1c0491
 # ╟─6128347f-8029-45ff-a47a-2ef21f090561
+# ╠═be77278e-f197-4a1e-9a9f-20c765a12e93
 # ╟─722f971d-d8a7-4ea8-81e9-09bba8db8a90
-# ╠═1adfc99c-1183-4c7c-8425-9cc59aa8b05d
-# ╠═457f9e33-3cd3-4c87-b1bc-f2ee6d56ecf5
 # ╟─64e21cb5-b9f3-49ec-8cef-5f8ab7caa8da
 # ╟─f1779876-5cc2-4ee6-b289-838b5320703a
 # ╠═99a7a989-c37b-46d8-9d72-87d67b9d5d9f
-# ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
 # ╠═778a0587-959b-4ced-baff-c95defa65a27
-# ╠═3803eba4-a40d-4849-888f-2f3cd0ecc7d1
-# ╟─be77278e-f197-4a1e-9a9f-20c765a12e93
-# ╠═e27ab3f3-a0f5-48b9-a0df-0974523c5ad8
-# ╠═02d51a56-26ea-423b-a60c-c50c75cec26c
+# ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
+# ╟─3803eba4-a40d-4849-888f-2f3cd0ecc7d1
 # ╠═cdd1fc12-2027-45df-8867-fe7fe3265999
+# ╠═02d51a56-26ea-423b-a60c-c50c75cec26c
 # ╠═b96458b3-6f68-4071-bb82-6b3e1dcff8f7
+# ╠═80a29446-d7c7-47c1-8cfa-697745abc3a9
+# ╠═6645cf3a-7875-4868-a8db-ff4668da787c
+# ╠═abea362f-28e6-47e9-b7c0-8d3295d0138b
+# ╠═ec526f2a-a990-4ea5-b1ba-43a0c56cef60
+# ╠═e0a98746-4c8d-4ccc-9086-61429452521c
 # ╠═ee515f09-6dc2-4baa-a151-67bfb7136a61
 # ╠═d861ef63-4ac2-46dc-9c6f-7221393b7277
 # ╠═f84727eb-011d-4679-912a-beb99afb25bc
@@ -1801,7 +1880,10 @@ version = "1.4.1+1"
 # ╠═add04bdd-1814-4253-830b-c5e8977fde29
 # ╠═77444d6c-a3e3-49f9-9b21-8c79b649eb58
 # ╠═ae26ace3-377d-44e7-83c3-96aedac697d4
+# ╠═1ebb005c-a121-4eec-9d09-1ad035068524
+# ╠═ab262803-6f5e-4b42-9bb4-d7fd31d042e5
 # ╠═44469bb4-f9cf-4014-bbca-e91e34a98aac
+# ╠═c9440555-0f0e-4356-9a92-fcf0ad4398f0
 # ╟─10bb2145-4069-4e88-8852-bd2d892a2627
 # ╠═38757378-634c-4606-88df-fdf1b47b7e70
 # ╠═f422e650-3016-497b-8a9e-d367337d9380
