@@ -19,6 +19,8 @@ end
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
 using PlutoUI, Plots, Distributions, QuadGK
 
+
+
 # ╔═╡ fad8a8e2-141a-4f54-a822-150ecdcbde5a
 md"# edumodels 0.1
 this pluto.jl notebook provide a toy model of a system of education. it can be used to theorise about fair chances in a system of education. 
@@ -35,6 +37,9 @@ md"ability setting for B:"
 # ╔═╡ 22598207-1e0f-444b-9064-5cc818305d83
 # set the baseline distribution of opportunities 
 @bind baseline_ NumberField(0:200, default=50)
+
+# ╔═╡ f9d450e4-e3fd-4ef7-8d9b-39cd209ce091
+@bind grain NumberField(0:0.1:1, default=1)
 
 # ╔═╡ 97bad24c-f88a-4709-9130-7187536fb99b
 md"## trade-offs"
@@ -67,6 +72,36 @@ md"## ability settings
 here is where we can change the ability settings available for the model.
 
 "
+
+# ╔═╡ 6c731bce-6fef-4d69-a64c-65ecbb08eee9
+@bind scaleall NumberField(0:0.1:10, default=1)
+
+# ╔═╡ b706f625-6c87-4681-9cdf-172ca30255fc
+@bind lowmax NumberField(0:200, default=55)
+
+# ╔═╡ e6b9420a-5187-4cdf-9f15-a60fd6855a8f
+@bind lowmid NumberField(0:200, default=50)
+
+# ╔═╡ 0e097004-9b9c-4517-ad2f-aa6840226158
+@bind lowsteep NumberField(0:0.01:2, default=0.1)
+
+# ╔═╡ de1ac2da-61a5-49ff-a0be-e0d05ccfdf5f
+@bind midmax NumberField(0:200, default=80)
+
+# ╔═╡ b8fe0439-61fc-4634-93e8-d0aa05a87035
+@bind midmid NumberField(0:200, default=50)
+
+# ╔═╡ 52bc5a38-926b-4311-8868-1d32a6f21408
+@bind midsteep NumberField(0:0.01:2, default=0.1)
+
+# ╔═╡ d805916b-8c7a-47b4-8ea8-0ad782c3148d
+@bind highmax NumberField(0:200, default=100)
+
+# ╔═╡ 6c1a19b1-a66a-4b63-8413-063dc883537d
+@bind highmid NumberField(0:200, default=50)
+
+# ╔═╡ 053e5999-291d-4638-a066-942d2a61f0e9
+@bind highsteep NumberField(0:0.01:2, default=0.1)
 
 # ╔═╡ 80a29446-d7c7-47c1-8cfa-697745abc3a9
 function highabilitylinear(n)
@@ -154,6 +189,42 @@ function looselyfair(xs)
 	isempty(filter(x -> (x > 0.002), justthediffs))
 end
 
+# ╔═╡ 5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
+function looselyfairgrouped(xs)
+    justthediffs = xs   # map(x -> x[3], xs)
+    # filtered = filter(x -> (x[2] > 0.002), justthediffs)
+
+    # Initialize variables to hold the result and the current group
+    result = []
+    current_group = []
+
+    for value in justthediffs
+        if isempty(filter(x -> (x[2] > 0.002), value))
+            push!(current_group, value)  # Add to current group if it meets the condition
+        else
+            if !isempty(current_group)
+                push!(result, current_group)  # Save the current group if it's not empty
+                current_group = []  # Reset for the next group
+            end
+        end
+    end
+
+    # Add the last group if it exists
+    if !isempty(current_group)
+        push!(result, current_group)
+    end
+
+    return result
+end
+
+
+
+# ╔═╡ 0390e0e1-f258-496e-880b-68348677cbf8
+
+
+# ╔═╡ 3dc7f12b-e60c-4572-b792-22e25978efde
+
+
 # ╔═╡ eaf323c6-d8f2-486f-ae9f-ca5610e1f243
 md"## model settings"
 
@@ -204,25 +275,25 @@ end
 
 # ╔═╡ cdd1fc12-2027-45df-8867-fe7fe3265999
 function lowability(n)
-	L = 60 # Maximum outcome
-    k = 0.08  # Steepness of the curve
-    x0 = 40  # Midpoint of the logistic function
+	L = lowmax * scaleall # Maximum outcome
+    k = lowsteep  # Steepness of the curve
+    x0 = lowmid * scaleall  # Midpoint of the logistic function
 	logistic(n, L, k, x0)
 end
 
 # ╔═╡ 02d51a56-26ea-423b-a60c-c50c75cec26c
 function midability(n)
-	L = 70  # Maximum outcome
-    k = 0.07  # Steepness of the curve
-    x0 = 45  # Midpoint of the logistic function
+	L = midmax * scaleall  # Maximum outcome
+    k = midsteep  # Steepness of the curve
+    x0 = midmid * scaleall  # Midpoint of the logistic function
 	logistic(n, L, k, x0)
 end
 
 # ╔═╡ b96458b3-6f68-4071-bb82-6b3e1dcff8f7
 function highability(n)
-	L = 100  # Maximum outcome
-    k = 0.11  # Steepness of the curve
-    x0 = 50  # Midpoint of the logistic function
+	L = highmax * scaleall  # Maximum outcome
+    k = highsteep  # Steepness of the curve
+    x0 = highmid * scaleall  # Midpoint of the logistic function
 	logistic(n, L, k, x0)
 end
 
@@ -230,7 +301,7 @@ end
 @bind A Select([highability,midability,lowability])
 
 # ╔═╡ 6a1a187e-2f6c-4acf-98e6-744cbb1f5873
-@bind B Select([highability,midability,lowability], default=midability)
+@bind B Select([highability,midability,lowability], default=lowability)
 
 # ╔═╡ e0a98746-4c8d-4ccc-9086-61429452521c
 opportunitycosts = [(B(i) + A((totalops - i ))) for i in policyrange]
@@ -416,11 +487,11 @@ function runmodel(d1,d2) # d1 is the baseline
 	wsum =  wdiffs[2] + wdiffs[1]
 	bclaim = if ((wdiffs[2] > 0) && ((wdiffs[2] + wdiffs[1]) > 0))
 		(wdiffs[2] + wdiffs[1])
-	    else 0 
+	    else 0
 	end 
 	aclaim = if ((wdiffs[1] > 0) && ((wdiffs[1] + wdiffs[2]) > 0 ))
 		(wdiffs[1] + wdiffs[2])
-	    else 0 
+	    else 0
 	end
 	return (Report(
 		      d1 
@@ -474,7 +545,7 @@ md"## report
 # ╔═╡ b9a9d78e-0109-403e-b8b2-4682bf56707c
 # this function takes a single policy (taken from policy1 for now) and then checks this policy against all available policies (given by the total opportunities). it returns a list of chances paired against the weighted differences for A and B on these chances. we will then plot this thing! 
 function comparepolicies(d1)
-	availablepolicies = [(i,totalopportunities - i) for i in 0:1:totalopportunities ]
+	availablepolicies = [(i,totalopportunities - i) for i in 0:grain:totalopportunities ]
 	allreports = map((x -> runmodel(d1,x)),availablepolicies) 
 	chancesanddiffs(allreports)
 end
@@ -514,13 +585,25 @@ end
 
 # ╔═╡ 38757378-634c-4606-88df-fdf1b47b7e70
 function compareallpolicies()
-	availablepolicies = [(i,totalopportunities - i) for i in 0:0.1:totalopportunities ]
+	availablepolicies = [(i,totalopportunities - i) for i in 0:grain:totalopportunities ]
 	allreports = runmodels(availablepolicies)
 	map(chancesanddiffs2,allreports)
 end
 
 # ╔═╡ 4d2b2b64-ced5-4afc-9464-9629878883ff
 compareallagainstall = compareallpolicies()
+
+# ╔═╡ fad62b09-869b-4afc-8747-bf5b8b0ca605
+ss = (map(y -> map(x -> (x[4],x[3]),y),compareallagainstall))
+
+# ╔═╡ 657d2c5d-940f-43f1-b68f-8043fdd2e3d2
+looselyfairgrouped(ss)
+
+# ╔═╡ c6a7f717-4818-4fc5-a4e9-2e639ad682d4
+lfg = map(y-> map(x -> x[1][1],y),looselyfairgrouped(ss))
+
+# ╔═╡ a91d0a6b-075d-4cf7-a28d-1a4daab965cc
+compareallagainstall
 
 # ╔═╡ e9b328ce-28dc-49d9-af67-bfcf069ea4ed
 lll = filterfair(looselyfair,compareallagainstall)
@@ -536,19 +619,20 @@ lf2 = map(x -> x[1][4],lll2)
 
 # ╔═╡ 6bb004ee-fe76-4760-8feb-d6f21153afc8
 begin
-	plot(x_compare, y_a_compare, label="A's weighted interests", colour="green", ylim=(-0.04, 0.04), size=(800, 600))
+	plot(x_compare, y_a_compare, label="A's weighted interests", colour="green", ylim=(-0.04, 0.04), xlim=(0, 1))
 	plot!(x_compare, y_b_compare, label="B's weighted interests", colour="red")
 	# plot!(x_compare, y_sum_compare, label="balance of interets", colour="dark orange")
-	plot!(x_compare, a_claim_compare, label="B's claim against") 
-	plot!(x_compare, b_claim_compare, label="A's claim against")
-	vspan!([minimum(lf),maximum(lf)], label="loosely fair", color="light grey", opacity=0.2)
-	vline!(lf2, label="strictly fair", opacity=0.9)
-	vline!([currentchances], label="B's chances on policy1", color=:grey)
-	vline!([currentchances2], label="B's chances on policy2", color=:grey)
-	
+	plot!(x_compare, a_claim_compare, label="B's claim against", colour= "dark orange") 
+	plot!(x_compare, b_claim_compare, label="A's claim against", colour="light green")
+	vspan!([], label="loosely fair", color="light blue", opacity=0.2) ## this is just a dummy so that we get the label for loosely fair
+	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
+	vline!([currentchances], label="B's chances on policy", color=:grey)
+	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
+	vline!(lf2, label="strictly fair", opacity=0.9, color="sky blue")
+	hline!([0], label=false, color=:grey)
 	
 	# Add titles and labels
-	title!("trade-offs")
+	#title!("fair trade-offs")
 	xlabel!("B's chances")
 	ylabel!("weighted interests")
 end
@@ -560,6 +644,12 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+
+[compat]
+Distributions = "~0.25.113"
+Plots = "~1.40.8"
+PlutoUI = "~0.7.60"
+QuadGK = "~2.11.1"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -568,7 +658,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "09c17342b0d7303fc3366dcaa34aab76b94b748d"
+project_hash = "5a441c9496260ed70c46baaf8ed73ddb743ad819"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -619,9 +709,9 @@ version = "0.7.6"
 
 [[deps.ColorSchemes]]
 deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "PrecompileTools", "Random"]
-git-tree-sha1 = "c785dfb1b3bfddd1da557e861b919819b82bbe5b"
+git-tree-sha1 = "b5278586822443594ff615963b0c09755771b3e0"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.27.1"
+version = "3.26.0"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -630,20 +720,16 @@ uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 version = "0.11.5"
 
 [[deps.ColorVectorSpace]]
-deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "Requires", "Statistics", "TensorCore"]
-git-tree-sha1 = "a1f44953f2382ebb937d60dafbe2deea4bd23249"
+deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "SpecialFunctions", "Statistics", "TensorCore"]
+git-tree-sha1 = "600cc5508d66b78aae350f7accdb58763ac18589"
 uuid = "c3611d14-8923-5661-9e6a-0046d554d3a4"
-version = "0.10.0"
-weakdeps = ["SpecialFunctions"]
-
-    [deps.ColorVectorSpace.extensions]
-    SpecialFunctionsExt = "SpecialFunctions"
+version = "0.9.10"
 
 [[deps.Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
-git-tree-sha1 = "64e15186f0aa277e174aa81798f7eb8598e0157e"
+git-tree-sha1 = "362a287c3aa50601b0bc359053d5c2468f0e7ce0"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
-version = "0.13.0"
+version = "0.12.11"
 
 [[deps.Compat]]
 deps = ["TOML", "UUIDs"]
@@ -1837,14 +1923,15 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╟─a3c707eb-2dbd-4ede-80e9-0e4c90e01154
+# ╠═a3c707eb-2dbd-4ede-80e9-0e4c90e01154
 # ╟─fad8a8e2-141a-4f54-a822-150ecdcbde5a
 # ╟─a3a348bf-6e2c-4775-b1c6-26fa602b319a
 # ╟─a7923940-392f-4ee5-a9a3-126c5b8ba9c3
 # ╟─a8c8c80a-2e0f-4f34-92b5-3f872a4249c6
-# ╟─6a1a187e-2f6c-4acf-98e6-744cbb1f5873
+# ╠═6a1a187e-2f6c-4acf-98e6-744cbb1f5873
 # ╟─e7b6f564-a08e-43b1-b602-b10a935ad94a
-# ╠═22598207-1e0f-444b-9064-5cc818305d83
+# ╟─22598207-1e0f-444b-9064-5cc818305d83
+# ╠═f9d450e4-e3fd-4ef7-8d9b-39cd209ce091
 # ╟─97bad24c-f88a-4709-9130-7187536fb99b
 # ╟─b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
 # ╠═6bb004ee-fe76-4760-8feb-d6f21153afc8
@@ -1852,16 +1939,26 @@ version = "1.4.1+1"
 # ╟─e94755e2-b707-4a16-a751-9e5cc04f1b29
 # ╟─65e3c95a-e330-4fab-903f-bcf81d1c0491
 # ╟─6128347f-8029-45ff-a47a-2ef21f090561
-# ╠═be77278e-f197-4a1e-9a9f-20c765a12e93
+# ╟─be77278e-f197-4a1e-9a9f-20c765a12e93
 # ╟─722f971d-d8a7-4ea8-81e9-09bba8db8a90
 # ╟─64e21cb5-b9f3-49ec-8cef-5f8ab7caa8da
 # ╟─f1779876-5cc2-4ee6-b289-838b5320703a
 # ╠═99a7a989-c37b-46d8-9d72-87d67b9d5d9f
-# ╠═778a0587-959b-4ced-baff-c95defa65a27
+# ╟─778a0587-959b-4ced-baff-c95defa65a27
 # ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
 # ╟─3803eba4-a40d-4849-888f-2f3cd0ecc7d1
+# ╠═6c731bce-6fef-4d69-a64c-65ecbb08eee9
+# ╠═b706f625-6c87-4681-9cdf-172ca30255fc
+# ╠═e6b9420a-5187-4cdf-9f15-a60fd6855a8f
+# ╠═0e097004-9b9c-4517-ad2f-aa6840226158
 # ╠═cdd1fc12-2027-45df-8867-fe7fe3265999
+# ╠═de1ac2da-61a5-49ff-a0be-e0d05ccfdf5f
+# ╠═b8fe0439-61fc-4634-93e8-d0aa05a87035
+# ╠═52bc5a38-926b-4311-8868-1d32a6f21408
 # ╠═02d51a56-26ea-423b-a60c-c50c75cec26c
+# ╠═d805916b-8c7a-47b4-8ea8-0ad782c3148d
+# ╠═6c1a19b1-a66a-4b63-8413-063dc883537d
+# ╠═053e5999-291d-4638-a066-942d2a61f0e9
 # ╠═b96458b3-6f68-4071-bb82-6b3e1dcff8f7
 # ╠═80a29446-d7c7-47c1-8cfa-697745abc3a9
 # ╠═6645cf3a-7875-4868-a8db-ff4668da787c
@@ -1890,10 +1987,17 @@ version = "1.4.1+1"
 # ╠═64959798-11bd-4f0e-b287-597453067ed5
 # ╠═ea3cf121-cc70-46d7-a15c-fffd1b962ff9
 # ╠═43b6d787-ee10-4a6f-aeee-f16af2aec1f2
+# ╠═5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
+# ╠═657d2c5d-940f-43f1-b68f-8043fdd2e3d2
+# ╠═c6a7f717-4818-4fc5-a4e9-2e639ad682d4
+# ╠═fad62b09-869b-4afc-8747-bf5b8b0ca605
+# ╠═a91d0a6b-075d-4cf7-a28d-1a4daab965cc
 # ╠═e7ad6c9a-b112-4f43-a78a-71370e989553
 # ╠═4d2b2b64-ced5-4afc-9464-9629878883ff
 # ╠═e9b328ce-28dc-49d9-af67-bfcf069ea4ed
 # ╠═f898b9b1-0550-4800-96f6-8a2907c3ae30
+# ╠═0390e0e1-f258-496e-880b-68348677cbf8
+# ╠═3dc7f12b-e60c-4572-b792-22e25978efde
 # ╠═e1bf01c4-7adc-477b-b4a6-42dee053809b
 # ╠═8c2af803-3371-41c4-885e-b550ede68c86
 # ╟─eaf323c6-d8f2-486f-ae9f-ca5610e1f243
