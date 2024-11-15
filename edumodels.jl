@@ -17,7 +17,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
-using PlutoUI, Plots, Distributions, QuadGK
+using PlutoUI, Plots, Distributions, QuadGK, Printf
 
 
 
@@ -28,6 +28,9 @@ this pluto.jl notebook provide a toy model of a system of education. it can be u
 we begin by setting the ability for the individuals A and B...
 "
 
+# ╔═╡ 7a83590e-488e-41b7-a4ed-303956cc0359
+md"### basic settings"
+
 # ╔═╡ a3a348bf-6e2c-4775-b1c6-26fa602b319a
 md"ability setting for A:"
 
@@ -36,7 +39,14 @@ md"ability setting for B:"
 
 # ╔═╡ 22598207-1e0f-444b-9064-5cc818305d83
 # set the baseline distribution of opportunities 
-@bind baseline_ NumberField(0:200, default=50)
+@bind baseline_ NumberField(0:200, default=40)
+
+# ╔═╡ 69b27cb2-720f-44bd-8cdf-b33bd1e0399f
+# set the total opportunities available to distribute 
+@bind totalopportunities_ NumberField(0:200, default=20)
+
+# ╔═╡ 7e6de677-5e7f-4e66-86e1-cb73671e0928
+md"change the accuracy/performance settings for the model. 0.1 is high accuracy. 1.0 is higher performance." 
 
 # ╔═╡ f9d450e4-e3fd-4ef7-8d9b-39cd209ce091
 @bind grain NumberField(0:0.1:1, default=1)
@@ -56,15 +66,10 @@ the same reasoning for B's point of view (that is, looking right) will lead us t
 
 "
 
-# ╔═╡ 64e21cb5-b9f3-49ec-8cef-5f8ab7caa8da
-md"set the distributions for policy1 and policy2..."
+# ╔═╡ da3e23be-42ac-466d-b2d9-3af4a3e90717
+md" ## dashboard"
 
-# ╔═╡ f1779876-5cc2-4ee6-b289-838b5320703a
-# baseline distribution of opportunities
-baseline = (baseline_,baseline_)
 
-# ╔═╡ e7b6f564-a08e-43b1-b602-b10a935ad94a
-md"baseline distribution of opportunities: $baseline"
 
 # ╔═╡ b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
 md"## ability settings
@@ -103,32 +108,38 @@ here is where we can change the ability settings available for the model.
 # ╔═╡ 053e5999-291d-4638-a066-942d2a61f0e9
 @bind highsteep NumberField(0:0.01:2, default=0.1)
 
-# ╔═╡ 80a29446-d7c7-47c1-8cfa-697745abc3a9
-function highabilitylinear(n)
-	n
-end
+# ╔═╡ 23104c1b-afe4-486f-af81-79264eb4f61c
+md"## opportunity costs"
 
-# ╔═╡ 6645cf3a-7875-4868-a8db-ff4668da787c
-function midabilitylinear(n)
-	(n * 0.75) + 12.5
-end
-
-# ╔═╡ ee515f09-6dc2-4baa-a151-67bfb7136a61
-outm = 0.8
-
-# ╔═╡ 69b27cb2-720f-44bd-8cdf-b33bd1e0399f
-# set the total opportunities available to distribute 
-@bind totalopportunities_ Slider(0:200, default=20)
+# ╔═╡ 1350ddba-a676-45c7-8552-d13b607610cd
+md"## variables"
 
 # ╔═╡ 65594757-7ded-4552-97cb-695eb82cf4c8
 # total number of opportunities available to distribute
 totalopportunities = totalopportunities_
+
+# ╔═╡ 8bcb854d-cb45-4ed4-bc0f-8e5d0c693d27
+md"opportunities available to distribute: $totalopportunities"
 
 # ╔═╡ e94755e2-b707-4a16-a751-9e5cc04f1b29
 @bind policy1_ Slider(0:0.1:totalopportunities, default=0)
 
 # ╔═╡ 6128347f-8029-45ff-a47a-2ef21f090561
 @bind policy2_ Slider(0:0.1:totalopportunities, default=0)
+
+# ╔═╡ d861ef63-4ac2-46dc-9c6f-7221393b7277
+# distribution under policy 1
+policy1 = (totalopportunities - policy1_, policy1_)
+
+# ╔═╡ f84727eb-011d-4679-912a-beb99afb25bc
+# distribution under policy 2
+policy2 = (totalopportunities - policy2_, policy2_)
+
+# ╔═╡ 5f37b1e0-eb9a-4c06-90bb-f67bf0da1f2e
+baseline = (baseline_,baseline_)
+
+# ╔═╡ e7b6f564-a08e-43b1-b602-b10a935ad94a
+md"baseline distribution of opportunities: $baseline (default=40)"
 
 # ╔═╡ abea362f-28e6-47e9-b7c0-8d3295d0138b
 # let's work out the opportunity costs, as we move from giving B the highest possible amount of opportunities to the lowest possible 
@@ -139,21 +150,26 @@ policyrange = range(baseline[2],totalopportunities + baseline[2], step=0.1) # th
 # ╔═╡ ec526f2a-a990-4ea5-b1ba-43a0c56cef60
 totalops = totalopportunities + baseline[1] + baseline[2]
 
-# ╔═╡ d861ef63-4ac2-46dc-9c6f-7221393b7277
-# distribution under policy 1
-policy1 = (totalopportunities - policy1_, policy1_)
+# ╔═╡ b1893f3e-6cd9-417b-96d7-5f53c0b3cca8
+dt1 = (policy1[1] + baseline[1],policy1[2] + baseline[2])
 
-# ╔═╡ f84727eb-011d-4679-912a-beb99afb25bc
-# distribution under policy 2
-policy2 = (totalopportunities - policy2_, policy2_)
+# ╔═╡ 9ca98b60-7953-4bfa-86e0-b449d154b98d
+dt2 = (policy2[1] + baseline[1],policy2[2] + baseline[2])
 
 # ╔═╡ 65e3c95a-e330-4fab-903f-bcf81d1c0491
-md"setting for policy2: $policy2"
+md"setting for policy2: $policy2, $dt2"
 
-# ╔═╡ bc753593-51e5-4492-bf13-145643b77802
-function chancesanddiffs(xs) 
-	map(x -> (x.chances_b_2,x.w_diffs,x.w_sum,x.a_claim,x.b_claim),xs) 
+# ╔═╡ 2eed9e35-394a-4ad9-9c39-290065432cc2
+function tr(t)
+	round(t; digits=2)
 end
+
+# ╔═╡ 4f81db11-2811-4008-b09c-56335160d0c9
+md"## pairwise comparison of policies"
+
+# ╔═╡ 0857676b-b3f1-4048-8a7a-b07b696d8423
+# all the available polices, given the current settings
+availablepolicies = [(baseline[1] + i,baseline[1] + totalopportunities - i) for i in 0:grain:totalopportunities ]
 
 # ╔═╡ 10bb2145-4069-4e88-8852-bd2d892a2627
 md"## finding the fair policies
@@ -217,12 +233,6 @@ function looselyfairgrouped(xs)
     return result
 end
 
-
-
-# ╔═╡ 0390e0e1-f258-496e-880b-68348677cbf8
-
-
-# ╔═╡ 3dc7f12b-e60c-4572-b792-22e25978efde
 
 
 # ╔═╡ eaf323c6-d8f2-486f-ae9f-ca5610e1f243
@@ -300,24 +310,17 @@ end
 # ╔═╡ a7923940-392f-4ee5-a9a3-126c5b8ba9c3
 @bind A Select([highability,midability,lowability])
 
+# ╔═╡ e89d181c-3cb8-4c7a-a4ac-b6e7f85d0a51
+opportunitycostsa = [A((totalops - i )) for i in policyrange]
+
 # ╔═╡ 6a1a187e-2f6c-4acf-98e6-744cbb1f5873
-@bind B Select([highability,midability,lowability], default=lowability)
+@bind B Select([highability,midability,lowability], default=midability)
 
 # ╔═╡ e0a98746-4c8d-4ccc-9086-61429452521c
 opportunitycosts = [(B(i) + A((totalops - i ))) for i in policyrange]
 
-# ╔═╡ be77278e-f197-4a1e-9a9f-20c765a12e93
-begin 
-	plot(policyrange, opportunitycosts, label="total outcomes", size=(800, 600))
-	# Add titles and labels
-	# vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
-	vline!([policy1[2]+baseline[2]], label="B's opportunities", color=:green)
-	# annotate!([policy1[1]+baseline[1]-0.5] , maximum(opportunitycosts), "A")
-	annotate!([policy1[2]+baseline[2]-0.5] , maximum(opportunitycosts), "B")
-	title!("opportunity costs")
-	xlabel!("B's opportunities")
-	ylabel!("total outcomes")
-end
+# ╔═╡ 2088381a-d880-4a7f-b6cd-4efde74eea08
+opportunitycostsb = [(B(i)) for i in policyrange]
 
 # ╔═╡ 965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
 # Function to model educational outcomes for high ability
@@ -348,9 +351,21 @@ end
 # ╔═╡ 7c36cbdc-8181-4388-a679-5101da90bc71
 oprange = 0:100
 
+# ╔═╡ 778a0587-959b-4ced-baff-c95defa65a27
+function ability()
+	plot(oprange, [A(i) for i in oprange], label=false)
+	plot!(oprange, [B(i) for i in oprange], label=false)
+	# Add titles and labels
+	title!("ability")
+	xlabel!("opportunities")
+	ylabel!("outcomes")
+	vline!([policy1[1]+baseline[1]], label=false, color=:blue)
+	vline!([policy1[2]+baseline[2]], label=false, color=:green)
+end
+
 # ╔═╡ 3803eba4-a40d-4849-888f-2f3cd0ecc7d1
 begin
-	plot(oprange, [highability(i) for i in oprange], label="high average", size=(800, 600))
+	plot(oprange, [highability(i) for i in oprange], label="high average")
 	plot!(oprange, [midability(i) for i in oprange], label="mid average" )
 	plot!(oprange, [lowability(i) for i in oprange], label="low average" )
 	# Add titles and labels
@@ -372,11 +387,11 @@ highsamples = reduce(vcat,[(get10samples(i,educational_outcome_high)) for i in o
 # ╔═╡ fb7aa538-0ccc-472b-8e9a-1f0c1c2e90f0
 lowsamples = reduce(vcat,[get10samples(i,educational_outcome_low) for i in oprange])
 
-# ╔═╡ 778a0587-959b-4ced-baff-c95defa65a27
+# ╔═╡ a72b5bff-2932-407f-a546-4d42d7493944
 begin
-	scatter([i[1] for i in highsamples], [i[2] for i in highsamples], label="A scatter", size=(800, 600), opacity=0.1)
+	scatter([i[1] for i in highsamples], [i[2] for i in highsamples], label="A scatter", opacity=0.05)
 	plot!(oprange, [A(i) for i in oprange], label="A average")
-	scatter!([i[1] for i in lowsamples], [i[2] for i in lowsamples], size=(800, 600), label="B scatter", opacity=0.1)
+	scatter!([i[1] for i in lowsamples], [i[2] for i in lowsamples], label="B scatter", opacity=0.05)
 	plot!(oprange, [B(i) for i in oprange], label="B average" )
 	# Add titles and labels
 	title!("ability")
@@ -384,19 +399,48 @@ begin
 	ylabel!("outcomes")
 	vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
 	vline!([policy1[2]+baseline[2]], label="B's opportunities", color=:green)
-	annotate!([policy1[1]+baseline[1]-1.5] , 120, "A")
-	annotate!([policy1[2]+baseline[2]-1.5] , 120, "B")
 end
+
+# ╔═╡ ef84633d-cc13-4573-9203-940fb2a14f35
+md"## model engine"
 
 # ╔═╡ e552a0a9-0f56-4456-8395-f12ef677835c
 # unit cost of an opportunity 
 unitcost = 0
 
+# ╔═╡ 5ccfe20e-cf68-4413-a833-3154437a0a6f
+function edubenefits(n)
+	L = 200 # Maximum outcome
+    k = 0.1  # Steepness of the curve
+    x0 = 100  # Midpoint of the logistic function
+	logistic(n, L, k, x0)
+end
+
+# ╔═╡ 6acfc730-1d1a-479d-b63f-ef1016096128
+opportunitycostsw = map(edubenefits,opportunitycosts)
+
+# ╔═╡ be77278e-f197-4a1e-9a9f-20c765a12e93
+function dash6()
+	plot(policyrange, opportunitycostsa, label=false)
+	plot!(policyrange, opportunitycostsb, label=false)
+	plot!(policyrange, opportunitycosts, label=false)
+	plot!(policyrange, opportunitycostsw, label=false, colour="light green")
+	# Add titles and labels
+	# vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
+	vline!([dt1[2]], color=:green, label=false)
+	# annotate!([policy1[1]+baseline[1]-0.5] , maximum(opportunitycosts), "A")
+	# annotate!([policy1[2]+baseline[2]-0.5] , maximum(opportunitycosts), "B")
+	title!("opportunity costs")
+	xlabel!("B's opportunities")
+	ylabel!("outcomes")
+end
+
 # ╔═╡ 8253ebaa-09e0-40a6-acdb-a43d0f9ddb6e
-# social baseline
+edubenefits(150)
 
 # ╔═╡ 1aea36b9-3736-442f-abf1-eeb5654b201e
-sbl = -20
+# social baseline
+sbl = 700
 
 # ╔═╡ 0cde042c-6e7a-4c7a-9f87-8146f0995eff
 # proportion for top ranked 
@@ -422,7 +466,7 @@ end
 # ╔═╡ dd77135b-c68d-486d-9333-249475176d11
 # function for calculating life prospects given chances, average outcomes, and cost of provision 
 function getlifeprospects(ch,avout,cp)
-    total = (sbl + (avout * outm) - cp) * 0.01 
+    total = (sbl + (edubenefits(avout)) - cp) * 0.001 
 	return ((ch * pptop * total) + ((1 - ch) * ppbot * total))
 end
 
@@ -455,6 +499,10 @@ struct Report
 	prospects_b_2::Float64 
 	av_out_1::Float64 
 	av_out_2::Float64 
+	av_out_1A::Float64 
+	av_out_1B::Float64 
+	av_out_2A::Float64 
+	av_out_2B::Float64 
 	cost_1::Float64 
 	cost_2::Float64 
 	uw_diffs::Tuple{Float64, Float64}
@@ -467,15 +515,19 @@ end
 
 # ╔═╡ 14a6c1d8-48cf-4bfc-b7f9-f56fd0406ead
 # this function calculates the unweighted difference between a pair of distributions
-function runmodel(d1,d2) # d1 is the baseline
-	dt1 = (d1[1] + baseline[1],d1[2] + baseline[2])
-	dt2 = (d2[1] + baseline[1],d2[2] + baseline[2])
+function runmodel(dt1,dt2) # d1 is the baseline
+	d1 = policy1
+	d2 = policy2
     d1chA = probability_x_greater_than_y2(educational_outcome_high(dt1[1]), educational_outcome_low(dt1[2])) # A's chances on d1
 	d1chB = 1 - d1chA # B's chances on d1 
 	d2chA = probability_x_greater_than_y2(educational_outcome_high(dt2[1]), educational_outcome_low(dt2[2])) # A's chances on d2
 	d2chB = 1 - d2chA # B's chances on d2
-	d1avout = averagetotaloutcomes_(dt1) # average outcomes on d1
-	d2avout = averagetotaloutcomes_(dt2) # average outcomes on d2 
+	d1avoutA = A(dt1[1])
+	d1avoutB = B(dt1[2])
+	d2avoutA = A(dt2[1])
+	d2avoutB = B(dt2[2])
+	d1avout = d1avoutA + d1avoutB # average outcomes on d1
+	d2avout = d2avoutA + d2avoutB # average outcomes on d2 
 	d1cost = costofprovision(d1) 
 	d2cost = costofprovision(d2) 
 	d1lpA = getlifeprospects(d1chA,d1avout,d1cost)
@@ -507,9 +559,13 @@ function runmodel(d1,d2) # d1 is the baseline
 			, d1lpB
 			, d2lpB 
 			, d1avout
-			,d2avout 
-			,d1cost
-			,d2cost 
+			, d2avout 
+		    , d1avoutA
+		    , d1avoutB
+		    , d2avoutA
+		    , d2avoutB
+			, d1cost
+			, d2cost 
 		    , uwdiffs
 		    , wdiffs
 		    , wsum
@@ -520,12 +576,10 @@ function runmodel(d1,d2) # d1 is the baseline
 end
 
 # ╔═╡ 99a7a989-c37b-46d8-9d72-87d67b9d5d9f
-report1 = runmodel(policy1,policy2)
+report1 = runmodel(dt1,dt2)
 
 # ╔═╡ dfe2f957-53b5-4d2b-be90-1b60f28f730a
-md"setting for policy1: $policy1
-  * A's prospects: $(report1.prospects_a_1)
-  * B's prospects: $(report1.prospects_b_1)"
+md"setting for policy1: $policy1, $dt1, ( $(tr(report1.chances_a_1)), $(tr(report1.chances_b_1))), ( $(tr(report1.prospects_a_1)), $(tr(report1.prospects_b_1)))"
 
 # ╔═╡ 722f971d-d8a7-4ea8-81e9-09bba8db8a90
 md"## report 
@@ -543,40 +597,72 @@ md"## report
 "
 
 # ╔═╡ b9a9d78e-0109-403e-b8b2-4682bf56707c
-# this function takes a single policy (taken from policy1 for now) and then checks this policy against all available policies (given by the total opportunities). it returns a list of chances paired against the weighted differences for A and B on these chances. we will then plot this thing! 
+# compare a single policy against all the available policies  
 function comparepolicies(d1)
-	availablepolicies = [(i,totalopportunities - i) for i in 0:grain:totalopportunities ]
 	allreports = map((x -> runmodel(d1,x)),availablepolicies) 
-	chancesanddiffs(allreports)
 end
 
 # ╔═╡ a66540f1-6ea7-496a-9894-ff7b4b4794c0
-compareagainstpolicy1 = comparepolicies(policy1)
+compareagainstpolicy1 = comparepolicies(dt1)
 
 # ╔═╡ 05346589-c4e3-408f-96ee-15b7cd3f2195
-x_compare = map(x -> x[1],compareagainstpolicy1)
+x_compare = map(x -> x.chances_b_2,compareagainstpolicy1)
 
 # ╔═╡ add04bdd-1814-4253-830b-c5e8977fde29
-y_a_compare = map(x -> x[2][1],compareagainstpolicy1)
+y_a_compare = map(x -> x.w_diffs[1],compareagainstpolicy1)
 
 # ╔═╡ 77444d6c-a3e3-49f9-9b21-8c79b649eb58
-y_b_compare = map(x -> x[2][2],compareagainstpolicy1)
+y_b_compare = map(x -> x.w_diffs[2],compareagainstpolicy1)
 
 # ╔═╡ ae26ace3-377d-44e7-83c3-96aedac697d4
-y_sum_compare = map(x -> x[3],compareagainstpolicy1)
+y_sum_compare = map(x -> x.w_sum,compareagainstpolicy1)
 
 # ╔═╡ 1ebb005c-a121-4eec-9d09-1ad035068524
-a_claim_compare = map(x -> x[4],compareagainstpolicy1)
+a_claim_compare = map(x -> x.a_claim,compareagainstpolicy1)
 
 # ╔═╡ ab262803-6f5e-4b42-9bb4-d7fd31d042e5
-b_claim_compare = map(x -> x[5],compareagainstpolicy1)
+b_claim_compare = map(x -> x.b_claim,compareagainstpolicy1)
+
+# ╔═╡ 0c79995e-b2ce-4ff1-a8b1-e12b83fde215
+a_avout_compare = map(x -> x.av_out_2A,compareagainstpolicy1)
+
+# ╔═╡ 4e413570-b779-4b5a-9bed-6bf76e596a0b
+b_avout_compare = map(x -> x.av_out_2B,compareagainstpolicy1)
+
+# ╔═╡ 1073b598-56a1-4ce0-a9fc-26fb00a38f93
+t_avout_compare = map(x -> x.av_out_2,compareagainstpolicy1)
+
+# ╔═╡ b2f6e17d-ddc6-47bd-8cd2-c2caa94a10a7
+t_avout_top = map(x -> pptop * (edubenefits(x) + sbl) * 0.001,t_avout_compare)
+
+# ╔═╡ 16c21e3a-cf61-45a5-8662-b4f413a25cc4
+t_avout_bot = map(x -> ppbot * (edubenefits(x) + sbl) * 0.001,t_avout_compare)
+
+# ╔═╡ 45bd24b3-22b8-444e-9189-0237168d716a
+lpa_compare = map(x -> x.prospects_a_2,compareagainstpolicy1)
+
+# ╔═╡ 32f5158b-fc04-4c8d-9363-eb935e5241f3
+lpb_compare = map(x -> x.prospects_b_2,compareagainstpolicy1)
 
 # ╔═╡ 44469bb4-f9cf-4014-bbca-e91e34a98aac
-currentchances = 
-	(runmodel(policy1,policy1)).chances_b_1 
+currentchances = (runmodel(dt1,dt1)).chances_b_2
 
 # ╔═╡ c9440555-0f0e-4356-9a92-fcf0ad4398f0
-currentchances2 = (runmodel(policy2,policy2)).chances_b_1 
+currentchances2 = (runmodel(dt2,dt2)).chances_b_2 
+
+# ╔═╡ 0d974777-8d78-4e4d-b4eb-c4d5d40a385c
+currentavout = (runmodel(dt1,dt1)).av_out_2
+
+# ╔═╡ 895c3a3d-9769-4af4-aad5-c0fb14b6dd27
+function benefits()
+	plot(range(1,200), [edubenefits(i) for i in range(1,200)], label=false)
+    vline!([currentavout], label=false, color=:blue)
+	# Add titles and labels
+	title!("benefits of education")
+	xlabel!("total outcomes")
+	ylabel!("benefits")
+
+end
 
 # ╔═╡ e7ad6c9a-b112-4f43-a78a-71370e989553
 function runmodels(xs) 
@@ -585,7 +671,6 @@ end
 
 # ╔═╡ 38757378-634c-4606-88df-fdf1b47b7e70
 function compareallpolicies()
-	availablepolicies = [(i,totalopportunities - i) for i in 0:grain:totalopportunities ]
 	allreports = runmodels(availablepolicies)
 	map(chancesanddiffs2,allreports)
 end
@@ -619,7 +704,7 @@ lf2 = map(x -> x[1][4],lll2)
 
 # ╔═╡ 6bb004ee-fe76-4760-8feb-d6f21153afc8
 begin
-	plot(x_compare, y_a_compare, label="A's weighted interests", colour="green", ylim=(-0.04, 0.04), xlim=(0, 1))
+	plot(x_compare, y_a_compare, label="A's weighted interests", ylim=(-0.04, 0.04), xlim=(0, 1), size=(800, 500))
 	plot!(x_compare, y_b_compare, label="B's weighted interests", colour="red")
 	# plot!(x_compare, y_sum_compare, label="balance of interets", colour="dark orange")
 	plot!(x_compare, a_claim_compare, label="B's claim against", colour= "dark orange") 
@@ -637,12 +722,100 @@ begin
 	ylabel!("weighted interests")
 end
 
+# ╔═╡ 3bc80e92-56b0-4f71-ac67-54c62fe3b416
+function dash1()
+	plot(x_compare, a_avout_compare,xlim=(0, 1), label=false)
+	plot!(x_compare, b_avout_compare, label=false)
+    plot!(x_compare, t_avout_compare, label=false)
+	vspan!([], label=false, color="light blue", opacity=0.2) ## this is just a dummy so that we get the label for loosely fair
+	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
+	vline!([currentchances], label=false,  color=:grey)
+	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
+	vline!(lf2,  opacity=0.9, label=false, color="sky blue")
+
+	
+	# Add titles and labels
+	title!("educational outcomes against B's chances")
+	xlabel!("B's chances")
+	ylabel!("educational outcomes")
+end
+
+# ╔═╡ 113e1428-3988-4210-9821-6fb38e991fd7
+function dash2()
+	plot(x_compare, lpa_compare,xlim=(0, 1), label=false)
+	plot!(x_compare, lpb_compare, label=false)
+	
+	vspan!([], label=false, color="light blue", opacity=0.2) ## this is just a dummy so that we get the label for loosely fair
+	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
+	vline!([currentchances],  color=:grey, label=false)
+	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
+	vline!(lf2,  opacity=0.9, color="sky blue", label=false)
+
+	
+	# Add titles and labels
+	title!("unweighted prospects against B's chances")
+	xlabel!("B's chances")
+	ylabel!("life prospects")
+end
+
+# ╔═╡ cc157e83-4182-4559-9424-3e89f4f27401
+function dash3()
+    plot(x_compare, t_avout_compare, xlim=(0, 1), colour="green", label=false)
+	vspan!([], color="light blue", opacity=0.2, label=false) ## this is just a dummy so that we get the label for loosely fair
+	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
+	vline!([currentchances], color=:grey, label=false)
+	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
+	vline!(lf2, opacity=0.9, color="sky blue", label=false)
+
+	
+	# Add titles and labels
+	title!("total educational outcomes against B's chances")
+	xlabel!("B's chances")
+	ylabel!("educational outcomes")
+end
+
+# ╔═╡ 37635241-84f8-4ac5-adc2-09376fca1a47
+function dash4()
+    plot(x_compare, map(x -> (edubenefits(x) + sbl),t_avout_compare),xlim=(0, 1), colour="green", label=false)
+	vspan!([], color="light blue", opacity=0.2, label=false) ## this is just a dummy so that we get the label for loosely fair
+	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
+	vline!([currentchances],  color=:grey, label=false)
+	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
+	vline!(lf2,  opacity=0.9, color="sky blue", label=false)
+
+	
+	# Add titles and labels
+	title!("total social benefit against B's chances")
+	xlabel!("B's chances")
+	ylabel!("social benefits")
+end
+
+# ╔═╡ 96dc7710-f566-4441-840a-cc57fc3928ea
+function dash5()
+    plot(x_compare, ((map(x -> (edubenefits(x) + sbl),t_avout_compare)) / maximum(map(x -> (edubenefits(x) + sbl),t_avout_compare)) * 100),xlim=(0, 1), ylim=(0, 100), colour="green", label=false)
+	vspan!([], color="light blue", opacity=0.2, label=false) ## this is just a dummy so that we get the label for loosely fair
+	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
+	vline!([currentchances], color=:grey, label=false)
+	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
+	vline!(lf2,  opacity=0.9, color="sky blue", label=false)
+
+	
+	# Add titles and labels
+	title!("total social benefit against B's chances")
+	xlabel!("B's chances")
+	ylabel!("social benefits %")
+end
+
+# ╔═╡ abfa1360-bb3d-426c-9052-7cb5fecf74c3
+dashboard = plot(dash1(),dash2(),dash3(),dash4(),dash5(),dash6(), benefits(), ability(), layout=(4, 2),size=(1000, 1000)) 
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 
 [compat]
@@ -658,7 +831,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "5a441c9496260ed70c46baaf8ed73ddb743ad819"
+project_hash = "beaf961555cac56e1381d5be56e0726dcddadea6"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -1923,55 +2096,71 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╠═a3c707eb-2dbd-4ede-80e9-0e4c90e01154
+# ╟─a3c707eb-2dbd-4ede-80e9-0e4c90e01154
 # ╟─fad8a8e2-141a-4f54-a822-150ecdcbde5a
+# ╟─7a83590e-488e-41b7-a4ed-303956cc0359
 # ╟─a3a348bf-6e2c-4775-b1c6-26fa602b319a
 # ╟─a7923940-392f-4ee5-a9a3-126c5b8ba9c3
 # ╟─a8c8c80a-2e0f-4f34-92b5-3f872a4249c6
-# ╠═6a1a187e-2f6c-4acf-98e6-744cbb1f5873
+# ╟─6a1a187e-2f6c-4acf-98e6-744cbb1f5873
 # ╟─e7b6f564-a08e-43b1-b602-b10a935ad94a
 # ╟─22598207-1e0f-444b-9064-5cc818305d83
-# ╠═f9d450e4-e3fd-4ef7-8d9b-39cd209ce091
+# ╟─8bcb854d-cb45-4ed4-bc0f-8e5d0c693d27
+# ╟─69b27cb2-720f-44bd-8cdf-b33bd1e0399f
+# ╟─7e6de677-5e7f-4e66-86e1-cb73671e0928
+# ╟─f9d450e4-e3fd-4ef7-8d9b-39cd209ce091
 # ╟─97bad24c-f88a-4709-9130-7187536fb99b
 # ╟─b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
-# ╠═6bb004ee-fe76-4760-8feb-d6f21153afc8
+# ╟─6bb004ee-fe76-4760-8feb-d6f21153afc8
 # ╟─dfe2f957-53b5-4d2b-be90-1b60f28f730a
 # ╟─e94755e2-b707-4a16-a751-9e5cc04f1b29
-# ╟─65e3c95a-e330-4fab-903f-bcf81d1c0491
-# ╟─6128347f-8029-45ff-a47a-2ef21f090561
+# ╟─da3e23be-42ac-466d-b2d9-3af4a3e90717
+# ╟─abfa1360-bb3d-426c-9052-7cb5fecf74c3
+# ╟─3bc80e92-56b0-4f71-ac67-54c62fe3b416
+# ╟─113e1428-3988-4210-9821-6fb38e991fd7
+# ╟─cc157e83-4182-4559-9424-3e89f4f27401
+# ╟─37635241-84f8-4ac5-adc2-09376fca1a47
+# ╟─96dc7710-f566-4441-840a-cc57fc3928ea
 # ╟─be77278e-f197-4a1e-9a9f-20c765a12e93
 # ╟─722f971d-d8a7-4ea8-81e9-09bba8db8a90
-# ╟─64e21cb5-b9f3-49ec-8cef-5f8ab7caa8da
-# ╟─f1779876-5cc2-4ee6-b289-838b5320703a
-# ╠═99a7a989-c37b-46d8-9d72-87d67b9d5d9f
-# ╟─778a0587-959b-4ced-baff-c95defa65a27
+# ╟─65e3c95a-e330-4fab-903f-bcf81d1c0491
+# ╟─6128347f-8029-45ff-a47a-2ef21f090561
+# ╟─99a7a989-c37b-46d8-9d72-87d67b9d5d9f
 # ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
+# ╟─778a0587-959b-4ced-baff-c95defa65a27
+# ╟─a72b5bff-2932-407f-a546-4d42d7493944
 # ╟─3803eba4-a40d-4849-888f-2f3cd0ecc7d1
 # ╠═6c731bce-6fef-4d69-a64c-65ecbb08eee9
 # ╠═b706f625-6c87-4681-9cdf-172ca30255fc
 # ╠═e6b9420a-5187-4cdf-9f15-a60fd6855a8f
 # ╠═0e097004-9b9c-4517-ad2f-aa6840226158
-# ╠═cdd1fc12-2027-45df-8867-fe7fe3265999
+# ╟─cdd1fc12-2027-45df-8867-fe7fe3265999
 # ╠═de1ac2da-61a5-49ff-a0be-e0d05ccfdf5f
 # ╠═b8fe0439-61fc-4634-93e8-d0aa05a87035
 # ╠═52bc5a38-926b-4311-8868-1d32a6f21408
-# ╠═02d51a56-26ea-423b-a60c-c50c75cec26c
+# ╟─02d51a56-26ea-423b-a60c-c50c75cec26c
 # ╠═d805916b-8c7a-47b4-8ea8-0ad782c3148d
 # ╠═6c1a19b1-a66a-4b63-8413-063dc883537d
 # ╠═053e5999-291d-4638-a066-942d2a61f0e9
-# ╠═b96458b3-6f68-4071-bb82-6b3e1dcff8f7
-# ╠═80a29446-d7c7-47c1-8cfa-697745abc3a9
-# ╠═6645cf3a-7875-4868-a8db-ff4668da787c
-# ╠═abea362f-28e6-47e9-b7c0-8d3295d0138b
-# ╠═ec526f2a-a990-4ea5-b1ba-43a0c56cef60
+# ╟─b96458b3-6f68-4071-bb82-6b3e1dcff8f7
+# ╟─23104c1b-afe4-486f-af81-79264eb4f61c
+# ╟─abea362f-28e6-47e9-b7c0-8d3295d0138b
+# ╟─ec526f2a-a990-4ea5-b1ba-43a0c56cef60
 # ╠═e0a98746-4c8d-4ccc-9086-61429452521c
-# ╠═ee515f09-6dc2-4baa-a151-67bfb7136a61
+# ╠═6acfc730-1d1a-479d-b63f-ef1016096128
+# ╟─e89d181c-3cb8-4c7a-a4ac-b6e7f85d0a51
+# ╟─2088381a-d880-4a7f-b6cd-4efde74eea08
+# ╟─1350ddba-a676-45c7-8552-d13b607610cd
 # ╠═d861ef63-4ac2-46dc-9c6f-7221393b7277
 # ╠═f84727eb-011d-4679-912a-beb99afb25bc
-# ╠═69b27cb2-720f-44bd-8cdf-b33bd1e0399f
 # ╠═65594757-7ded-4552-97cb-695eb82cf4c8
-# ╠═b9a9d78e-0109-403e-b8b2-4682bf56707c
-# ╠═bc753593-51e5-4492-bf13-145643b77802
+# ╟─5f37b1e0-eb9a-4c06-90bb-f67bf0da1f2e
+# ╟─b1893f3e-6cd9-417b-96d7-5f53c0b3cca8
+# ╟─9ca98b60-7953-4bfa-86e0-b449d154b98d
+# ╟─2eed9e35-394a-4ad9-9c39-290065432cc2
+# ╟─4f81db11-2811-4008-b09c-56335160d0c9
+# ╟─0857676b-b3f1-4048-8a7a-b07b696d8423
+# ╟─b9a9d78e-0109-403e-b8b2-4682bf56707c
 # ╠═a66540f1-6ea7-496a-9894-ff7b4b4794c0
 # ╠═05346589-c4e3-408f-96ee-15b7cd3f2195
 # ╠═add04bdd-1814-4253-830b-c5e8977fde29
@@ -1979,40 +2168,49 @@ version = "1.4.1+1"
 # ╠═ae26ace3-377d-44e7-83c3-96aedac697d4
 # ╠═1ebb005c-a121-4eec-9d09-1ad035068524
 # ╠═ab262803-6f5e-4b42-9bb4-d7fd31d042e5
+# ╠═0c79995e-b2ce-4ff1-a8b1-e12b83fde215
+# ╠═4e413570-b779-4b5a-9bed-6bf76e596a0b
+# ╠═1073b598-56a1-4ce0-a9fc-26fb00a38f93
+# ╠═b2f6e17d-ddc6-47bd-8cd2-c2caa94a10a7
+# ╠═16c21e3a-cf61-45a5-8662-b4f413a25cc4
+# ╠═45bd24b3-22b8-444e-9189-0237168d716a
+# ╠═32f5158b-fc04-4c8d-9363-eb935e5241f3
 # ╠═44469bb4-f9cf-4014-bbca-e91e34a98aac
 # ╠═c9440555-0f0e-4356-9a92-fcf0ad4398f0
+# ╠═0d974777-8d78-4e4d-b4eb-c4d5d40a385c
 # ╟─10bb2145-4069-4e88-8852-bd2d892a2627
-# ╠═38757378-634c-4606-88df-fdf1b47b7e70
-# ╠═f422e650-3016-497b-8a9e-d367337d9380
-# ╠═64959798-11bd-4f0e-b287-597453067ed5
-# ╠═ea3cf121-cc70-46d7-a15c-fffd1b962ff9
-# ╠═43b6d787-ee10-4a6f-aeee-f16af2aec1f2
-# ╠═5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
-# ╠═657d2c5d-940f-43f1-b68f-8043fdd2e3d2
-# ╠═c6a7f717-4818-4fc5-a4e9-2e639ad682d4
-# ╠═fad62b09-869b-4afc-8747-bf5b8b0ca605
-# ╠═a91d0a6b-075d-4cf7-a28d-1a4daab965cc
-# ╠═e7ad6c9a-b112-4f43-a78a-71370e989553
+# ╟─38757378-634c-4606-88df-fdf1b47b7e70
+# ╟─f422e650-3016-497b-8a9e-d367337d9380
+# ╟─64959798-11bd-4f0e-b287-597453067ed5
+# ╟─ea3cf121-cc70-46d7-a15c-fffd1b962ff9
+# ╟─43b6d787-ee10-4a6f-aeee-f16af2aec1f2
+# ╟─5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
+# ╟─657d2c5d-940f-43f1-b68f-8043fdd2e3d2
+# ╟─c6a7f717-4818-4fc5-a4e9-2e639ad682d4
+# ╟─fad62b09-869b-4afc-8747-bf5b8b0ca605
+# ╟─a91d0a6b-075d-4cf7-a28d-1a4daab965cc
+# ╟─e7ad6c9a-b112-4f43-a78a-71370e989553
 # ╠═4d2b2b64-ced5-4afc-9464-9629878883ff
 # ╠═e9b328ce-28dc-49d9-af67-bfcf069ea4ed
 # ╠═f898b9b1-0550-4800-96f6-8a2907c3ae30
-# ╠═0390e0e1-f258-496e-880b-68348677cbf8
-# ╠═3dc7f12b-e60c-4572-b792-22e25978efde
 # ╠═e1bf01c4-7adc-477b-b4a6-42dee053809b
 # ╠═8c2af803-3371-41c4-885e-b550ede68c86
 # ╟─eaf323c6-d8f2-486f-ae9f-ca5610e1f243
-# ╠═8b840cfb-c22e-498f-a052-8404ee68e153
-# ╠═6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
-# ╠═7374becb-cf8b-4416-8e4b-08fe2f62aceb
-# ╠═dfa36663-3f67-4809-9071-a68a0c985be1
-# ╠═965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
-# ╠═6d00b682-dbf8-41ef-95f6-04c210f128a1
-# ╠═7c36cbdc-8181-4388-a679-5101da90bc71
-# ╠═710f29cc-1b71-4865-a136-80d212f49ea5
-# ╠═81fedcdc-4db4-426f-8da6-4f950d826113
-# ╠═fb7aa538-0ccc-472b-8e9a-1f0c1c2e90f0
+# ╟─8b840cfb-c22e-498f-a052-8404ee68e153
+# ╟─6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
+# ╟─7374becb-cf8b-4416-8e4b-08fe2f62aceb
+# ╟─dfa36663-3f67-4809-9071-a68a0c985be1
+# ╟─965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
+# ╟─6d00b682-dbf8-41ef-95f6-04c210f128a1
+# ╟─7c36cbdc-8181-4388-a679-5101da90bc71
+# ╟─710f29cc-1b71-4865-a136-80d212f49ea5
+# ╟─81fedcdc-4db4-426f-8da6-4f950d826113
+# ╟─fb7aa538-0ccc-472b-8e9a-1f0c1c2e90f0
+# ╟─ef84633d-cc13-4573-9203-940fb2a14f35
 # ╠═e552a0a9-0f56-4456-8395-f12ef677835c
+# ╠═5ccfe20e-cf68-4413-a833-3154437a0a6f
 # ╠═8253ebaa-09e0-40a6-acdb-a43d0f9ddb6e
+# ╠═895c3a3d-9769-4af4-aad5-c0fb14b6dd27
 # ╠═1aea36b9-3736-442f-abf1-eeb5654b201e
 # ╠═0cde042c-6e7a-4c7a-9f87-8146f0995eff
 # ╠═4e1cbb11-306a-4eda-8d06-d11f73ae162e
@@ -2021,7 +2219,7 @@ version = "1.4.1+1"
 # ╠═dd77135b-c68d-486d-9333-249475176d11
 # ╠═5cef23cd-77bf-4c7f-9733-d1b415337b3b
 # ╠═d4db49d9-ef20-4ab0-8d7a-ed05f0c06ac1
-# ╠═14a6c1d8-48cf-4bfc-b7f9-f56fd0406ead
-# ╠═35587cb6-f68a-4423-b524-43bc2d1da908
+# ╟─14a6c1d8-48cf-4bfc-b7f9-f56fd0406ead
+# ╟─35587cb6-f68a-4423-b524-43bc2d1da908
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
