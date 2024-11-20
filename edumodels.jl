@@ -17,9 +17,14 @@ macro bind(def, element)
 end
 
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
-using PlutoUI, Plots, Distributions, QuadGK, Printf
+using PlutoUI, Plots, Distributions, QuadGK, Printf, Interpolations
 
 
+# ╔═╡ 41571ca1-d1a0-4761-8672-c20d30e37786
+# pgfplotsx()
+plotly()
+# pythonplot()
+# gr()
 
 # ╔═╡ fad8a8e2-141a-4f54-a822-150ecdcbde5a
 md"# edumodels 0.1
@@ -170,6 +175,53 @@ md"## pairwise comparison of policies"
 # ╔═╡ 0857676b-b3f1-4048-8a7a-b07b696d8423
 # all the available polices, given the current settings
 availablepolicies = [(baseline[1] + i,baseline[1] + totalopportunities - i) for i in 0:grain:totalopportunities ]
+
+# ╔═╡ 70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
+md"### ... generalised 
+
+we are now going to compare all policies at each available total level of opportunities. when we pick a policy, it will be a policy that distributes some total number of opportunities in some way. we will compare against policies that distribute different numbers of opportunities in different ways. our z axis in our plot is going to be the total number of opportunities distributed. our x axis will be the different chances for B for different distributions of the same total. and our y axis is going to be, for now, B's weighted interest in the alternative policy (relative to the policy chosen). "
+
+# ╔═╡ 5b160aba-6b82-42cc-8f77-286e87589f6d
+divisions = [ x for x in range(0,1, step=0.05)]
+
+# ╔═╡ 9519e1a8-8314-4468-bc84-77d97c58648b
+totals = [ x for x in range(0,totalopportunities, step=1)]
+
+# ╔═╡ 9e491c55-7c83-4618-8e58-69d97e00abb6
+getalldivisions = function(x) 
+	[ (x * y, (x - (x * y)) ) for y in divisions]
+end
+
+# ╔═╡ 4a3e6149-c925-43ac-b558-7a69d53f6917
+# here are all the policies compatible with the total opportunties
+alldivisions = map(getalldivisions,totals)
+
+# ╔═╡ 3f5f7655-9a09-4891-8823-73836ae74842
+addbaselinehelper = function(x) 
+	(x[1] + baseline[1], x[2] + baseline[2])
+end
+
+
+# ╔═╡ 0a76916c-6898-4b92-8174-0923b131ba01
+addbaseline =  function(x) 
+    map(addbaselinehelper,x)
+end
+
+
+# ╔═╡ 442c2d8c-5d05-42ee-962b-67841ba3346c
+# we want to add the baseline to all of these 
+allpolicies = map(addbaseline,alldivisions) 
+
+# ╔═╡ a9184731-ae21-497a-a58f-cd3372b79959
+function gettriple(x)
+	(x.chances_b_2,(x.ops_2[1] + x.ops_2[2]),x.w_sum)
+end
+
+# ╔═╡ 6017ab73-c9a6-46ee-a4a5-1aaa52a303a1
+function gettriples(xs)
+	x = reduce(vcat,xs)
+	map(gettriple,x)
+end
 
 # ╔═╡ 10bb2145-4069-4e88-8852-bd2d892a2627
 md"## finding the fair policies
@@ -448,7 +500,7 @@ pptop = 0.8
 
 # ╔═╡ 4e1cbb11-306a-4eda-8d06-d11f73ae162e
 # proportion for bottom ranked 
-ppbot = 0.5
+ppbot = 0.4
 
 # ╔═╡ 500ea6f5-9e50-4a93-9832-dd48e3727eb0
 # function to get the average outcomes on a distribution
@@ -664,6 +716,32 @@ function benefits()
 
 end
 
+# ╔═╡ bc4f15fc-4a47-4b91-a912-9602ba7437af
+# compare a single policy against all the available policies  
+function supercomparepolicies(d1)
+	allreports = map(y -> (map((x -> runmodel(d1,x)),y)),allpolicies)
+end
+
+# ╔═╡ d46ebb89-ded7-4050-8188-5e47a11771ff
+supercompareagainstpolicy1 = supercomparepolicies(dt1)
+
+# ╔═╡ 27127d50-d67a-4bfe-9b10-cd2042631dcb
+triples = unique(gettriples(supercompareagainstpolicy1))
+
+# ╔═╡ a328a25e-c9aa-4dd0-8b24-b7ff2c642eb2
+begin 
+
+data = triples
+
+# Step 1: Extract x, y, z values
+x_vals = [d[1] for d in data]
+y_vals = [d[2] for d in data]
+z_vals = [d[3] for d in data]
+
+scatter(x_vals, y_vals, z_vals, xlabel="X-axis", ylabel="Y-axis", zlabel="Z-axis", camera=(45, 25))
+surface!(x_vals, y_vals, z_vals, label="Smoothed Surface", alpha=0.5)
+end
+
 # ╔═╡ e7ad6c9a-b112-4f43-a78a-71370e989553
 function runmodels(xs) 
    map(x -> map(y -> runmodel(x,y),xs),xs) 
@@ -813,6 +891,7 @@ dashboard = plot(dash1(),dash2(),dash3(),dash4(),dash5(),dash6(), benefits(), ab
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -820,6 +899,7 @@ QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 
 [compat]
 Distributions = "~0.25.113"
+Interpolations = "~0.15.1"
 Plots = "~1.40.8"
 PlutoUI = "~0.7.60"
 QuadGK = "~2.11.1"
@@ -831,13 +911,23 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "beaf961555cac56e1381d5be56e0726dcddadea6"
+project_hash = "a168ce29090576221a3ba2a3f28f4d7cb950e536"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
 git-tree-sha1 = "6e1d2a35f2f90a4bc7c2ed98079b2ba09c35b83a"
 uuid = "6e696c72-6542-2067-7265-42206c756150"
 version = "1.3.2"
+
+[[deps.Adapt]]
+deps = ["LinearAlgebra", "Requires"]
+git-tree-sha1 = "50c3c56a52972d78e8be9fd135bfb91c9574c140"
+uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+version = "4.1.1"
+weakdeps = ["StaticArrays"]
+
+    [deps.Adapt.extensions]
+    AdaptStaticArraysExt = "StaticArrays"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -852,6 +942,12 @@ version = "1.1.2"
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
+
+[[deps.AxisAlgorithms]]
+deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
+git-tree-sha1 = "01b8ccb13d68535d73d2b0c23e39bd23155fb712"
+uuid = "13072b0f-2c55-5437-9ae7-d433b7a33950"
+version = "1.1.0"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -873,6 +969,16 @@ deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jl
 git-tree-sha1 = "009060c9a6168704143100f36ab08f06c2af4642"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.18.2+1"
+
+[[deps.ChainRulesCore]]
+deps = ["Compat", "LinearAlgebra"]
+git-tree-sha1 = "3e4b134270b372f2ed4d4d0e936aabaefc1802bc"
+uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+version = "1.25.0"
+weakdeps = ["SparseArrays"]
+
+    [deps.ChainRulesCore.extensions]
+    ChainRulesCoreSparseArraysExt = "SparseArrays"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -957,6 +1063,11 @@ deps = ["Mmap"]
 git-tree-sha1 = "9e2f36d3c96a820c678f2f1f1782582fcf685bae"
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 version = "1.9.1"
+
+[[deps.Distributed]]
+deps = ["Random", "Serialization", "Sockets"]
+uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+version = "1.11.0"
 
 [[deps.Distributions]]
 deps = ["AliasTables", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsAPI", "StatsBase", "StatsFuns"]
@@ -1141,6 +1252,16 @@ version = "0.2.5"
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 version = "1.11.0"
+
+[[deps.Interpolations]]
+deps = ["Adapt", "AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
+git-tree-sha1 = "88a101217d7cb38a7b481ccd50d21876e1d1b0e0"
+uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+version = "0.15.1"
+weakdeps = ["Unitful"]
+
+    [deps.Interpolations.extensions]
+    InterpolationsUnitfulExt = "Unitful"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
@@ -1380,6 +1501,15 @@ version = "1.0.2"
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.2.0"
 
+[[deps.OffsetArrays]]
+git-tree-sha1 = "1a27764e945a152f7ca7efa04de513d473e9542e"
+uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+version = "1.14.1"
+weakdeps = ["Adapt"]
+
+    [deps.OffsetArrays.extensions]
+    OffsetArraysAdaptExt = "Adapt"
+
 [[deps.Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
@@ -1574,6 +1704,16 @@ deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 version = "1.11.0"
 
+[[deps.Ratios]]
+deps = ["Requires"]
+git-tree-sha1 = "1342a47bf3260ee108163042310d26f2be5ec90b"
+uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
+version = "0.4.5"
+weakdeps = ["FixedPointNumbers"]
+
+    [deps.Ratios.extensions]
+    RatiosFixedPointNumbersExt = "FixedPointNumbers"
+
 [[deps.RecipesBase]]
 deps = ["PrecompileTools"]
 git-tree-sha1 = "5c3d09cc4f31f5fc6af001c250bf1278733100ff"
@@ -1629,6 +1769,11 @@ version = "1.2.1"
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 version = "1.11.0"
 
+[[deps.SharedArrays]]
+deps = ["Distributed", "Mmap", "Random", "Serialization"]
+uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+version = "1.11.0"
+
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
 git-tree-sha1 = "91eddf657aca81df9ae6ceb20b959ae5653ad1de"
@@ -1660,18 +1805,32 @@ deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_j
 git-tree-sha1 = "2f5d4697f21388cbe1ff299430dd169ef97d7e14"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
 version = "2.4.0"
+weakdeps = ["ChainRulesCore"]
 
     [deps.SpecialFunctions.extensions]
     SpecialFunctionsChainRulesCoreExt = "ChainRulesCore"
-
-    [deps.SpecialFunctions.weakdeps]
-    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 
 [[deps.StableRNGs]]
 deps = ["Random"]
 git-tree-sha1 = "83e6cce8324d49dfaf9ef059227f91ed4441a8e5"
 uuid = "860ef19b-820b-49d6-a774-d7a799459cd3"
 version = "1.0.2"
+
+[[deps.StaticArrays]]
+deps = ["LinearAlgebra", "PrecompileTools", "Random", "StaticArraysCore"]
+git-tree-sha1 = "777657803913ffc7e8cc20f0fd04b634f871af8f"
+uuid = "90137ffa-7385-5640-81b9-e52037218182"
+version = "1.9.8"
+weakdeps = ["ChainRulesCore", "Statistics"]
+
+    [deps.StaticArrays.extensions]
+    StaticArraysChainRulesCoreExt = "ChainRulesCore"
+    StaticArraysStatisticsExt = "Statistics"
+
+[[deps.StaticArraysCore]]
+git-tree-sha1 = "192954ef1208c7019899fbf8049e717f92959682"
+uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
+version = "1.4.3"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra"]
@@ -1815,6 +1974,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "93f43ab61b16ddfb2fd3bb13b3ce241cafb0e6c9"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.31.0+0"
+
+[[deps.WoodburyMatrices]]
+deps = ["LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "c1a7aa6219628fcd757dede0ca95e245c5cd9511"
+uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
+version = "1.0.0"
 
 [[deps.XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Zlib_jll"]
@@ -2096,7 +2261,8 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╟─a3c707eb-2dbd-4ede-80e9-0e4c90e01154
+# ╠═a3c707eb-2dbd-4ede-80e9-0e4c90e01154
+# ╠═41571ca1-d1a0-4761-8672-c20d30e37786
 # ╟─fad8a8e2-141a-4f54-a822-150ecdcbde5a
 # ╟─7a83590e-488e-41b7-a4ed-303956cc0359
 # ╟─a3a348bf-6e2c-4775-b1c6-26fa602b319a
@@ -2159,8 +2325,8 @@ version = "1.4.1+1"
 # ╟─9ca98b60-7953-4bfa-86e0-b449d154b98d
 # ╟─2eed9e35-394a-4ad9-9c39-290065432cc2
 # ╟─4f81db11-2811-4008-b09c-56335160d0c9
-# ╟─0857676b-b3f1-4048-8a7a-b07b696d8423
-# ╟─b9a9d78e-0109-403e-b8b2-4682bf56707c
+# ╠═0857676b-b3f1-4048-8a7a-b07b696d8423
+# ╠═b9a9d78e-0109-403e-b8b2-4682bf56707c
 # ╠═a66540f1-6ea7-496a-9894-ff7b4b4794c0
 # ╠═05346589-c4e3-408f-96ee-15b7cd3f2195
 # ╠═add04bdd-1814-4253-830b-c5e8977fde29
@@ -2178,6 +2344,20 @@ version = "1.4.1+1"
 # ╠═44469bb4-f9cf-4014-bbca-e91e34a98aac
 # ╠═c9440555-0f0e-4356-9a92-fcf0ad4398f0
 # ╠═0d974777-8d78-4e4d-b4eb-c4d5d40a385c
+# ╟─70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
+# ╠═a328a25e-c9aa-4dd0-8b24-b7ff2c642eb2
+# ╠═5b160aba-6b82-42cc-8f77-286e87589f6d
+# ╠═9519e1a8-8314-4468-bc84-77d97c58648b
+# ╠═9e491c55-7c83-4618-8e58-69d97e00abb6
+# ╠═4a3e6149-c925-43ac-b558-7a69d53f6917
+# ╠═442c2d8c-5d05-42ee-962b-67841ba3346c
+# ╠═0a76916c-6898-4b92-8174-0923b131ba01
+# ╠═3f5f7655-9a09-4891-8823-73836ae74842
+# ╠═bc4f15fc-4a47-4b91-a912-9602ba7437af
+# ╠═a9184731-ae21-497a-a58f-cd3372b79959
+# ╠═6017ab73-c9a6-46ee-a4a5-1aaa52a303a1
+# ╠═27127d50-d67a-4bfe-9b10-cd2042631dcb
+# ╠═d46ebb89-ded7-4050-8188-5e47a11771ff
 # ╟─10bb2145-4069-4e88-8852-bd2d892a2627
 # ╟─38757378-634c-4606-88df-fdf1b47b7e70
 # ╟─f422e650-3016-497b-8a9e-d367337d9380
@@ -2204,7 +2384,7 @@ version = "1.4.1+1"
 # ╟─6d00b682-dbf8-41ef-95f6-04c210f128a1
 # ╟─7c36cbdc-8181-4388-a679-5101da90bc71
 # ╟─710f29cc-1b71-4865-a136-80d212f49ea5
-# ╟─81fedcdc-4db4-426f-8da6-4f950d826113
+# ╠═81fedcdc-4db4-426f-8da6-4f950d826113
 # ╟─fb7aa538-0ccc-472b-8e9a-1f0c1c2e90f0
 # ╟─ef84633d-cc13-4573-9203-940fb2a14f35
 # ╠═e552a0a9-0f56-4456-8395-f12ef677835c
