@@ -15,59 +15,100 @@ macro bind(def, element)
 end
 
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
-using PlutoUI, Plots, Distributions, QuadGK, Printf, PlotlyBase
+using PlutoUI, Plots, Distributions, QuadGK, Printf
 
 
 # ╔═╡ 41571ca1-d1a0-4761-8672-c20d30e37786
 # pgfplotsx()
-plotly()
+# plotly()
 # pythonplot()
 # gr()
 
 # ╔═╡ fad8a8e2-141a-4f54-a822-150ecdcbde5a
-md"# edumodels 0.1
-this pluto.jl notebook provide a toy model of a system of education. it can be used to theorise about fair chances in a system of education. 
+md"# edumodels 2.0
 
-we begin by setting the ability for the individuals A and B...
+this pluto.jl notebook provides a toy model of a system of education. 
+
+edumodels 2.0 improves on edumodels 1.0 in various ways. additional features include: more control over distribution policies; proper modeling of the costs of provision; and a full array of functions for finding distributions with particular properies; better plotting. 
 "
 
 # ╔═╡ 7a83590e-488e-41b7-a4ed-303956cc0359
-md"### basic settings"
+md"### model settings
+
+here are the main settings we will want to play vary in our model. these variables can be modified by the user. other variables can be changed by changing the relevant code.
+"
 
 # ╔═╡ a3a348bf-6e2c-4775-b1c6-26fa602b319a
-md"ability setting for A:"
+md"choose an ability setting for A:"
 
 # ╔═╡ a8c8c80a-2e0f-4f34-92b5-3f872a4249c6
-md"ability setting for B:"
+md"choose an ability setting for B:"
+
+# ╔═╡ e7b6f564-a08e-43b1-b602-b10a935ad94a
+md"choose a baseline distribution of opportunities for A and B. this is the baseline relative to which we assess our policies. we do not consider the cost of provision for the baseline distribution of opportunities. you will typically want to begin with an equal baseline. however unequal baselines are useful for modelling differences in social class background between A and B. 
+
+choose a baseline distribution of opportunties for A (default=40):"
 
 # ╔═╡ 22598207-1e0f-444b-9064-5cc818305d83
 # set the baseline distribution of opportunities 
-@bind baseline_ NumberField(0:200, default=40)
+@bind baselineA_ NumberField(0:200, default=40)
+
+# ╔═╡ 5cd30ea0-0bb9-4745-abb5-1d5c99f09507
+md"choose a baseline distribution of opportunities for B (default=40):"
+
+# ╔═╡ 6a48a6c4-a3cc-4d9f-9a5d-de72d8a1a306
+# set the baseline distribution of opportunities 
+@bind baselineB_ NumberField(0:200, default=40)
+
+# ╔═╡ 8bcb854d-cb45-4ed4-bc0f-8e5d0c693d27
+md"choose the total number of additional opportunities to distribute (default=20):"
 
 # ╔═╡ 69b27cb2-720f-44bd-8cdf-b33bd1e0399f
 # set the total opportunities available to distribute 
 @bind totalopportunities_ NumberField(0:200, default=20)
 
-# ╔═╡ 7e6de677-5e7f-4e66-86e1-cb73671e0928
-md"change the accuracy/performance settings for the model. 0.1 is high accuracy. 1.0 is higher performance." 
+# ╔═╡ 3168827b-1e31-408d-9ec3-53e725872e5e
+md"choose the default life prospects for the top ranked (default=0.8):" 
 
-# ╔═╡ f9d450e4-e3fd-4ef7-8d9b-39cd209ce091
-@bind grain NumberField(0:0.1:1, default=1)
+# ╔═╡ 943a2a24-5ee7-42b9-bed3-868148d1781a
+@bind toplifeprospects_ NumberField(0:0.05:1, default=0.8)
+
+# ╔═╡ 24794095-f20d-4fe8-9aa9-e862d8d73786
+md"choose the default life prospects for the top ranked (default=0.5):" 
+
+# ╔═╡ 37e0d7dc-c92f-4163-a239-ef794cbefa3e
+@bind bottomlifeprospects_ NumberField(0:0.05:1, default=0.5)
+
+# ╔═╡ 8f7951a7-1fde-4783-8cf4-26412041fc77
+md"choose the default life prospects for bystanders (default=0.5):" 
+
+# ╔═╡ 53444608-183c-4bc4-a619-cf0704515a77
+@bind bystanderlifeprospects_ NumberField(0:0.05:1, default=0.5)
 
 # ╔═╡ 97bad24c-f88a-4709-9130-7187536fb99b
 md"## trade-offs"
 
 # ╔═╡ b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
-md"### weighing interests
+md"the first thing we do is look at how a chosen policy stands in relation to alternative available policies. we choose a policy by choosing the proportion of opportunities taken from the total number of opportunities to distribute. we can then represent the opportunity costs (and benefits) of that policy by comparing it to alternative policies."
 
-start by choosing any policy you like using the policy 1 slider. what you can now see is how that policy looks, from the point of view of A and B when compared to all the other available policies (all the other available policies that distribute the same total number of opportunities). 
+# ╔═╡ 33be0c01-b712-406e-8827-1c194f2fa863
+md"choose a proportion of the total available opportunities to go to B on policy 1 (default=0.5):" 
+
+# ╔═╡ e93e06f4-dd06-4a10-967d-9dab8d30e198
+@bind proportiontoB1_ NumberField(0:0.001:1, default=0.5)
+
+# ╔═╡ 3d595998-60e4-404e-94ed-1e89f6de26ae
+md"choose a proportion of the total available opportunities to go to B on policy 2 (default=0.5):" 
+
+# ╔═╡ a17bff12-2789-43f5-ab04-25e5e021fda4
+@bind proportiontoB2_ NumberField(0:0.001:1, default=0.5)
+
+# ╔═╡ cdeb3319-f70b-4c59-9ef6-294daf51ca3d
+md"start by choosing any policy you like using the policy 1 slider. what you can now see is how that policy looks, from the point of view of A and B when compared to all the other available policies (all the other available policies that distribute the same total number of opportunities). 
 
 could A object that this policy is unfair? well, look to the left of the line, where A's interests improve, and then look at the weighted balance. is it negative? then A can hardly object, because A's potential improvements at this point do not outweigh the costs B would have to bear. but suppose now that it is slighly positive. suppose we let A object if it is even slightly positive. then we can rule out all policies to the right. 
 
-the same reasoning for B's point of view (that is, looking right) will lead us to the policy option where the balance is not above zero on either side of the line. 
-
-
-"
+the same reasoning for B's point of view (that is, looking right) will lead us to the policy option where the balance is not above zero on either side of the line. "
 
 # ╔═╡ da3e23be-42ac-466d-b2d9-3af4a3e90717
 md" ## dashboard"
@@ -121,14 +162,11 @@ md"## variables"
 # total number of opportunities available to distribute
 totalopportunities = totalopportunities_
 
-# ╔═╡ 8bcb854d-cb45-4ed4-bc0f-8e5d0c693d27
-md"opportunities available to distribute: $totalopportunities"
-
 # ╔═╡ e94755e2-b707-4a16-a751-9e5cc04f1b29
-@bind policy1_ Slider(0:0.1:totalopportunities, default=0)
+policy1_ = proportiontoB1_ * totalopportunities
 
 # ╔═╡ 6128347f-8029-45ff-a47a-2ef21f090561
-@bind policy2_ Slider(0:0.1:totalopportunities, default=0)
+policy2_ = proportiontoB2_ * totalopportunities
 
 # ╔═╡ d861ef63-4ac2-46dc-9c6f-7221393b7277
 # distribution under policy 1
@@ -139,10 +177,7 @@ policy1 = (totalopportunities - policy1_, policy1_)
 policy2 = (totalopportunities - policy2_, policy2_)
 
 # ╔═╡ 5f37b1e0-eb9a-4c06-90bb-f67bf0da1f2e
-baseline = (baseline_,baseline_)
-
-# ╔═╡ e7b6f564-a08e-43b1-b602-b10a935ad94a
-md"baseline distribution of opportunities: $baseline (default=40)"
+baseline = (baselineA_,baselineB_)
 
 # ╔═╡ abea362f-28e6-47e9-b7c0-8d3295d0138b
 # let's work out the opportunity costs, as we move from giving B the highest possible amount of opportunities to the lowest possible 
@@ -170,9 +205,12 @@ end
 # ╔═╡ 4f81db11-2811-4008-b09c-56335160d0c9
 md"## pairwise comparison of policies"
 
+# ╔═╡ c70a0cb0-0900-402b-90f4-c4e254e2f8d5
+# we'll compare policies with a function 
+
 # ╔═╡ 0857676b-b3f1-4048-8a7a-b07b696d8423
 # all the available polices, given the current settings
-availablepolicies = [(baseline[1] + i,baseline[1] + totalopportunities - i) for i in 0:grain:totalopportunities ]
+availablepolicies = [(baseline[1] + i,baseline[1] + totalopportunities - i) for i in 0:0.1:totalopportunities ]
 
 # ╔═╡ 70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
 md"### ... generalised 
@@ -364,7 +402,7 @@ end
 opportunitycostsa = [A((totalops - i )) for i in policyrange]
 
 # ╔═╡ 6a1a187e-2f6c-4acf-98e6-744cbb1f5873
-@bind B Select([highability,midability,lowability], default=midability)
+@bind B Select([highability,midability,lowability], default=highability)
 
 # ╔═╡ e0a98746-4c8d-4ccc-9086-61429452521c
 opportunitycosts = [(B(i) + A((totalops - i ))) for i in policyrange]
@@ -646,6 +684,19 @@ md"## report
 
 "
 
+# ╔═╡ acf6e66a-79c6-4e29-9890-edc2c8b5adc5
+function getwsum2D(x) 
+   proportiontoB = x * totalopportunities 
+   proportiontoA = (1 - x) * totalopportunities
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2] 
+   report = runmodel(dt1,(totaltoA,totaltoB))
+   return report.w_sum
+end
+
+# ╔═╡ e82b4050-8a19-4dcf-bd9f-32b19971458f
+plot(range(0, 1, length=100), getwsum2D)
+
 # ╔═╡ b9a9d78e-0109-403e-b8b2-4682bf56707c
 # compare a single policy against all the available policies  
 function comparepolicies(d1)
@@ -898,7 +949,6 @@ dashboard = plot(dash1(),dash2(),dash3(),dash4(),dash5(),dash6(), benefits(), ab
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-PlotlyBase = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -906,7 +956,6 @@ QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 
 [compat]
 Distributions = "~0.25.113"
-PlotlyBase = "~0.8.19"
 Plots = "~1.40.8"
 PlutoUI = "~0.7.60"
 QuadGK = "~2.11.1"
@@ -918,7 +967,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.5"
 manifest_format = "2.0"
-project_hash = "753424069f4fd6365f40619f32dc0adebcabe75b"
+project_hash = "912ef3682ec813cd96f4aa11c456f15836cd9291"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -1522,12 +1571,6 @@ git-tree-sha1 = "e127b609fb9ecba6f201ba7ab753d5a605d53801"
 uuid = "36c8627f-9965-5494-a995-c6b170f724f3"
 version = "1.54.1+0"
 
-[[deps.Parameters]]
-deps = ["OrderedCollections", "UnPack"]
-git-tree-sha1 = "34c0e9ad262e5f7fc75b10a9952ca7692cfc5fbe"
-uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
-version = "0.12.3"
-
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
 git-tree-sha1 = "8489905bcdbcfac64d1daa51ca07c0d8f0283821"
@@ -1561,12 +1604,6 @@ deps = ["ColorSchemes", "Colors", "Dates", "PrecompileTools", "Printf", "Random"
 git-tree-sha1 = "3ca9a356cd2e113c420f2c13bea19f8d3fb1cb18"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
 version = "1.4.3"
-
-[[deps.PlotlyBase]]
-deps = ["ColorSchemes", "Dates", "DelimitedFiles", "DocStringExtensions", "JSON", "LaTeXStrings", "Logging", "Parameters", "Pkg", "REPL", "Requires", "Statistics", "UUIDs"]
-git-tree-sha1 = "56baf69781fc5e61607c3e46227ab17f7040ffa2"
-uuid = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
-version = "0.8.19"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "PrecompileTools", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "TOML", "UUIDs", "UnicodeFun", "UnitfulLatexify", "Unzip"]
@@ -1834,11 +1871,6 @@ version = "1.5.1"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
-
-[[deps.UnPack]]
-git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
-uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
-version = "1.0.2"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
@@ -2181,16 +2213,27 @@ version = "1.4.1+1"
 # ╟─a8c8c80a-2e0f-4f34-92b5-3f872a4249c6
 # ╟─6a1a187e-2f6c-4acf-98e6-744cbb1f5873
 # ╟─e7b6f564-a08e-43b1-b602-b10a935ad94a
-# ╟─22598207-1e0f-444b-9064-5cc818305d83
-# ╟─8bcb854d-cb45-4ed4-bc0f-8e5d0c693d27
-# ╟─69b27cb2-720f-44bd-8cdf-b33bd1e0399f
-# ╟─7e6de677-5e7f-4e66-86e1-cb73671e0928
-# ╟─f9d450e4-e3fd-4ef7-8d9b-39cd209ce091
+# ╠═22598207-1e0f-444b-9064-5cc818305d83
+# ╠═5cd30ea0-0bb9-4745-abb5-1d5c99f09507
+# ╠═6a48a6c4-a3cc-4d9f-9a5d-de72d8a1a306
+# ╠═8bcb854d-cb45-4ed4-bc0f-8e5d0c693d27
+# ╠═69b27cb2-720f-44bd-8cdf-b33bd1e0399f
+# ╠═3168827b-1e31-408d-9ec3-53e725872e5e
+# ╠═943a2a24-5ee7-42b9-bed3-868148d1781a
+# ╠═24794095-f20d-4fe8-9aa9-e862d8d73786
+# ╠═37e0d7dc-c92f-4163-a239-ef794cbefa3e
+# ╠═8f7951a7-1fde-4783-8cf4-26412041fc77
+# ╠═53444608-183c-4bc4-a619-cf0704515a77
 # ╟─97bad24c-f88a-4709-9130-7187536fb99b
 # ╟─b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
+# ╠═33be0c01-b712-406e-8827-1c194f2fa863
+# ╠═e93e06f4-dd06-4a10-967d-9dab8d30e198
+# ╠═3d595998-60e4-404e-94ed-1e89f6de26ae
+# ╠═a17bff12-2789-43f5-ab04-25e5e021fda4
+# ╠═cdeb3319-f70b-4c59-9ef6-294daf51ca3d
 # ╟─6bb004ee-fe76-4760-8feb-d6f21153afc8
 # ╟─dfe2f957-53b5-4d2b-be90-1b60f28f730a
-# ╟─e94755e2-b707-4a16-a751-9e5cc04f1b29
+# ╠═e94755e2-b707-4a16-a751-9e5cc04f1b29
 # ╟─da3e23be-42ac-466d-b2d9-3af4a3e90717
 # ╟─abfa1360-bb3d-426c-9052-7cb5fecf74c3
 # ╟─3bc80e92-56b0-4f71-ac67-54c62fe3b416
@@ -2201,7 +2244,7 @@ version = "1.4.1+1"
 # ╟─be77278e-f197-4a1e-9a9f-20c765a12e93
 # ╟─722f971d-d8a7-4ea8-81e9-09bba8db8a90
 # ╟─65e3c95a-e330-4fab-903f-bcf81d1c0491
-# ╟─6128347f-8029-45ff-a47a-2ef21f090561
+# ╠═6128347f-8029-45ff-a47a-2ef21f090561
 # ╟─99a7a989-c37b-46d8-9d72-87d67b9d5d9f
 # ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
 # ╟─778a0587-959b-4ced-baff-c95defa65a27
@@ -2231,11 +2274,14 @@ version = "1.4.1+1"
 # ╠═d861ef63-4ac2-46dc-9c6f-7221393b7277
 # ╠═f84727eb-011d-4679-912a-beb99afb25bc
 # ╠═65594757-7ded-4552-97cb-695eb82cf4c8
-# ╟─5f37b1e0-eb9a-4c06-90bb-f67bf0da1f2e
-# ╟─b1893f3e-6cd9-417b-96d7-5f53c0b3cca8
-# ╟─9ca98b60-7953-4bfa-86e0-b449d154b98d
-# ╟─2eed9e35-394a-4ad9-9c39-290065432cc2
+# ╠═5f37b1e0-eb9a-4c06-90bb-f67bf0da1f2e
+# ╠═b1893f3e-6cd9-417b-96d7-5f53c0b3cca8
+# ╠═9ca98b60-7953-4bfa-86e0-b449d154b98d
+# ╠═2eed9e35-394a-4ad9-9c39-290065432cc2
 # ╟─4f81db11-2811-4008-b09c-56335160d0c9
+# ╠═c70a0cb0-0900-402b-90f4-c4e254e2f8d5
+# ╠═acf6e66a-79c6-4e29-9890-edc2c8b5adc5
+# ╠═e82b4050-8a19-4dcf-bd9f-32b19971458f
 # ╠═0857676b-b3f1-4048-8a7a-b07b696d8423
 # ╠═b9a9d78e-0109-403e-b8b2-4682bf56707c
 # ╠═a66540f1-6ea7-496a-9894-ff7b4b4794c0
@@ -2277,9 +2323,9 @@ version = "1.4.1+1"
 # ╟─ea3cf121-cc70-46d7-a15c-fffd1b962ff9
 # ╟─43b6d787-ee10-4a6f-aeee-f16af2aec1f2
 # ╟─5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
-# ╟─657d2c5d-940f-43f1-b68f-8043fdd2e3d2
-# ╟─c6a7f717-4818-4fc5-a4e9-2e639ad682d4
-# ╟─fad62b09-869b-4afc-8747-bf5b8b0ca605
+# ╠═657d2c5d-940f-43f1-b68f-8043fdd2e3d2
+# ╠═c6a7f717-4818-4fc5-a4e9-2e639ad682d4
+# ╠═fad62b09-869b-4afc-8747-bf5b8b0ca605
 # ╟─a91d0a6b-075d-4cf7-a28d-1a4daab965cc
 # ╟─e7ad6c9a-b112-4f43-a78a-71370e989553
 # ╠═4d2b2b64-ced5-4afc-9464-9629878883ff
@@ -2311,7 +2357,7 @@ version = "1.4.1+1"
 # ╠═dd77135b-c68d-486d-9333-249475176d11
 # ╠═5cef23cd-77bf-4c7f-9733-d1b415337b3b
 # ╠═d4db49d9-ef20-4ab0-8d7a-ed05f0c06ac1
-# ╟─14a6c1d8-48cf-4bfc-b7f9-f56fd0406ead
+# ╠═14a6c1d8-48cf-4bfc-b7f9-f56fd0406ead
 # ╟─35587cb6-f68a-4423-b524-43bc2d1da908
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
