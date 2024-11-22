@@ -1,19 +1,17 @@
 ### A Pluto.jl notebook ###
-# v0.20.3
+# v0.19.46
 
 using Markdown
 using InteractiveUtils
 
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
-    #! format: off
     quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
-    #! format: on
 end
 
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
@@ -209,48 +207,6 @@ md"### ... generalised
 
 we are now going to compare all policies at each available total level of opportunities. when we pick a policy, it will be a policy that distributes some total number of opportunities in some way. we will compare against policies that distribute different numbers of opportunities in different ways. our z axis in our plot is going to be the total number of opportunities distributed. our x axis will be the different chances for B for different distributions of the same total. and our y axis is going to be, for now, B's weighted interest in the alternative policy (relative to the policy chosen). "
 
-# ╔═╡ 5b160aba-6b82-42cc-8f77-286e87589f6d
-divisions = [ x for x in range(0,1, step=0.05)]
-
-# ╔═╡ 9519e1a8-8314-4468-bc84-77d97c58648b
-totals = [ x for x in range(0,totalopportunities, step=1)]
-
-# ╔═╡ 9e491c55-7c83-4618-8e58-69d97e00abb6
-getalldivisions = function(x) 
-	[ (x * y, (x - (x * y)) ) for y in divisions]
-end
-
-# ╔═╡ 4a3e6149-c925-43ac-b558-7a69d53f6917
-# here are all the policies compatible with the total opportunties
-alldivisions = map(getalldivisions,totals)
-
-# ╔═╡ 3f5f7655-9a09-4891-8823-73836ae74842
-addbaselinehelper = function(x) 
-	(x[1] + baseline[1], x[2] + baseline[2])
-end
-
-
-# ╔═╡ 0a76916c-6898-4b92-8174-0923b131ba01
-addbaseline =  function(x) 
-    map(addbaselinehelper,x)
-end
-
-
-# ╔═╡ 442c2d8c-5d05-42ee-962b-67841ba3346c
-# we want to add the baseline to all of these 
-allpolicies = map(addbaseline,alldivisions) 
-
-# ╔═╡ a9184731-ae21-497a-a58f-cd3372b79959
-function gettriple(x)
-	(x.chances_b_2,(x.ops_2[1] + x.ops_2[2]),x.w_sum)
-end
-
-# ╔═╡ 6017ab73-c9a6-46ee-a4a5-1aaa52a303a1
-function gettriples(xs)
-	x = reduce(vcat,xs)
-	map(gettriple,x)
-end
-
 # ╔═╡ 10bb2145-4069-4e88-8852-bd2d892a2627
 md"## finding the fair policies
 
@@ -330,6 +286,8 @@ function weighteddiff(x, y)
 end
 
 # ╔═╡ 6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
+# ╠═╡ disabled = true
+#=╠═╡
 # using sampling
 function probability_x_greater_than_y(d1, d2, num_samples)
     count = 0
@@ -342,6 +300,7 @@ function probability_x_greater_than_y(d1, d2, num_samples)
     end
     return count / num_samples  # Calculate the probability
 end
+  ╠═╡ =#
 
 # ╔═╡ 7374becb-cf8b-4416-8e4b-08fe2f62aceb
 # using numerical integration
@@ -726,7 +685,7 @@ here is an extended report:
 
 # ╔═╡ 2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
 function getreporthelper(x) 
-	proportiontoB = x * totalopportunities 
+   proportiontoB = x * totalopportunities 
    proportiontoA = ((1 - x) * discountA_) * totalopportunities
    totaltoA = proportiontoA + baseline[1] 
    totaltoB = proportiontoB + baseline[2] 
@@ -786,22 +745,10 @@ begin
 	vline!([proportiontoB1_], label="current policy", color=:grey)
 end
 
-# ╔═╡ bc4f15fc-4a47-4b91-a912-9602ba7437af
-# compare a single policy against all the available policies  
-function supercomparepolicies(d1)
-	allreports = map(y -> (map((x -> runmodel(d1,x)),y)),allpolicies)
-end
-
-# ╔═╡ d46ebb89-ded7-4050-8188-5e47a11771ff
-supercompareagainstpolicy1 = supercomparepolicies(dt1)
-
-# ╔═╡ 27127d50-d67a-4bfe-9b10-cd2042631dcb
-triples = unique(gettriples(supercompareagainstpolicy1))
-
 # ╔═╡ 7d10e574-c928-4104-9d18-b897021d7a5f
 # we need a function from x and y where x is the % of the total B gets and y is total number of opportunities to be distributed. it returns the sum diff 
 
-function getwsum(x,y) 
+function getwsum3Dvar(x,y) 
    proportiontoB = x * y 
    proportiontoA = ((1 - x) * discountA_) * y 
    totaltoA = proportiontoA + baseline[1] 
@@ -818,7 +765,33 @@ x_vals = range(0, 1, length=100)
 y_vals = range(0, totalopportunities, length=100)
 
 # scatter(x_vals, y_vals, z_vals, xlabel="X-axis", ylabel="Y-axis", zlabel="Z-axis", camera=(45, 25))
-plot(x_vals, y_vals, getwsum, label="Smoothed Surface", st=:surface, c=:viridis, camera=(140,20), zlim=(-0.04, 0.04))
+plot(x_vals, y_vals, getwsum3Dvar, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.5, zlim=(-0.04, 0.04))
+end
+
+# ╔═╡ d342d102-da15-4e0f-8054-bd54d2def8e8
+function getreporthelper3D(x,y) 
+   proportiontoB = x * totalopportunities 
+   proportiontoA = ((1 - x) * discountA_) * totalopportunities
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2]  
+   proportiontoBy = y * totalopportunities 
+   proportiontoAy = ((1 - y) * discountA_) * totalopportunities
+   totaltoAy = proportiontoAy + baseline[1] 
+   totaltoBy = proportiontoBy + baseline[2] 
+   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
+   return (report) 
+end
+
+# ╔═╡ 2c4779c5-238d-4328-aac6-cc5fcbe8f6b3
+function getwsum3D(x,y) 
+   report = getreporthelper3D(x,y)
+   return report.w_sum
+end
+
+# ╔═╡ fcd7edcf-4df1-47cf-98f2-190a921c3606
+begin 
+plot(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed Surface", st=:wireframe)
+plot!(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
 end
 
 # ╔═╡ e7ad6c9a-b112-4f43-a78a-71370e989553
@@ -831,33 +804,6 @@ function compareallpolicies()
 	allreports = runmodels(availablepolicies)
 	map(chancesanddiffs2,allreports)
 end
-
-# ╔═╡ 4d2b2b64-ced5-4afc-9464-9629878883ff
-compareallagainstall = compareallpolicies()
-
-# ╔═╡ fad62b09-869b-4afc-8747-bf5b8b0ca605
-ss = (map(y -> map(x -> (x[4],x[3]),y),compareallagainstall))
-
-# ╔═╡ 657d2c5d-940f-43f1-b68f-8043fdd2e3d2
-looselyfairgrouped(ss)
-
-# ╔═╡ c6a7f717-4818-4fc5-a4e9-2e639ad682d4
-lfg = map(y-> map(x -> x[1][1],y),looselyfairgrouped(ss))
-
-# ╔═╡ a91d0a6b-075d-4cf7-a28d-1a4daab965cc
-compareallagainstall
-
-# ╔═╡ e9b328ce-28dc-49d9-af67-bfcf069ea4ed
-lll = filterfair(looselyfair,compareallagainstall)
-
-# ╔═╡ f898b9b1-0550-4800-96f6-8a2907c3ae30
-lf = map(x -> x[1][4],lll)
-
-# ╔═╡ e1bf01c4-7adc-477b-b4a6-42dee053809b
-lll2 = filterfair(strictlyfair,compareallagainstall)
-
-# ╔═╡ 8c2af803-3371-41c4-885e-b550ede68c86
-lf2 = map(x -> x[1][4],lll2)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -879,9 +825,9 @@ QuadGK = "~2.11.1"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.1"
+julia_version = "1.10.5"
 manifest_format = "2.0"
-project_hash = "beaf961555cac56e1381d5be56e0726dcddadea6"
+project_hash = "912ef3682ec813cd96f4aa11c456f15836cd9291"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -897,15 +843,13 @@ version = "1.1.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
-version = "1.1.2"
+version = "1.1.1"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
-version = "1.11.0"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
-version = "1.11.0"
 
 [[deps.BitFlags]]
 git-tree-sha1 = "0691e34b3bb8be9307330f88d1a3c3f25466c24d"
@@ -998,7 +942,6 @@ version = "0.18.20"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
-version = "1.11.0"
 
 [[deps.Dbus_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
@@ -1071,7 +1014,6 @@ version = "4.4.4+1"
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
-version = "1.11.0"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra"]
@@ -1194,7 +1136,6 @@ version = "0.2.5"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
-version = "1.11.0"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
@@ -1278,17 +1219,16 @@ version = "0.6.4"
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "8.6.0+0"
+version = "8.4.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "LibGit2_jll", "NetworkOptions", "Printf", "SHA"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
-version = "1.11.0"
 
 [[deps.LibGit2_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll"]
 uuid = "e37daf67-58a4-590a-8e99-b0245dd2ffc5"
-version = "1.7.2+0"
+version = "1.6.4+0"
 
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
@@ -1297,7 +1237,6 @@ version = "1.11.0+1"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
-version = "1.11.0"
 
 [[deps.Libffi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1350,7 +1289,6 @@ version = "2.40.1+0"
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-version = "1.11.0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
@@ -1370,7 +1308,6 @@ version = "0.3.28"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
-version = "1.11.0"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
@@ -1392,7 +1329,6 @@ version = "0.5.13"
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
-version = "1.11.0"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "MozillaCACerts_jll", "NetworkOptions", "Random", "Sockets"]
@@ -1403,7 +1339,7 @@ version = "1.1.9"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.6+0"
+version = "2.28.2+1"
 
 [[deps.Measures]]
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
@@ -1418,11 +1354,10 @@ version = "1.2.0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
-version = "1.11.0"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2023.12.12"
+version = "2023.1.10"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
@@ -1443,7 +1378,7 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.27+1"
+version = "0.3.23+4"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1514,13 +1449,9 @@ uuid = "30392449-352a-5448-841d-b1acce4e97dc"
 version = "0.43.4+0"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.11.0"
-weakdeps = ["REPL"]
-
-    [deps.Pkg.extensions]
-    REPLExt = "REPL"
+version = "1.10.0"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]
@@ -1575,7 +1506,6 @@ version = "1.4.3"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-version = "1.11.0"
 
 [[deps.PtrArrays]]
 git-tree-sha1 = "77a42d78b6a92df47ab37e177b2deac405e1c88f"
@@ -1619,14 +1549,12 @@ version = "2.11.1"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
 [[deps.REPL]]
-deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]
+deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
-version = "1.11.0"
 
 [[deps.Random]]
 deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-version = "1.11.0"
 
 [[deps.RecipesBase]]
 deps = ["PrecompileTools"]
@@ -1681,7 +1609,6 @@ version = "1.2.1"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
-version = "1.11.0"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -1696,7 +1623,6 @@ version = "1.2.0"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
-version = "1.11.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
@@ -1707,7 +1633,7 @@ version = "1.2.1"
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-version = "1.11.0"
+version = "1.10.0"
 
 [[deps.SpecialFunctions]]
 deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
@@ -1728,14 +1654,9 @@ uuid = "860ef19b-820b-49d6-a774-d7a799459cd3"
 version = "1.0.2"
 
 [[deps.Statistics]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "ae3bb1eb3bba077cd276bc5cfc337cc65c3075c0"
+deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-version = "1.11.1"
-weakdeps = ["SparseArrays"]
-
-    [deps.Statistics.extensions]
-    SparseArraysExt = ["SparseArrays"]
+version = "1.10.0"
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
@@ -1763,10 +1684,6 @@ version = "1.3.2"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
     InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
 
-[[deps.StyledStrings]]
-uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
-version = "1.11.0"
-
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
@@ -1774,7 +1691,7 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "7.7.0+0"
+version = "7.2.1+1"
 
 [[deps.TOML]]
 deps = ["Dates"]
@@ -1795,7 +1712,6 @@ version = "0.1.1"
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-version = "1.11.0"
 
 [[deps.TranscodingStreams]]
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
@@ -1815,11 +1731,9 @@ version = "1.5.1"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
-version = "1.11.0"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
-version = "1.11.0"
 
 [[deps.UnicodeFun]]
 deps = ["REPL"]
@@ -2123,7 +2037,7 @@ version = "1.1.6+0"
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
-version = "1.59.0+0"
+version = "1.52.0+1"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -2224,19 +2138,10 @@ version = "1.4.1+1"
 # ╠═716e0ea5-1097-4e93-bbe6-f7a0a72491a2
 # ╟─70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
 # ╠═a328a25e-c9aa-4dd0-8b24-b7ff2c642eb2
-# ╠═5b160aba-6b82-42cc-8f77-286e87589f6d
-# ╠═9519e1a8-8314-4468-bc84-77d97c58648b
-# ╠═9e491c55-7c83-4618-8e58-69d97e00abb6
-# ╠═4a3e6149-c925-43ac-b558-7a69d53f6917
-# ╠═442c2d8c-5d05-42ee-962b-67841ba3346c
-# ╠═0a76916c-6898-4b92-8174-0923b131ba01
-# ╠═3f5f7655-9a09-4891-8823-73836ae74842
-# ╠═bc4f15fc-4a47-4b91-a912-9602ba7437af
-# ╠═a9184731-ae21-497a-a58f-cd3372b79959
-# ╠═6017ab73-c9a6-46ee-a4a5-1aaa52a303a1
-# ╠═27127d50-d67a-4bfe-9b10-cd2042631dcb
-# ╠═d46ebb89-ded7-4050-8188-5e47a11771ff
 # ╠═7d10e574-c928-4104-9d18-b897021d7a5f
+# ╠═fcd7edcf-4df1-47cf-98f2-190a921c3606
+# ╠═d342d102-da15-4e0f-8054-bd54d2def8e8
+# ╠═2c4779c5-238d-4328-aac6-cc5fcbe8f6b3
 # ╟─10bb2145-4069-4e88-8852-bd2d892a2627
 # ╟─38757378-634c-4606-88df-fdf1b47b7e70
 # ╟─f422e650-3016-497b-8a9e-d367337d9380
@@ -2244,19 +2149,10 @@ version = "1.4.1+1"
 # ╟─ea3cf121-cc70-46d7-a15c-fffd1b962ff9
 # ╟─43b6d787-ee10-4a6f-aeee-f16af2aec1f2
 # ╟─5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
-# ╠═657d2c5d-940f-43f1-b68f-8043fdd2e3d2
-# ╠═c6a7f717-4818-4fc5-a4e9-2e639ad682d4
-# ╠═fad62b09-869b-4afc-8747-bf5b8b0ca605
-# ╠═a91d0a6b-075d-4cf7-a28d-1a4daab965cc
 # ╠═e7ad6c9a-b112-4f43-a78a-71370e989553
-# ╠═4d2b2b64-ced5-4afc-9464-9629878883ff
-# ╠═e9b328ce-28dc-49d9-af67-bfcf069ea4ed
-# ╠═f898b9b1-0550-4800-96f6-8a2907c3ae30
-# ╠═e1bf01c4-7adc-477b-b4a6-42dee053809b
-# ╠═8c2af803-3371-41c4-885e-b550ede68c86
 # ╟─ef84633d-cc13-4573-9203-940fb2a14f35
 # ╠═8b840cfb-c22e-498f-a052-8404ee68e153
-# ╠═6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
+# ╟─6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
 # ╠═7374becb-cf8b-4416-8e4b-08fe2f62aceb
 # ╠═dfa36663-3f67-4809-9071-a68a0c985be1
 # ╠═965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
