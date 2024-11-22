@@ -1,17 +1,19 @@
 ### A Pluto.jl notebook ###
-# v0.19.46
+# v0.20.3
 
 using Markdown
 using InteractiveUtils
 
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
+    #! format: off
     quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
+    #! format: on
 end
 
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
@@ -67,6 +69,18 @@ md"choose the total number of additional opportunities to distribute (default=20
 # set the total opportunities available to distribute 
 @bind totalopportunities_ NumberField(0:200, default=20)
 
+# ╔═╡ 9c87ab70-aa58-4130-989d-363779557d2c
+md"choose a discount rate on A's proportion of the opportunities (default=1):"
+
+# ╔═╡ eb6dc23e-6307-4585-9010-5cc9efb582e9
+@bind discountA_ NumberField(0:0.1:1, default=1)
+
+# ╔═╡ 3fd76120-b631-4022-a6dd-6c9f4ec06aa3
+md"scale up the benefits of education (default 1, higher numbers make education more important):" 
+
+# ╔═╡ 2a873e8b-71d6-4e53-840b-f37c645f06d1
+@bind eduscale_ NumberField(0:0.05:1, default=0.2)
+
 # ╔═╡ 3168827b-1e31-408d-9ec3-53e725872e5e
 md"choose the default life prospects for the top ranked (default=0.8):" 
 
@@ -78,6 +92,12 @@ md"choose the default life prospects for the top ranked (default=0.5):"
 
 # ╔═╡ 37e0d7dc-c92f-4163-a239-ef794cbefa3e
 @bind bottomlifeprospects_ NumberField(0:0.05:1, default=0.5)
+
+# ╔═╡ b7bd8235-5bf9-4bbc-ac30-07ef17bd9d8b
+md"choose the cost of an opportunity (default=0):"
+
+# ╔═╡ 7588880c-2c3a-4b19-950d-e21faf015105
+@bind unitcost_ NumberField(0:20, default=0)
 
 # ╔═╡ 8f7951a7-1fde-4783-8cf4-26412041fc77
 md"choose the default life prospects for bystanders (default=0.5):" 
@@ -95,25 +115,13 @@ md"the first thing we do is look at how a chosen policy stands in relation to al
 md"choose a proportion of the total available opportunities to go to B on policy 1 (default=0.5):" 
 
 # ╔═╡ e93e06f4-dd06-4a10-967d-9dab8d30e198
-@bind proportiontoB1_ NumberField(0:0.001:1, default=0.5)
+@bind proportiontoB1_ NumberField(0:0.01:1, default=0.5)
 
 # ╔═╡ 3d595998-60e4-404e-94ed-1e89f6de26ae
 md"choose a proportion of the total available opportunities to go to B on policy 2 (default=0.5):" 
 
 # ╔═╡ a17bff12-2789-43f5-ab04-25e5e021fda4
-@bind proportiontoB2_ NumberField(0:0.001:1, default=0.5)
-
-# ╔═╡ cdeb3319-f70b-4c59-9ef6-294daf51ca3d
-md"start by choosing any policy you like using the policy 1 slider. what you can now see is how that policy looks, from the point of view of A and B when compared to all the other available policies (all the other available policies that distribute the same total number of opportunities). 
-
-could A object that this policy is unfair? well, look to the left of the line, where A's interests improve, and then look at the weighted balance. is it negative? then A can hardly object, because A's potential improvements at this point do not outweigh the costs B would have to bear. but suppose now that it is slighly positive. suppose we let A object if it is even slightly positive. then we can rule out all policies to the right. 
-
-the same reasoning for B's point of view (that is, looking right) will lead us to the policy option where the balance is not above zero on either side of the line. "
-
-# ╔═╡ da3e23be-42ac-466d-b2d9-3af4a3e90717
-md" ## dashboard"
-
-
+@bind proportiontoB2_ NumberField(0:0.01:1, default=0.5)
 
 # ╔═╡ b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
 md"## ability settings
@@ -152,9 +160,6 @@ here is where we can change the ability settings available for the model.
 # ╔═╡ 053e5999-291d-4638-a066-942d2a61f0e9
 @bind highsteep NumberField(0:0.01:2, default=0.1)
 
-# ╔═╡ 23104c1b-afe4-486f-af81-79264eb4f61c
-md"## opportunity costs"
-
 # ╔═╡ 1350ddba-a676-45c7-8552-d13b607610cd
 md"## variables"
 
@@ -170,20 +175,14 @@ policy2_ = proportiontoB2_ * totalopportunities
 
 # ╔═╡ d861ef63-4ac2-46dc-9c6f-7221393b7277
 # distribution under policy 1
-policy1 = (totalopportunities - policy1_, policy1_)
+policy1 = ((totalopportunities - policy1_) * discountA_, policy1_ )
 
 # ╔═╡ f84727eb-011d-4679-912a-beb99afb25bc
 # distribution under policy 2
-policy2 = (totalopportunities - policy2_, policy2_)
+policy2 = ((totalopportunities - policy2_) * discountA_, policy2_)
 
 # ╔═╡ 5f37b1e0-eb9a-4c06-90bb-f67bf0da1f2e
 baseline = (baselineA_,baselineB_)
-
-# ╔═╡ abea362f-28e6-47e9-b7c0-8d3295d0138b
-# let's work out the opportunity costs, as we move from giving B the highest possible amount of opportunities to the lowest possible 
-
-
-policyrange = range(baseline[2],totalopportunities + baseline[2], step=0.1) # the range from B's opportunities to A's opportunities, e.g. 40, 70
 
 # ╔═╡ ec526f2a-a990-4ea5-b1ba-43a0c56cef60
 totalops = totalopportunities + baseline[1] + baseline[2]
@@ -193,9 +192,6 @@ dt1 = (policy1[1] + baseline[1],policy1[2] + baseline[2])
 
 # ╔═╡ 9ca98b60-7953-4bfa-86e0-b449d154b98d
 dt2 = (policy2[1] + baseline[1],policy2[2] + baseline[2])
-
-# ╔═╡ 65e3c95a-e330-4fab-903f-bcf81d1c0491
-md"setting for policy2: $policy2, $dt2"
 
 # ╔═╡ 2eed9e35-394a-4ad9-9c39-290065432cc2
 function tr(t)
@@ -207,10 +203,6 @@ md"## pairwise comparison of policies"
 
 # ╔═╡ c70a0cb0-0900-402b-90f4-c4e254e2f8d5
 # we'll compare policies with a function 
-
-# ╔═╡ 0857676b-b3f1-4048-8a7a-b07b696d8423
-# all the available polices, given the current settings
-availablepolicies = [(baseline[1] + i,baseline[1] + totalopportunities - i) for i in 0:0.1:totalopportunities ]
 
 # ╔═╡ 70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
 md"### ... generalised 
@@ -323,8 +315,8 @@ end
 
 
 
-# ╔═╡ eaf323c6-d8f2-486f-ae9f-ca5610e1f243
-md"## model settings"
+# ╔═╡ ef84633d-cc13-4573-9203-940fb2a14f35
+md"## model engine"
 
 # ╔═╡ 8b840cfb-c22e-498f-a052-8404ee68e153
 function weighteddiff(x, y)
@@ -398,17 +390,8 @@ end
 # ╔═╡ a7923940-392f-4ee5-a9a3-126c5b8ba9c3
 @bind A Select([highability,midability,lowability])
 
-# ╔═╡ e89d181c-3cb8-4c7a-a4ac-b6e7f85d0a51
-opportunitycostsa = [A((totalops - i )) for i in policyrange]
-
 # ╔═╡ 6a1a187e-2f6c-4acf-98e6-744cbb1f5873
 @bind B Select([highability,midability,lowability], default=highability)
-
-# ╔═╡ e0a98746-4c8d-4ccc-9086-61429452521c
-opportunitycosts = [(B(i) + A((totalops - i ))) for i in policyrange]
-
-# ╔═╡ 2088381a-d880-4a7f-b6cd-4efde74eea08
-opportunitycostsb = [(B(i)) for i in policyrange]
 
 # ╔═╡ 965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
 # Function to model educational outcomes for high ability
@@ -464,37 +447,9 @@ begin
 	vline!([policy1[2]+baseline[2]], label="B's opportunities", color=:green)
 end
 
-# ╔═╡ 710f29cc-1b71-4865-a136-80d212f49ea5
-function get10samples(n,d) 
-    [(n,rand(d(n))) for i in range(1,10)]
-end
-
-# ╔═╡ 81fedcdc-4db4-426f-8da6-4f950d826113
-highsamples = reduce(vcat,[(get10samples(i,educational_outcome_high)) for i in oprange])
-
-# ╔═╡ fb7aa538-0ccc-472b-8e9a-1f0c1c2e90f0
-lowsamples = reduce(vcat,[get10samples(i,educational_outcome_low) for i in oprange])
-
-# ╔═╡ a72b5bff-2932-407f-a546-4d42d7493944
-begin
-	scatter([i[1] for i in highsamples], [i[2] for i in highsamples], label="A scatter", opacity=0.05)
-	plot!(oprange, [A(i) for i in oprange], label="A average")
-	scatter!([i[1] for i in lowsamples], [i[2] for i in lowsamples], label="B scatter", opacity=0.05)
-	plot!(oprange, [B(i) for i in oprange], label="B average" )
-	# Add titles and labels
-	title!("ability")
-	xlabel!("opportunities")
-	ylabel!("outcomes")
-	vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
-	vline!([policy1[2]+baseline[2]], label="B's opportunities", color=:green)
-end
-
-# ╔═╡ ef84633d-cc13-4573-9203-940fb2a14f35
-md"## model engine"
-
 # ╔═╡ e552a0a9-0f56-4456-8395-f12ef677835c
 # unit cost of an opportunity 
-unitcost = 0
+unitcost = unitcost_
 
 # ╔═╡ 5ccfe20e-cf68-4413-a833-3154437a0a6f
 function edubenefits(n)
@@ -504,39 +459,28 @@ function edubenefits(n)
 	logistic(n, L, k, x0)
 end
 
-# ╔═╡ 6acfc730-1d1a-479d-b63f-ef1016096128
-opportunitycostsw = map(edubenefits,opportunitycosts)
-
-# ╔═╡ be77278e-f197-4a1e-9a9f-20c765a12e93
-function dash6()
-	plot(policyrange, opportunitycostsa, label=false)
-	plot!(policyrange, opportunitycostsb, label=false)
-	plot!(policyrange, opportunitycosts, label=false)
-	plot!(policyrange, opportunitycostsw, label=false, colour="light green")
+# ╔═╡ 895c3a3d-9769-4af4-aad5-c0fb14b6dd27
+function benefits()
+	plot(range(1,200), [edubenefits(i) for i in range(1,200)], label=false)
+    vline!([currentavout], label=false, color=:blue)
 	# Add titles and labels
-	# vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
-	vline!([dt1[2]], color=:green, label=false)
-	# annotate!([policy1[1]+baseline[1]-0.5] , maximum(opportunitycosts), "A")
-	# annotate!([policy1[2]+baseline[2]-0.5] , maximum(opportunitycosts), "B")
-	title!("opportunity costs")
-	xlabel!("B's opportunities")
-	ylabel!("outcomes")
-end
+	title!("benefits of education")
+	xlabel!("total outcomes")
+	ylabel!("benefits")
 
-# ╔═╡ 8253ebaa-09e0-40a6-acdb-a43d0f9ddb6e
-edubenefits(150)
+end
 
 # ╔═╡ 1aea36b9-3736-442f-abf1-eeb5654b201e
 # social baseline
-sbl = 700
+sbl = 1000
 
 # ╔═╡ 0cde042c-6e7a-4c7a-9f87-8146f0995eff
-# proportion for top ranked 
-pptop = 0.8 
+# proportion for top ranked (set above)
+pptop = toplifeprospects_
 
 # ╔═╡ 4e1cbb11-306a-4eda-8d06-d11f73ae162e
-# proportion for bottom ranked 
-ppbot = 0.4
+# proportion for bottom ranked (set above)
+ppbot = bottomlifeprospects_
 
 # ╔═╡ 500ea6f5-9e50-4a93-9832-dd48e3727eb0
 # function to get the average outcomes on a distribution
@@ -551,10 +495,21 @@ function costofprovision(d)
 	return((d[1] * unitcost) + (d[2] * unitcost))
 end
 
+# ╔═╡ 0c5bd66f-3c6a-4c31-a889-ae07c58d0fdd
+function scalebenefits(s,e) 
+    scaledsbl = (1 - eduscale_) * s 
+	scaledben = eduscale_ * (e / 200) * 1000
+	return (scaledsbl + scaledben)
+end
+	
+
+# ╔═╡ e90cd186-946e-4600-99bc-3c8628d5dc2c
+scalebenefits(100,edubenefits(150))
+
 # ╔═╡ dd77135b-c68d-486d-9333-249475176d11
 # function for calculating life prospects given chances, average outcomes, and cost of provision 
 function getlifeprospects(ch,avout,cp)
-    total = (sbl + (edubenefits(avout)) - cp) * 0.001 
+    total = ((scalebenefits(sbl,(edubenefits(avout)))) - cp) * 0.001 
 	return ((ch * pptop * total) + ((1 - ch) * ppbot * total))
 end
 
@@ -573,10 +528,10 @@ end
 # ╔═╡ 35587cb6-f68a-4423-b524-43bc2d1da908
 # a record type for storing the results of running the model 
 struct Report 
-	policy_1::Tuple{Float64, Float64}
-	policy_2::Tuple{Float64, Float64}
-	ops_1::Tuple{Float64, Float64}
-	ops_2::Tuple{Float64, Float64}
+	policy_1::Tuple{Float64, Float64} # policy for additional opportunities
+	policy_2::Tuple{Float64, Float64} # policy for additional opportunities
+	ops_1::Tuple{Float64, Float64} # policy for total opportunities
+	ops_2::Tuple{Float64, Float64} # policy for total opportunities
 	chances_a_1::Float64 
 	chances_a_2::Float64 
 	chances_b_1::Float64 
@@ -591,13 +546,24 @@ struct Report
 	av_out_1B::Float64 
 	av_out_2A::Float64 
 	av_out_2B::Float64 
-	cost_1::Float64 
-	cost_2::Float64 
-	uw_diffs::Tuple{Float64, Float64}
-	w_diffs::Tuple{Float64, Float64} 
-	w_sum::Float64
+	cost_1::Float64 # cost of providing additional opportunities on 1
+	cost_2::Float64 # cost of providing additional opportunities on 2
+	uw_diffs::Tuple{Float64, Float64} # unweighted difference between 1 and 2 for A and B
+	w_diffs::Tuple{Float64, Float64} # weighted difference between 1 and 2 for A and B
+	w_sum::Float64 # sum of the weighted difference between 1 and 2 for A and B
+	uw_sum::Float64 # sum of the unweighted difference between 1 and 2 for A and B
 	a_claim::Float64
 	b_claim::Float64
+	v_add1::Float64
+	v_add2::Float64 
+	c_ben1::Float64 
+	c_ben2::Float64
+	tin1::Float64
+	tain1::Float64 
+	tin2::Float64 
+	tain2::Float64 
+	bystander1::Float64 
+	bystander2::Float64
 end
 	
 
@@ -625,6 +591,7 @@ function runmodel(dt1,dt2) # d1 is the baseline
 	uwdiffs = getuwdiffs(d1lpA,d2lpA,d1lpB,d2lpB) 
 	wdiffs = getwdiffs(d1lpA,d2lpA,d1lpB,d2lpB) 
 	wsum =  wdiffs[2] + wdiffs[1]
+	uwsum = uwdiffs[2] + uwdiffs[1]
 	bclaim = if ((wdiffs[2] > 0) && ((wdiffs[2] + wdiffs[1]) > 0))
 		(wdiffs[2] + wdiffs[1])
 	    else 0
@@ -632,7 +599,17 @@ function runmodel(dt1,dt2) # d1 is the baseline
 	aclaim = if ((wdiffs[1] > 0) && ((wdiffs[1] + wdiffs[2]) > 0 ))
 		(wdiffs[1] + wdiffs[2])
 	    else 0
-	end
+	end 
+	valueadd1 = ((scalebenefits(sbl,(edubenefits(d1avout))))) 
+	valueadd2 = ((scalebenefits(sbl,(edubenefits(d2avout)))))
+	costbenefit1 = ((scalebenefits(sbl,(edubenefits(d1avout)))) - d1cost) 
+	costbenefit2 = ((scalebenefits(sbl,(edubenefits(d2avout)))) - d2cost) 
+	bystander1 = bystanderlifeprospects_ * costbenefit1 * 0.001
+	bystander2 = bystanderlifeprospects_ * costbenefit2 * 0.001
+	totalinputs1 = dt1[1] + dt1[2]
+	totaladditionalinputs1 = policy1[1] + policy1[2]
+	totalinputs2 = dt2[1] + dt2[2]
+	totaladditionalinputs2 = policy2[1] + policy2[2]
 	return (Report(
 		      d1 
 		    , d2 
@@ -657,8 +634,19 @@ function runmodel(dt1,dt2) # d1 is the baseline
 		    , uwdiffs
 		    , wdiffs
 		    , wsum
+		    , uwsum
 		    , bclaim 
 		    , aclaim
+		    , valueadd1 
+		    , valueadd2
+		    , costbenefit1 
+		    , costbenefit2
+		    , totalinputs1
+	        , totaladditionalinputs1 
+	        , totalinputs2 
+	        , totaladditionalinputs2 
+		    , bystander1 
+		    , bystander2
 		)
 	)
 end
@@ -666,103 +654,136 @@ end
 # ╔═╡ 99a7a989-c37b-46d8-9d72-87d67b9d5d9f
 report1 = runmodel(dt1,dt2)
 
-# ╔═╡ dfe2f957-53b5-4d2b-be90-1b60f28f730a
-md"setting for policy1: $policy1, $dt1, ( $(tr(report1.chances_a_1)), $(tr(report1.chances_b_1))), ( $(tr(report1.prospects_a_1)), $(tr(report1.prospects_b_1)))"
-
 # ╔═╡ 722f971d-d8a7-4ea8-81e9-09bba8db8a90
 md"## report 
 
-* Policy 1, $(report1.policy_1)
-   * A: $(report1.chances_a_1), $(report1.prospects_a_1)
-   * B: $(report1.chances_b_1), $(report1.prospects_b_1)
-   * Average outcomes: $(report1.av_out_1)
-* Policy 2 $(report1.policy_2)
-   * A: $(report1.chances_a_2), $(report1.prospects_a_2)
-   * B: $(report1.chances_b_2), $(report1.prospects_b_2)
-* Average outcomes: $(report1.av_out_2)
+the following is a report comparing policy 1 and policy 2
+
+* policy 1, $(report1.policy_1)
+   * A: 
+      * additional opportunities: $(report1.policy_1[1])
+      * total opportunities: $(report1.ops_1[1])
+      * chances: $(report1.chances_a_1) 
+      * prospects: $(report1.prospects_a_1)
+   * B: 
+      * additional opportunities: $(report1.policy_1[2])
+      * total opportunities: $(report1.ops_1[2])
+      * chances: $(report1.chances_b_1) 
+      * prospects: $(report1.prospects_b_1) 
+   * C: 
+      * prospects: $(report1.bystander1)
+* policy 2 $(report1.policy_2)
+   * A: 
+       * additional opportunities: $(report1.policy_2[1])
+       * total opportunities: $(report1.ops_2[1])
+       * chances: $(report1.chances_a_2) 
+       * prospects: $(report1.prospects_a_2)
+   * B: 
+       * additional opportunities: $(report1.policy_2[2])
+       * total opportunities: $(report1.ops_2[2])
+       * chances: $(report1.chances_b_2) 
+       * prospects: $(report1.prospects_b_2) 
+   * C: 
+       * prospects: $(report1.bystander2)
+
+some important comparisons: 
+
+* unweighted interests 
+    * A's unweighted interest in policy 2 over policy 1: $(report1.uw_diffs[1])
+    * B's unweighted interest in policy 2 over policy 1: $(report1.uw_diffs[2])
+    * the sum of A and B's unweighted interests: $(report1.uw_sum)
+* weighted interests 
+    * A's weighted interest in policy 2 over policy 1: $(report1.w_diffs[1])
+    * B's weighted interest in policy 2 over policy 1: $(report1.w_diffs[2])
+    * the sum of A and B's weighted interests: $(report1.w_sum) 
+    * A's claim: $(report1.a_claim)
+    * B's claim: $(report1.b_claim)
+
+here is an extended report:
+
+* policy 1 
+   * total opportunities: $(report1.tin1)
+   * total additional opportunities: $(report1.tain1)
+   * total average outcomes: $(report1.av_out_1)
+   * average outcomes for A: $(report1.av_out_1A)
+   * average outcomes for B: $(report1.av_out_1B)
+   * educational value-add: $(report1.v_add1)
+   * total cost: $(report1.cost_1)
+   * cost benefits: $(report1.c_ben1)
+
+* policy 2 
+   * total opportunities: $(report1.tin2)
+   * total additional opportunities: $(report1.tain2)
+   * total average outcomes: $(report1.av_out_2)
+   * average outcomes for A: $(report1.av_out_2A)
+   * average outcomes for B: $(report1.av_out_2B)
+   * educational value-add: $(report1.v_add2) 
+   * total cost: $(report1.cost_2)
+   * cost benefits: $(report1.c_ben2)
+
+" 
 
 
-"
-
-# ╔═╡ acf6e66a-79c6-4e29-9890-edc2c8b5adc5
-function getwsum2D(x) 
-   proportiontoB = x * totalopportunities 
-   proportiontoA = (1 - x) * totalopportunities
+# ╔═╡ 2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
+function getreporthelper(x) 
+	proportiontoB = x * totalopportunities 
+   proportiontoA = ((1 - x) * discountA_) * totalopportunities
    totaltoA = proportiontoA + baseline[1] 
    totaltoB = proportiontoB + baseline[2] 
    report = runmodel(dt1,(totaltoA,totaltoB))
+   return (report) 
+end
+
+# ╔═╡ acf6e66a-79c6-4e29-9890-edc2c8b5adc5
+function getwsum2D(x) 
+   report = getreporthelper(x)
    return report.w_sum
 end
 
-# ╔═╡ e82b4050-8a19-4dcf-bd9f-32b19971458f
-plot(range(0, 1, length=100), getwsum2D)
-
-# ╔═╡ b9a9d78e-0109-403e-b8b2-4682bf56707c
-# compare a single policy against all the available policies  
-function comparepolicies(d1)
-	allreports = map((x -> runmodel(d1,x)),availablepolicies) 
+# ╔═╡ 1cb27925-26f4-44e6-ad00-05ddf647088e
+function getuwsum2D(x) 
+   report = getreporthelper(x)
+   return report.uw_sum
 end
 
-# ╔═╡ a66540f1-6ea7-496a-9894-ff7b4b4794c0
-compareagainstpolicy1 = comparepolicies(dt1)
+# ╔═╡ 88306a77-c85c-4dde-861e-f7ace7c0115c
+function getuwdiffsA(x) 
+   report = getreporthelper(x)
+   return report.uw_diffs[1]
+end
 
-# ╔═╡ 05346589-c4e3-408f-96ee-15b7cd3f2195
-x_compare = map(x -> x.chances_b_2,compareagainstpolicy1)
+# ╔═╡ 92f08b2f-632a-4c2d-bbb0-2058d4dcf923
+function getuwdiffsB(x) 
+   report = getreporthelper(x)
+   return report.uw_diffs[2]
+end
 
-# ╔═╡ add04bdd-1814-4253-830b-c5e8977fde29
-y_a_compare = map(x -> x.w_diffs[1],compareagainstpolicy1)
+# ╔═╡ e82b4050-8a19-4dcf-bd9f-32b19971458f
+begin
+	plot(range(0, 1, length=100), getuwdiffsA, title="unweighted interests", label="A's interests", palette = :Dark2_5)
+	plot!(range(0, 1, length=100), getuwdiffsB, label="B's interests")
+	plot!(range(0, 1, length=100), getwsum2D, label="balance")
+	vline!([proportiontoB1_], label="current policy", color=:grey)
+end
 
-# ╔═╡ 77444d6c-a3e3-49f9-9b21-8c79b649eb58
-y_b_compare = map(x -> x.w_diffs[2],compareagainstpolicy1)
+# ╔═╡ a7db1f6f-4350-4fef-bd5b-fae0de2421bf
+function getwdiffsA(x) 
+   report = getreporthelper(x)
+   return report.w_diffs[1]
+end
 
-# ╔═╡ ae26ace3-377d-44e7-83c3-96aedac697d4
-y_sum_compare = map(x -> x.w_sum,compareagainstpolicy1)
+# ╔═╡ 8c88a658-512c-4a72-a252-5a245b3e791d
+function getwdiffsB(x) 
+   report = getreporthelper(x)
+   return report.w_diffs[2]
+end
 
-# ╔═╡ 1ebb005c-a121-4eec-9d09-1ad035068524
-a_claim_compare = map(x -> x.a_claim,compareagainstpolicy1)
-
-# ╔═╡ ab262803-6f5e-4b42-9bb4-d7fd31d042e5
-b_claim_compare = map(x -> x.b_claim,compareagainstpolicy1)
-
-# ╔═╡ 0c79995e-b2ce-4ff1-a8b1-e12b83fde215
-a_avout_compare = map(x -> x.av_out_2A,compareagainstpolicy1)
-
-# ╔═╡ 4e413570-b779-4b5a-9bed-6bf76e596a0b
-b_avout_compare = map(x -> x.av_out_2B,compareagainstpolicy1)
-
-# ╔═╡ 1073b598-56a1-4ce0-a9fc-26fb00a38f93
-t_avout_compare = map(x -> x.av_out_2,compareagainstpolicy1)
-
-# ╔═╡ b2f6e17d-ddc6-47bd-8cd2-c2caa94a10a7
-t_avout_top = map(x -> pptop * (edubenefits(x) + sbl) * 0.001,t_avout_compare)
-
-# ╔═╡ 16c21e3a-cf61-45a5-8662-b4f413a25cc4
-t_avout_bot = map(x -> ppbot * (edubenefits(x) + sbl) * 0.001,t_avout_compare)
-
-# ╔═╡ 45bd24b3-22b8-444e-9189-0237168d716a
-lpa_compare = map(x -> x.prospects_a_2,compareagainstpolicy1)
-
-# ╔═╡ 32f5158b-fc04-4c8d-9363-eb935e5241f3
-lpb_compare = map(x -> x.prospects_b_2,compareagainstpolicy1)
-
-# ╔═╡ 44469bb4-f9cf-4014-bbca-e91e34a98aac
-currentchances = (runmodel(dt1,dt1)).chances_b_2
-
-# ╔═╡ c9440555-0f0e-4356-9a92-fcf0ad4398f0
-currentchances2 = (runmodel(dt2,dt2)).chances_b_2 
-
-# ╔═╡ 0d974777-8d78-4e4d-b4eb-c4d5d40a385c
-currentavout = (runmodel(dt1,dt1)).av_out_2
-
-# ╔═╡ 895c3a3d-9769-4af4-aad5-c0fb14b6dd27
-function benefits()
-	plot(range(1,200), [edubenefits(i) for i in range(1,200)], label=false)
-    vline!([currentavout], label=false, color=:blue)
-	# Add titles and labels
-	title!("benefits of education")
-	xlabel!("total outcomes")
-	ylabel!("benefits")
-
+# ╔═╡ 716e0ea5-1097-4e93-bbe6-f7a0a72491a2
+begin
+	plot(range(0, 1, length=100), getwdiffsA, title="weighted interests", label="A's interests", palette = :Dark2_5)
+	plot!(range(0, 1, length=100), getwdiffsB, label="B's interests")
+	plot!(range(0, 1, length=100), getwsum2D, label="balance")
+	vline!([proportiontoB1_], label="current policy", color=:grey)
 end
 
 # ╔═╡ bc4f15fc-4a47-4b91-a912-9602ba7437af
@@ -782,7 +803,7 @@ triples = unique(gettriples(supercompareagainstpolicy1))
 
 function getwsum(x,y) 
    proportiontoB = x * y 
-   proportiontoA = (1 - x) * y 
+   proportiontoA = ((1 - x) * discountA_) * y 
    totaltoA = proportiontoA + baseline[1] 
    totaltoB = proportiontoB + baseline[2] 
    report = runmodel(dt1,(totaltoA,totaltoB))
@@ -838,113 +859,6 @@ lll2 = filterfair(strictlyfair,compareallagainstall)
 # ╔═╡ 8c2af803-3371-41c4-885e-b550ede68c86
 lf2 = map(x -> x[1][4],lll2)
 
-# ╔═╡ 6bb004ee-fe76-4760-8feb-d6f21153afc8
-begin
-	plot(x_compare, y_a_compare, label="A's weighted interests", ylim=(-0.04, 0.04), xlim=(0, 1), size=(800, 500))
-	plot!(x_compare, y_b_compare, label="B's weighted interests", colour="red")
-	# plot!(x_compare, y_sum_compare, label="balance of interets", colour="dark orange")
-	plot!(x_compare, a_claim_compare, label="B's claim against", colour= "dark orange") 
-	plot!(x_compare, b_claim_compare, label="A's claim against", colour="light green")
-	vspan!([], label="loosely fair", color="light blue", opacity=0.2) ## this is just a dummy so that we get the label for loosely fair
-	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
-	vline!([currentchances], label="B's chances on policy", color=:grey)
-	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
-	vline!(lf2, label="strictly fair", opacity=0.9, color="sky blue")
-	hline!([0], label=false, color=:grey)
-	
-	# Add titles and labels
-	#title!("fair trade-offs")
-	xlabel!("B's chances")
-	ylabel!("weighted interests")
-end
-
-# ╔═╡ 3bc80e92-56b0-4f71-ac67-54c62fe3b416
-function dash1()
-	plot(x_compare, a_avout_compare,xlim=(0, 1), label=false)
-	plot!(x_compare, b_avout_compare, label=false)
-    plot!(x_compare, t_avout_compare, label=false)
-	vspan!([], label=false, color="light blue", opacity=0.2) ## this is just a dummy so that we get the label for loosely fair
-	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
-	vline!([currentchances], label=false,  color=:grey)
-	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
-	vline!(lf2,  opacity=0.9, label=false, color="sky blue")
-
-	
-	# Add titles and labels
-	title!("educational outcomes against B's chances")
-	xlabel!("B's chances")
-	ylabel!("educational outcomes")
-end
-
-# ╔═╡ 113e1428-3988-4210-9821-6fb38e991fd7
-function dash2()
-	plot(x_compare, lpa_compare,xlim=(0, 1), label=false)
-	plot!(x_compare, lpb_compare, label=false)
-	
-	vspan!([], label=false, color="light blue", opacity=0.2) ## this is just a dummy so that we get the label for loosely fair
-	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
-	vline!([currentchances],  color=:grey, label=false)
-	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
-	vline!(lf2,  opacity=0.9, color="sky blue", label=false)
-
-	
-	# Add titles and labels
-	title!("unweighted prospects against B's chances")
-	xlabel!("B's chances")
-	ylabel!("life prospects")
-end
-
-# ╔═╡ cc157e83-4182-4559-9424-3e89f4f27401
-function dash3()
-    plot(x_compare, t_avout_compare, xlim=(0, 1), colour="green", label=false)
-	vspan!([], color="light blue", opacity=0.2, label=false) ## this is just a dummy so that we get the label for loosely fair
-	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
-	vline!([currentchances], color=:grey, label=false)
-	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
-	vline!(lf2, opacity=0.9, color="sky blue", label=false)
-
-	
-	# Add titles and labels
-	title!("total educational outcomes against B's chances")
-	xlabel!("B's chances")
-	ylabel!("educational outcomes")
-end
-
-# ╔═╡ 37635241-84f8-4ac5-adc2-09376fca1a47
-function dash4()
-    plot(x_compare, map(x -> (edubenefits(x) + sbl),t_avout_compare),xlim=(0, 1), colour="green", label=false)
-	vspan!([], color="light blue", opacity=0.2, label=false) ## this is just a dummy so that we get the label for loosely fair
-	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
-	vline!([currentchances],  color=:grey, label=false)
-	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
-	vline!(lf2,  opacity=0.9, color="sky blue", label=false)
-
-	
-	# Add titles and labels
-	title!("total social benefit against B's chances")
-	xlabel!("B's chances")
-	ylabel!("social benefits")
-end
-
-# ╔═╡ 96dc7710-f566-4441-840a-cc57fc3928ea
-function dash5()
-    plot(x_compare, ((map(x -> (edubenefits(x) + sbl),t_avout_compare)) / maximum(map(x -> (edubenefits(x) + sbl),t_avout_compare)) * 100),xlim=(0, 1), ylim=(0, 100), colour="green", label=false)
-	vspan!([], color="light blue", opacity=0.2, label=false) ## this is just a dummy so that we get the label for loosely fair
-	[vspan!([minimum(i),maximum(i)], label=false, color="light blue", opacity=0.2) for i in lfg   ]
-	vline!([currentchances], color=:grey, label=false)
-	# vline!([currentchances2], label="B's chances on policy2", color=:grey)
-	vline!(lf2,  opacity=0.9, color="sky blue", label=false)
-
-	
-	# Add titles and labels
-	title!("total social benefit against B's chances")
-	xlabel!("B's chances")
-	ylabel!("social benefits %")
-end
-
-# ╔═╡ abfa1360-bb3d-426c-9052-7cb5fecf74c3
-dashboard = plot(dash1(),dash2(),dash3(),dash4(),dash5(),dash6(), benefits(), ability(), layout=(4, 2),size=(1000, 1000)) 
-
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -965,9 +879,9 @@ QuadGK = "~2.11.1"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.5"
+julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "912ef3682ec813cd96f4aa11c456f15836cd9291"
+project_hash = "beaf961555cac56e1381d5be56e0726dcddadea6"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -983,13 +897,15 @@ version = "1.1.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
-version = "1.1.1"
+version = "1.1.2"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+version = "1.11.0"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+version = "1.11.0"
 
 [[deps.BitFlags]]
 git-tree-sha1 = "0691e34b3bb8be9307330f88d1a3c3f25466c24d"
@@ -1038,9 +954,9 @@ weakdeps = ["SpecialFunctions"]
 
 [[deps.Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
-git-tree-sha1 = "362a287c3aa50601b0bc359053d5c2468f0e7ce0"
+git-tree-sha1 = "64e15186f0aa277e174aa81798f7eb8598e0157e"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
-version = "0.12.11"
+version = "0.13.0"
 
 [[deps.Compat]]
 deps = ["TOML", "UUIDs"]
@@ -1082,6 +998,7 @@ version = "0.18.20"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+version = "1.11.0"
 
 [[deps.Dbus_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
@@ -1154,6 +1071,7 @@ version = "4.4.4+1"
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
+version = "1.11.0"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra"]
@@ -1276,6 +1194,7 @@ version = "0.2.5"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+version = "1.11.0"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
@@ -1359,16 +1278,17 @@ version = "0.6.4"
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "8.4.0+0"
+version = "8.6.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "LibGit2_jll", "NetworkOptions", "Printf", "SHA"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
+version = "1.11.0"
 
 [[deps.LibGit2_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll"]
 uuid = "e37daf67-58a4-590a-8e99-b0245dd2ffc5"
-version = "1.6.4+0"
+version = "1.7.2+0"
 
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
@@ -1377,6 +1297,7 @@ version = "1.11.0+1"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+version = "1.11.0"
 
 [[deps.Libffi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1429,6 +1350,7 @@ version = "2.40.1+0"
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+version = "1.11.0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
@@ -1448,6 +1370,7 @@ version = "0.3.28"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+version = "1.11.0"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
@@ -1469,6 +1392,7 @@ version = "0.5.13"
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+version = "1.11.0"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "MozillaCACerts_jll", "NetworkOptions", "Random", "Sockets"]
@@ -1479,7 +1403,7 @@ version = "1.1.9"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.2+1"
+version = "2.28.6+0"
 
 [[deps.Measures]]
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
@@ -1494,10 +1418,11 @@ version = "1.2.0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+version = "1.11.0"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2023.1.10"
+version = "2023.12.12"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
@@ -1518,7 +1443,7 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.23+4"
+version = "0.3.27+1"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1589,9 +1514,13 @@ uuid = "30392449-352a-5448-841d-b1acce4e97dc"
 version = "0.43.4+0"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.10.0"
+version = "1.11.0"
+weakdeps = ["REPL"]
+
+    [deps.Pkg.extensions]
+    REPLExt = "REPL"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]
@@ -1607,9 +1536,9 @@ version = "1.4.3"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "PrecompileTools", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "TOML", "UUIDs", "UnicodeFun", "UnitfulLatexify", "Unzip"]
-git-tree-sha1 = "45470145863035bb124ca51b320ed35d071cc6c2"
+git-tree-sha1 = "dae01f8c2e069a683d3a6e17bbae5070ab94786f"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.40.8"
+version = "1.40.9"
 
     [deps.Plots.extensions]
     FileIOExt = "FileIO"
@@ -1646,6 +1575,7 @@ version = "1.4.3"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+version = "1.11.0"
 
 [[deps.PtrArrays]]
 git-tree-sha1 = "77a42d78b6a92df47ab37e177b2deac405e1c88f"
@@ -1689,12 +1619,14 @@ version = "2.11.1"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
 [[deps.REPL]]
-deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
+deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+version = "1.11.0"
 
 [[deps.Random]]
 deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+version = "1.11.0"
 
 [[deps.RecipesBase]]
 deps = ["PrecompileTools"]
@@ -1749,6 +1681,7 @@ version = "1.2.1"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+version = "1.11.0"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -1763,6 +1696,7 @@ version = "1.2.0"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+version = "1.11.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
@@ -1773,7 +1707,7 @@ version = "1.2.1"
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-version = "1.10.0"
+version = "1.11.0"
 
 [[deps.SpecialFunctions]]
 deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
@@ -1794,9 +1728,14 @@ uuid = "860ef19b-820b-49d6-a774-d7a799459cd3"
 version = "1.0.2"
 
 [[deps.Statistics]]
-deps = ["LinearAlgebra", "SparseArrays"]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "ae3bb1eb3bba077cd276bc5cfc337cc65c3075c0"
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-version = "1.10.0"
+version = "1.11.1"
+weakdeps = ["SparseArrays"]
+
+    [deps.Statistics.extensions]
+    SparseArraysExt = ["SparseArrays"]
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
@@ -1824,6 +1763,10 @@ version = "1.3.2"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
     InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
 
+[[deps.StyledStrings]]
+uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
+version = "1.11.0"
+
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
@@ -1831,7 +1774,7 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "7.2.1+1"
+version = "7.7.0+0"
 
 [[deps.TOML]]
 deps = ["Dates"]
@@ -1852,6 +1795,7 @@ version = "0.1.1"
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+version = "1.11.0"
 
 [[deps.TranscodingStreams]]
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
@@ -1871,9 +1815,11 @@ version = "1.5.1"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+version = "1.11.0"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+version = "1.11.0"
 
 [[deps.UnicodeFun]]
 deps = ["REPL"]
@@ -2177,7 +2123,7 @@ version = "1.1.6+0"
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
-version = "1.52.0+1"
+version = "1.59.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -2204,8 +2150,8 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╠═a3c707eb-2dbd-4ede-80e9-0e4c90e01154
-# ╠═41571ca1-d1a0-4761-8672-c20d30e37786
+# ╟─a3c707eb-2dbd-4ede-80e9-0e4c90e01154
+# ╟─41571ca1-d1a0-4761-8672-c20d30e37786
 # ╟─fad8a8e2-141a-4f54-a822-150ecdcbde5a
 # ╟─7a83590e-488e-41b7-a4ed-303956cc0359
 # ╟─a3a348bf-6e2c-4775-b1c6-26fa602b319a
@@ -2213,42 +2159,35 @@ version = "1.4.1+1"
 # ╟─a8c8c80a-2e0f-4f34-92b5-3f872a4249c6
 # ╟─6a1a187e-2f6c-4acf-98e6-744cbb1f5873
 # ╟─e7b6f564-a08e-43b1-b602-b10a935ad94a
-# ╠═22598207-1e0f-444b-9064-5cc818305d83
-# ╠═5cd30ea0-0bb9-4745-abb5-1d5c99f09507
-# ╠═6a48a6c4-a3cc-4d9f-9a5d-de72d8a1a306
-# ╠═8bcb854d-cb45-4ed4-bc0f-8e5d0c693d27
-# ╠═69b27cb2-720f-44bd-8cdf-b33bd1e0399f
-# ╠═3168827b-1e31-408d-9ec3-53e725872e5e
-# ╠═943a2a24-5ee7-42b9-bed3-868148d1781a
-# ╠═24794095-f20d-4fe8-9aa9-e862d8d73786
-# ╠═37e0d7dc-c92f-4163-a239-ef794cbefa3e
-# ╠═8f7951a7-1fde-4783-8cf4-26412041fc77
-# ╠═53444608-183c-4bc4-a619-cf0704515a77
+# ╟─22598207-1e0f-444b-9064-5cc818305d83
+# ╟─5cd30ea0-0bb9-4745-abb5-1d5c99f09507
+# ╟─6a48a6c4-a3cc-4d9f-9a5d-de72d8a1a306
+# ╟─8bcb854d-cb45-4ed4-bc0f-8e5d0c693d27
+# ╟─69b27cb2-720f-44bd-8cdf-b33bd1e0399f
+# ╟─9c87ab70-aa58-4130-989d-363779557d2c
+# ╟─eb6dc23e-6307-4585-9010-5cc9efb582e9
+# ╟─3fd76120-b631-4022-a6dd-6c9f4ec06aa3
+# ╟─2a873e8b-71d6-4e53-840b-f37c645f06d1
+# ╟─3168827b-1e31-408d-9ec3-53e725872e5e
+# ╟─943a2a24-5ee7-42b9-bed3-868148d1781a
+# ╟─24794095-f20d-4fe8-9aa9-e862d8d73786
+# ╟─37e0d7dc-c92f-4163-a239-ef794cbefa3e
+# ╟─b7bd8235-5bf9-4bbc-ac30-07ef17bd9d8b
+# ╟─7588880c-2c3a-4b19-950d-e21faf015105
+# ╟─8f7951a7-1fde-4783-8cf4-26412041fc77
+# ╟─53444608-183c-4bc4-a619-cf0704515a77
 # ╟─97bad24c-f88a-4709-9130-7187536fb99b
 # ╟─b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
 # ╠═33be0c01-b712-406e-8827-1c194f2fa863
 # ╠═e93e06f4-dd06-4a10-967d-9dab8d30e198
+# ╠═e94755e2-b707-4a16-a751-9e5cc04f1b29
 # ╠═3d595998-60e4-404e-94ed-1e89f6de26ae
 # ╠═a17bff12-2789-43f5-ab04-25e5e021fda4
-# ╠═cdeb3319-f70b-4c59-9ef6-294daf51ca3d
-# ╟─6bb004ee-fe76-4760-8feb-d6f21153afc8
-# ╟─dfe2f957-53b5-4d2b-be90-1b60f28f730a
-# ╠═e94755e2-b707-4a16-a751-9e5cc04f1b29
-# ╟─da3e23be-42ac-466d-b2d9-3af4a3e90717
-# ╟─abfa1360-bb3d-426c-9052-7cb5fecf74c3
-# ╟─3bc80e92-56b0-4f71-ac67-54c62fe3b416
-# ╟─113e1428-3988-4210-9821-6fb38e991fd7
-# ╟─cc157e83-4182-4559-9424-3e89f4f27401
-# ╟─37635241-84f8-4ac5-adc2-09376fca1a47
-# ╟─96dc7710-f566-4441-840a-cc57fc3928ea
-# ╟─be77278e-f197-4a1e-9a9f-20c765a12e93
-# ╟─722f971d-d8a7-4ea8-81e9-09bba8db8a90
-# ╟─65e3c95a-e330-4fab-903f-bcf81d1c0491
 # ╠═6128347f-8029-45ff-a47a-2ef21f090561
-# ╟─99a7a989-c37b-46d8-9d72-87d67b9d5d9f
+# ╠═722f971d-d8a7-4ea8-81e9-09bba8db8a90
+# ╠═99a7a989-c37b-46d8-9d72-87d67b9d5d9f
 # ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
 # ╟─778a0587-959b-4ced-baff-c95defa65a27
-# ╟─a72b5bff-2932-407f-a546-4d42d7493944
 # ╟─3803eba4-a40d-4849-888f-2f3cd0ecc7d1
 # ╠═6c731bce-6fef-4d69-a64c-65ecbb08eee9
 # ╠═b706f625-6c87-4681-9cdf-172ca30255fc
@@ -2263,13 +2202,7 @@ version = "1.4.1+1"
 # ╠═6c1a19b1-a66a-4b63-8413-063dc883537d
 # ╠═053e5999-291d-4638-a066-942d2a61f0e9
 # ╟─b96458b3-6f68-4071-bb82-6b3e1dcff8f7
-# ╟─23104c1b-afe4-486f-af81-79264eb4f61c
-# ╟─abea362f-28e6-47e9-b7c0-8d3295d0138b
 # ╟─ec526f2a-a990-4ea5-b1ba-43a0c56cef60
-# ╠═e0a98746-4c8d-4ccc-9086-61429452521c
-# ╠═6acfc730-1d1a-479d-b63f-ef1016096128
-# ╟─e89d181c-3cb8-4c7a-a4ac-b6e7f85d0a51
-# ╟─2088381a-d880-4a7f-b6cd-4efde74eea08
 # ╟─1350ddba-a676-45c7-8552-d13b607610cd
 # ╠═d861ef63-4ac2-46dc-9c6f-7221393b7277
 # ╠═f84727eb-011d-4679-912a-beb99afb25bc
@@ -2280,27 +2213,15 @@ version = "1.4.1+1"
 # ╠═2eed9e35-394a-4ad9-9c39-290065432cc2
 # ╟─4f81db11-2811-4008-b09c-56335160d0c9
 # ╠═c70a0cb0-0900-402b-90f4-c4e254e2f8d5
+# ╠═2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
 # ╠═acf6e66a-79c6-4e29-9890-edc2c8b5adc5
+# ╠═1cb27925-26f4-44e6-ad00-05ddf647088e
+# ╠═88306a77-c85c-4dde-861e-f7ace7c0115c
+# ╠═92f08b2f-632a-4c2d-bbb0-2058d4dcf923
 # ╠═e82b4050-8a19-4dcf-bd9f-32b19971458f
-# ╠═0857676b-b3f1-4048-8a7a-b07b696d8423
-# ╠═b9a9d78e-0109-403e-b8b2-4682bf56707c
-# ╠═a66540f1-6ea7-496a-9894-ff7b4b4794c0
-# ╠═05346589-c4e3-408f-96ee-15b7cd3f2195
-# ╠═add04bdd-1814-4253-830b-c5e8977fde29
-# ╠═77444d6c-a3e3-49f9-9b21-8c79b649eb58
-# ╠═ae26ace3-377d-44e7-83c3-96aedac697d4
-# ╠═1ebb005c-a121-4eec-9d09-1ad035068524
-# ╠═ab262803-6f5e-4b42-9bb4-d7fd31d042e5
-# ╠═0c79995e-b2ce-4ff1-a8b1-e12b83fde215
-# ╠═4e413570-b779-4b5a-9bed-6bf76e596a0b
-# ╠═1073b598-56a1-4ce0-a9fc-26fb00a38f93
-# ╠═b2f6e17d-ddc6-47bd-8cd2-c2caa94a10a7
-# ╠═16c21e3a-cf61-45a5-8662-b4f413a25cc4
-# ╠═45bd24b3-22b8-444e-9189-0237168d716a
-# ╠═32f5158b-fc04-4c8d-9363-eb935e5241f3
-# ╠═44469bb4-f9cf-4014-bbca-e91e34a98aac
-# ╠═c9440555-0f0e-4356-9a92-fcf0ad4398f0
-# ╠═0d974777-8d78-4e4d-b4eb-c4d5d40a385c
+# ╠═a7db1f6f-4350-4fef-bd5b-fae0de2421bf
+# ╠═8c88a658-512c-4a72-a252-5a245b3e791d
+# ╠═716e0ea5-1097-4e93-bbe6-f7a0a72491a2
 # ╟─70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
 # ╠═a328a25e-c9aa-4dd0-8b24-b7ff2c642eb2
 # ╠═5b160aba-6b82-42cc-8f77-286e87589f6d
@@ -2326,38 +2247,35 @@ version = "1.4.1+1"
 # ╠═657d2c5d-940f-43f1-b68f-8043fdd2e3d2
 # ╠═c6a7f717-4818-4fc5-a4e9-2e639ad682d4
 # ╠═fad62b09-869b-4afc-8747-bf5b8b0ca605
-# ╟─a91d0a6b-075d-4cf7-a28d-1a4daab965cc
-# ╟─e7ad6c9a-b112-4f43-a78a-71370e989553
+# ╠═a91d0a6b-075d-4cf7-a28d-1a4daab965cc
+# ╠═e7ad6c9a-b112-4f43-a78a-71370e989553
 # ╠═4d2b2b64-ced5-4afc-9464-9629878883ff
 # ╠═e9b328ce-28dc-49d9-af67-bfcf069ea4ed
 # ╠═f898b9b1-0550-4800-96f6-8a2907c3ae30
 # ╠═e1bf01c4-7adc-477b-b4a6-42dee053809b
 # ╠═8c2af803-3371-41c4-885e-b550ede68c86
-# ╟─eaf323c6-d8f2-486f-ae9f-ca5610e1f243
-# ╟─8b840cfb-c22e-498f-a052-8404ee68e153
-# ╟─6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
-# ╟─7374becb-cf8b-4416-8e4b-08fe2f62aceb
-# ╟─dfa36663-3f67-4809-9071-a68a0c985be1
-# ╟─965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
-# ╟─6d00b682-dbf8-41ef-95f6-04c210f128a1
-# ╟─7c36cbdc-8181-4388-a679-5101da90bc71
-# ╟─710f29cc-1b71-4865-a136-80d212f49ea5
-# ╠═81fedcdc-4db4-426f-8da6-4f950d826113
-# ╟─fb7aa538-0ccc-472b-8e9a-1f0c1c2e90f0
 # ╟─ef84633d-cc13-4573-9203-940fb2a14f35
+# ╠═8b840cfb-c22e-498f-a052-8404ee68e153
+# ╠═6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
+# ╠═7374becb-cf8b-4416-8e4b-08fe2f62aceb
+# ╠═dfa36663-3f67-4809-9071-a68a0c985be1
+# ╠═965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
+# ╠═6d00b682-dbf8-41ef-95f6-04c210f128a1
+# ╟─7c36cbdc-8181-4388-a679-5101da90bc71
 # ╠═e552a0a9-0f56-4456-8395-f12ef677835c
 # ╠═5ccfe20e-cf68-4413-a833-3154437a0a6f
-# ╠═8253ebaa-09e0-40a6-acdb-a43d0f9ddb6e
 # ╠═895c3a3d-9769-4af4-aad5-c0fb14b6dd27
 # ╠═1aea36b9-3736-442f-abf1-eeb5654b201e
 # ╠═0cde042c-6e7a-4c7a-9f87-8146f0995eff
 # ╠═4e1cbb11-306a-4eda-8d06-d11f73ae162e
 # ╠═500ea6f5-9e50-4a93-9832-dd48e3727eb0
 # ╠═24e949ba-9794-4bf2-8d36-19bbbf7c7087
+# ╠═0c5bd66f-3c6a-4c31-a889-ae07c58d0fdd
+# ╠═e90cd186-946e-4600-99bc-3c8628d5dc2c
 # ╠═dd77135b-c68d-486d-9333-249475176d11
 # ╠═5cef23cd-77bf-4c7f-9733-d1b415337b3b
 # ╠═d4db49d9-ef20-4ab0-8d7a-ed05f0c06ac1
 # ╠═14a6c1d8-48cf-4bfc-b7f9-f56fd0406ead
-# ╟─35587cb6-f68a-4423-b524-43bc2d1da908
+# ╠═35587cb6-f68a-4423-b524-43bc2d1da908
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
