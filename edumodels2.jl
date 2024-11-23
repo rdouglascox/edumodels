@@ -15,11 +15,11 @@ macro bind(def, element)
 end
 
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
-using PlutoUI, Plots, Distributions, QuadGK, Printf
+using PlutoUI, Plots, Distributions, QuadGK, Printf, PGFPlotsX
 
 
 # ╔═╡ 41571ca1-d1a0-4761-8672-c20d30e37786
-# pgfplotsx()
+pgfplotsx()
 # plotly()
 # pythonplot()
 # gr()
@@ -216,29 +216,27 @@ this is going to be computationally expensive, so I won't include it in the plot
 
 
 
-# ╔═╡ f422e650-3016-497b-8a9e-d367337d9380
-function chancesanddiffs2(xs) 
-	map(x -> (x.chances_b_2,x.w_diffs,x.w_sum,x.chances_b_1),xs) 
-end
+# ╔═╡ 6d63ad59-4f9c-43be-80bf-4a1295a3d8c1
+function split_into_groups(numbers, n)
+    if isempty(numbers)
+        return []
+    end
 
-# ╔═╡ 64959798-11bd-4f0e-b287-597453067ed5
-# we filter out just the policy results that are fair according to f
-function filterfair(f,xxs)
-    filter(f,xxs)
-end
+    sorted_numbers = sort(unique(numbers))  # Sort and remove duplicates
+    groups = []
+    current_group = [sorted_numbers[1]]
 
-# ╔═╡ ea3cf121-cc70-46d7-a15c-fffd1b962ff9
-# strict fairness filter 
-function strictlyfair(xs)
-	justthediffs = map(x -> x[3],xs)
-	isempty(filter(x -> (x > 0.0000001), justthediffs))
-end
+    for i in 2:length(sorted_numbers)
+        if isapprox(sorted_numbers[i],(sorted_numbers[i-1] + n))
+            push!(current_group, sorted_numbers[i])
+        else
+            push!(groups, current_group)
+            current_group = [sorted_numbers[i]]
+        end
+    end
 
-# ╔═╡ 43b6d787-ee10-4a6f-aeee-f16af2aec1f2
-# loose fairness filter 
-function looselyfair(xs)
-	justthediffs = map(x -> x[3],xs)
-	isempty(filter(x -> (x > 0.002), justthediffs))
+    push!(groups, current_group)  # Add the last group
+    return groups
 end
 
 # ╔═╡ 5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
@@ -251,7 +249,7 @@ function looselyfairgrouped(xs)
     current_group = []
 
     for value in justthediffs
-        if isempty(filter(x -> (x[2] > 0.002), value))
+        if isempty(filter(x -> (x > 0.002)), value)
             push!(current_group, value)  # Add to current group if it meets the condition
         else
             if !isempty(current_group)
@@ -699,6 +697,10 @@ function getwsum2D(x)
    return report.w_sum
 end
 
+# ╔═╡ 5808ab27-f325-402a-9859-7a985c557ace
+# this one just works out what the 
+sum0 = [getreporthelper(i) for i in range(0, 1, length=101) if isapprox(getwsum2D(i),0, atol=0.00001)] 
+
 # ╔═╡ 1cb27925-26f4-44e6-ad00-05ddf647088e
 function getuwsum2D(x) 
    report = getreporthelper(x)
@@ -717,14 +719,6 @@ function getuwdiffsB(x)
    return report.uw_diffs[2]
 end
 
-# ╔═╡ e82b4050-8a19-4dcf-bd9f-32b19971458f
-begin
-	plot(range(0, 1, length=100), getuwdiffsA, title="unweighted interests", label="A's interests", palette = :Dark2_5)
-	plot!(range(0, 1, length=100), getuwdiffsB, label="B's interests")
-	plot!(range(0, 1, length=100), getwsum2D, label="balance")
-	vline!([proportiontoB1_], label="current policy", color=:grey)
-end
-
 # ╔═╡ a7db1f6f-4350-4fef-bd5b-fae0de2421bf
 function getwdiffsA(x) 
    report = getreporthelper(x)
@@ -735,14 +729,6 @@ end
 function getwdiffsB(x) 
    report = getreporthelper(x)
    return report.w_diffs[2]
-end
-
-# ╔═╡ 716e0ea5-1097-4e93-bbe6-f7a0a72491a2
-begin
-	plot(range(0, 1, length=100), getwdiffsA, title="weighted interests", label="A's interests", palette = :Dark2_5)
-	plot!(range(0, 1, length=100), getwdiffsB, label="B's interests")
-	plot!(range(0, 1, length=100), getwsum2D, label="balance")
-	vline!([proportiontoB1_], label="current policy", color=:grey)
 end
 
 # ╔═╡ 7d10e574-c928-4104-9d18-b897021d7a5f
@@ -765,7 +751,8 @@ x_vals = range(0, 1, length=100)
 y_vals = range(0, totalopportunities, length=100)
 
 # scatter(x_vals, y_vals, z_vals, xlabel="X-axis", ylabel="Y-axis", zlabel="Z-axis", camera=(45, 25))
-plot(x_vals, y_vals, getwsum3Dvar, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.5, zlim=(-0.04, 0.04))
+plot(x_vals, y_vals, getwsum3Dvar, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, zlim=(-0.04, 0.04))
+plot!(x_vals, y_vals, getwsum3Dvar, label="Smoothed Surface", st=:wireframe, zlim=(-0.04, 0.04))
 end
 
 # ╔═╡ d342d102-da15-4e0f-8054-bd54d2def8e8
@@ -794,21 +781,104 @@ plot(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed 
 plot!(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
 end
 
-# ╔═╡ e7ad6c9a-b112-4f43-a78a-71370e989553
-function runmodels(xs) 
-   map(x -> map(y -> runmodel(x,y),xs),xs) 
+# ╔═╡ 97d1e787-cf26-451b-a027-4eefe916a795
+## this function gets the strictly fair policies
+
+getstrictlyfair = [x for x in range(0, 1, length=101) if all(z -> z < 0.0000001, map(z -> getwsum3D(z,x),range(0, 1, length=101)))]
+
+# ╔═╡ f45d9483-ac5e-4731-a2c1-acb34a8c3d7b
+## this function gets the loosely fair policies
+
+getlooselyfair = [x for x in range(0, 1, step=0.01) if all(z -> z < 0.002, map(z -> getwsum3D(z,x),range(0, 1, step=0.01)))]
+
+# ╔═╡ a1d54e9b-9af6-4a1d-8b88-7beb098e5df9
+glfgroups = split_into_groups(getlooselyfair,0.01)
+
+# ╔═╡ e82b4050-8a19-4dcf-bd9f-32b19971458f
+begin
+	plot(range(0, 1, length=100), getuwdiffsA, title="unweighted interests", label="A's interests", palette = :Dark2_5)
+	plot!(range(0, 1, length=100), getuwdiffsB, label="B's interests")
+	plot!(range(0, 1, length=100), getwsum2D, label="balance")
+	vline!([proportiontoB1_], label="current policy", color=:grey)
+	vspan!([[minimum(i),maximum(i)] for i in glfgroups], label=false, color="light blue", opacity=0.2)
 end
 
-# ╔═╡ 38757378-634c-4606-88df-fdf1b47b7e70
-function compareallpolicies()
-	allreports = runmodels(availablepolicies)
-	map(chancesanddiffs2,allreports)
+# ╔═╡ 716e0ea5-1097-4e93-bbe6-f7a0a72491a2
+begin
+	plot(range(0, 1, length=100), getwdiffsA, title="weighted interests", label="A's interests", palette = :Dark2_5)
+	plot!(range(0, 1, length=100), getwdiffsB, label="B's interests")
+	plot!(range(0, 1, length=100), getwsum2D, label="balance")
+	vline!([proportiontoB1_], label="current policy", color=:grey)
+	vspan!([[minimum(i),maximum(i)] for i in glfgroups], label=false, color="light blue", opacity=0.2)
 end
+
+# ╔═╡ fa988726-e491-46e9-9478-92621ff30e77
+function getwdiffsB3D(x,y) 
+   report = getreporthelper3D(x,y)
+   return report.w_diffs[2]
+end
+
+# ╔═╡ fa934ffa-a874-49df-a785-34354d26f2b0
+begin 
+plot(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:wireframe)
+plot!(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
+end
+
+# ╔═╡ fe3dcaee-a713-4aab-bfee-a41573c1291f
+# this one just works out what the 
+sum03D = [getreporthelper3D(x,y) for x in range(0, 1, length=101), y in range(0, 1, length=101) if isapprox(getwsum3D(x,y),0, atol=0.00001)] 
+
+# ╔═╡ cf430baf-e199-4060-9128-ccc359783e58
+# this is the mother of all functions 
+# it compares policies considered as proportion/total pairs 
+# it compares one such against another such 
+
+function getreporthelper3DALL((x1,x2),(y1,y2)) 
+   proportiontoB = x1 * x2
+   proportiontoA = ((1 - x1) * discountA_) * x2
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2]  
+   proportiontoBy = y1 * y2
+   proportiontoAy = ((1 - y1) * discountA_) * y2
+   totaltoAy = proportiontoAy + baseline[1] 
+   totaltoBy = proportiontoBy + baseline[2] 
+   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
+   return (report) 
+end
+
+# ╔═╡ 1d4d1957-c620-4150-8250-f886e5beb2be
+function getwsum3DALL((x1,x2),(y1,y2))
+   report = getreporthelper3DALL((x1,x2),(y1,y2))
+   return report.w_sum
+end
+
+# ╔═╡ 2a9cd28b-a55e-4db3-b472-ea536da0213b
+function getstrictlyfairALL()
+	thexs1 = range(0, 1, step=0.05)
+    thexs2 = range(0,totalopportunities)
+    theys = [(y1,y2) for y1 in range(0, 1, step=0.05), y2 in range(0,totalopportunities)] 
+    return([(x1,x2) for x1 in thexs1, x2 in thexs2 if all(y -> y < 0.0000001,(map(z -> getwsum3DALL(z,(x1,x2)),theys)))])
+end
+
+# ╔═╡ 7a1229ba-67b8-49af-9392-e7ec384068ba
+getstrictlyfairALL()
+
+# ╔═╡ 60c5173d-efa0-40c1-8afc-bb189a6ae7de
+function getlooselyfairALL()
+	thexs1 = range(0, 1, step=0.05)
+    thexs2 = range(0,totalopportunities)
+    theys = [(y1,y2) for y1 in range(0, 1, step=0.05), y2 in range(0,totalopportunities)] 
+    return([(x1,x2) for x1 in thexs1, x2 in thexs2 if all(y -> y < 0.002,(map(z -> getwsum3DALL(z,(x1,x2)),theys)))])
+end
+
+# ╔═╡ 60e940d8-df1e-4d4b-b894-9c6897479bac
+getlooselyfairALL()
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -816,6 +886,7 @@ QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 
 [compat]
 Distributions = "~0.25.113"
+PGFPlotsX = "~1.6.2"
 Plots = "~1.40.8"
 PlutoUI = "~0.7.60"
 QuadGK = "~2.11.1"
@@ -827,7 +898,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.5"
 manifest_format = "2.0"
-project_hash = "912ef3682ec813cd96f4aa11c456f15836cd9291"
+project_hash = "24489e1ff85e1f16b014e9e71addcbc8de285c14"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -840,6 +911,11 @@ deps = ["PtrArrays", "Random"]
 git-tree-sha1 = "9876e1e164b144ca45e9e3198d0b689cadfed9ff"
 uuid = "66dad0bd-aa9a-41b7-9441-69ab47430ed8"
 version = "1.1.3"
+
+[[deps.ArgCheck]]
+git-tree-sha1 = "a3a402a35a2f7e0b87828ccabbd5ebfbebe356b4"
+uuid = "dce04be8-c92d-5529-be00-80e4d2c0e197"
+version = "2.3.0"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -939,6 +1015,11 @@ git-tree-sha1 = "1d0a14036acb104d9e89698bd408f63ab58cdc82"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 version = "0.18.20"
 
+[[deps.DataValueInterfaces]]
+git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
+uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
+version = "1.0.0"
+
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -948,6 +1029,12 @@ deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "fc173b380865f70627d7dd1190dc2fce6cc105af"
 uuid = "ee1fde0b-3d02-5ea6-8484-8dfef6360eab"
 version = "1.14.10+0"
+
+[[deps.DefaultApplication]]
+deps = ["InteractiveUtils"]
+git-tree-sha1 = "c0dfa5a35710a193d83f03124356eef3386688fc"
+uuid = "3f0dd361-4fe0-5fc6-8523-80b14ec94d85"
+version = "1.1.0"
 
 [[deps.DelimitedFiles]]
 deps = ["Mmap"]
@@ -1141,6 +1228,11 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.2.2"
+
+[[deps.IteratorInterfaceExtensions]]
+git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
+uuid = "82899510-4779-5014-852e-03e436cf321d"
+version = "1.0.0"
 
 [[deps.JLFzf]]
 deps = ["Pipe", "REPL", "Random", "fzf_jll"]
@@ -1425,11 +1517,35 @@ git-tree-sha1 = "949347156c25054de2db3b166c52ac4728cbad65"
 uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
 version = "0.11.31"
 
+[[deps.PGFPlotsX]]
+deps = ["ArgCheck", "Dates", "DefaultApplication", "DocStringExtensions", "MacroTools", "OrderedCollections", "Parameters", "Requires", "Tables"]
+git-tree-sha1 = "e5df51ffc01f8771d94c8db2d164be1f6927849c"
+uuid = "8314cec4-20b6-5062-9cdb-752b83310925"
+version = "1.6.2"
+
+    [deps.PGFPlotsX.extensions]
+    ColorsExt = "Colors"
+    ContourExt = "Contour"
+    MeasurementsExt = "Measurements"
+    StatsBaseExt = "StatsBase"
+
+    [deps.PGFPlotsX.weakdeps]
+    Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
+    Contour = "d38c429a-6771-53c6-b99e-75d170b6e991"
+    Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
+    StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
 [[deps.Pango_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "e127b609fb9ecba6f201ba7ab753d5a605d53801"
 uuid = "36c8627f-9965-5494-a995-c6b170f724f3"
 version = "1.54.1+0"
+
+[[deps.Parameters]]
+deps = ["OrderedCollections", "UnPack"]
+git-tree-sha1 = "34c0e9ad262e5f7fc75b10a9952ca7692cfc5fbe"
+uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
@@ -1698,6 +1814,18 @@ deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
 
+[[deps.TableTraits]]
+deps = ["IteratorInterfaceExtensions"]
+git-tree-sha1 = "c06b2f539df1c6efa794486abfb6ed2022561a39"
+uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
+version = "1.0.1"
+
+[[deps.Tables]]
+deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "OrderedCollections", "TableTraits"]
+git-tree-sha1 = "598cd7c1f68d1e205689b1c2fe65a9f85846f297"
+uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+version = "1.12.0"
+
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
@@ -1731,6 +1859,11 @@ version = "1.5.1"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+
+[[deps.UnPack]]
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
+uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+version = "1.0.2"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
@@ -2064,8 +2197,8 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╟─a3c707eb-2dbd-4ede-80e9-0e4c90e01154
-# ╟─41571ca1-d1a0-4761-8672-c20d30e37786
+# ╠═a3c707eb-2dbd-4ede-80e9-0e4c90e01154
+# ╠═41571ca1-d1a0-4761-8672-c20d30e37786
 # ╟─fad8a8e2-141a-4f54-a822-150ecdcbde5a
 # ╟─7a83590e-488e-41b7-a4ed-303956cc0359
 # ╟─a3a348bf-6e2c-4775-b1c6-26fa602b319a
@@ -2098,7 +2231,7 @@ version = "1.4.1+1"
 # ╠═3d595998-60e4-404e-94ed-1e89f6de26ae
 # ╠═a17bff12-2789-43f5-ab04-25e5e021fda4
 # ╠═6128347f-8029-45ff-a47a-2ef21f090561
-# ╠═722f971d-d8a7-4ea8-81e9-09bba8db8a90
+# ╟─722f971d-d8a7-4ea8-81e9-09bba8db8a90
 # ╠═99a7a989-c37b-46d8-9d72-87d67b9d5d9f
 # ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
 # ╟─778a0587-959b-4ced-baff-c95defa65a27
@@ -2129,6 +2262,7 @@ version = "1.4.1+1"
 # ╠═c70a0cb0-0900-402b-90f4-c4e254e2f8d5
 # ╠═2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
 # ╠═acf6e66a-79c6-4e29-9890-edc2c8b5adc5
+# ╠═5808ab27-f325-402a-9859-7a985c557ace
 # ╠═1cb27925-26f4-44e6-ad00-05ddf647088e
 # ╠═88306a77-c85c-4dde-861e-f7ace7c0115c
 # ╠═92f08b2f-632a-4c2d-bbb0-2058d4dcf923
@@ -2142,14 +2276,21 @@ version = "1.4.1+1"
 # ╠═fcd7edcf-4df1-47cf-98f2-190a921c3606
 # ╠═d342d102-da15-4e0f-8054-bd54d2def8e8
 # ╠═2c4779c5-238d-4328-aac6-cc5fcbe8f6b3
+# ╠═fa934ffa-a874-49df-a785-34354d26f2b0
+# ╠═fa988726-e491-46e9-9478-92621ff30e77
+# ╠═fe3dcaee-a713-4aab-bfee-a41573c1291f
 # ╟─10bb2145-4069-4e88-8852-bd2d892a2627
-# ╟─38757378-634c-4606-88df-fdf1b47b7e70
-# ╟─f422e650-3016-497b-8a9e-d367337d9380
-# ╟─64959798-11bd-4f0e-b287-597453067ed5
-# ╟─ea3cf121-cc70-46d7-a15c-fffd1b962ff9
-# ╟─43b6d787-ee10-4a6f-aeee-f16af2aec1f2
-# ╟─5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
-# ╠═e7ad6c9a-b112-4f43-a78a-71370e989553
+# ╠═97d1e787-cf26-451b-a027-4eefe916a795
+# ╠═f45d9483-ac5e-4731-a2c1-acb34a8c3d7b
+# ╠═a1d54e9b-9af6-4a1d-8b88-7beb098e5df9
+# ╠═6d63ad59-4f9c-43be-80bf-4a1295a3d8c1
+# ╠═5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
+# ╠═cf430baf-e199-4060-9128-ccc359783e58
+# ╠═1d4d1957-c620-4150-8250-f886e5beb2be
+# ╠═2a9cd28b-a55e-4db3-b472-ea536da0213b
+# ╠═7a1229ba-67b8-49af-9392-e7ec384068ba
+# ╠═60c5173d-efa0-40c1-8afc-bb189a6ae7de
+# ╠═60e940d8-df1e-4d4b-b894-9c6897479bac
 # ╟─ef84633d-cc13-4573-9203-940fb2a14f35
 # ╠═8b840cfb-c22e-498f-a052-8404ee68e153
 # ╟─6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
