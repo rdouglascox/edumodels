@@ -15,12 +15,12 @@ macro bind(def, element)
 end
 
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
-using PlutoUI, Plots, Distributions, QuadGK, Printf, PGFPlotsX
+using PlutoUI, Plots, Distributions, QuadGK, Printf, PlotlyBase
 
 
 # ╔═╡ 41571ca1-d1a0-4761-8672-c20d30e37786
-pgfplotsx()
-# plotly()
+# pgfplotsx()
+plotly()
 # pythonplot()
 # gr()
 
@@ -54,14 +54,16 @@ choose a baseline distribution of opportunties for A (default=40):"
 @bind baselineA_ NumberField(0:200, default=40)
 
 # ╔═╡ 5cd30ea0-0bb9-4745-abb5-1d5c99f09507
-md"choose a baseline distribution of opportunities for B (default=40):"
+md"---
+choose a baseline distribution of opportunities for B (default=40):"
 
 # ╔═╡ 6a48a6c4-a3cc-4d9f-9a5d-de72d8a1a306
 # set the baseline distribution of opportunities 
 @bind baselineB_ NumberField(0:200, default=40)
 
 # ╔═╡ 8bcb854d-cb45-4ed4-bc0f-8e5d0c693d27
-md"choose the total number of additional opportunities to distribute (default=20):"
+md"---
+choose the total number of additional opportunities to distribute (default=20):"
 
 # ╔═╡ 69b27cb2-720f-44bd-8cdf-b33bd1e0399f
 # set the total opportunities available to distribute 
@@ -74,7 +76,7 @@ md"choose a discount rate on A's proportion of the opportunities (default=1):"
 @bind discountA_ NumberField(0:0.1:1, default=1)
 
 # ╔═╡ 3fd76120-b631-4022-a6dd-6c9f4ec06aa3
-md"scale up the benefits of education (default 1, higher numbers make education more important):" 
+md"scale up the benefits of education (default 0.2, higher numbers make education more important):" 
 
 # ╔═╡ 2a873e8b-71d6-4e53-840b-f37c645f06d1
 @bind eduscale_ NumberField(0:0.05:1, default=0.2)
@@ -86,13 +88,13 @@ md"choose the default life prospects for the top ranked (default=0.8):"
 @bind toplifeprospects_ NumberField(0:0.05:1, default=0.8)
 
 # ╔═╡ 24794095-f20d-4fe8-9aa9-e862d8d73786
-md"choose the default life prospects for the top ranked (default=0.5):" 
+md"choose the default life prospects for the bottom ranked (default=0.5):" 
 
 # ╔═╡ 37e0d7dc-c92f-4163-a239-ef794cbefa3e
 @bind bottomlifeprospects_ NumberField(0:0.05:1, default=0.5)
 
 # ╔═╡ b7bd8235-5bf9-4bbc-ac30-07ef17bd9d8b
-md"choose the cost of an opportunity (default=0):"
+md"choose the unit cost of an opportunity (default=0):"
 
 # ╔═╡ 7588880c-2c3a-4b19-950d-e21faf015105
 @bind unitcost_ NumberField(0:20, default=0)
@@ -121,91 +123,40 @@ md"choose a proportion of the total available opportunities to go to B on policy
 # ╔═╡ a17bff12-2789-43f5-ab04-25e5e021fda4
 @bind proportiontoB2_ NumberField(0:0.01:1, default=0.5)
 
-# ╔═╡ b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
-md"## ability settings
-
-here is where we can change the ability settings available for the model.
-
-"
-
-# ╔═╡ 6c731bce-6fef-4d69-a64c-65ecbb08eee9
-@bind scaleall NumberField(0:0.1:10, default=1)
-
-# ╔═╡ b706f625-6c87-4681-9cdf-172ca30255fc
-@bind lowmax NumberField(0:200, default=55)
-
-# ╔═╡ e6b9420a-5187-4cdf-9f15-a60fd6855a8f
-@bind lowmid NumberField(0:200, default=50)
-
-# ╔═╡ 0e097004-9b9c-4517-ad2f-aa6840226158
-@bind lowsteep NumberField(0:0.01:2, default=0.1)
-
-# ╔═╡ de1ac2da-61a5-49ff-a0be-e0d05ccfdf5f
-@bind midmax NumberField(0:200, default=80)
-
-# ╔═╡ b8fe0439-61fc-4634-93e8-d0aa05a87035
-@bind midmid NumberField(0:200, default=50)
-
-# ╔═╡ 52bc5a38-926b-4311-8868-1d32a6f21408
-@bind midsteep NumberField(0:0.01:2, default=0.1)
-
-# ╔═╡ d805916b-8c7a-47b4-8ea8-0ad782c3148d
-@bind highmax NumberField(0:200, default=100)
-
-# ╔═╡ 6c1a19b1-a66a-4b63-8413-063dc883537d
-@bind highmid NumberField(0:200, default=50)
-
-# ╔═╡ 053e5999-291d-4638-a066-942d2a61f0e9
-@bind highsteep NumberField(0:0.01:2, default=0.1)
-
-# ╔═╡ 1350ddba-a676-45c7-8552-d13b607610cd
-md"## variables"
-
-# ╔═╡ 65594757-7ded-4552-97cb-695eb82cf4c8
-# total number of opportunities available to distribute
-totalopportunities = totalopportunities_
-
-# ╔═╡ e94755e2-b707-4a16-a751-9e5cc04f1b29
-policy1_ = proportiontoB1_ * totalopportunities
-
-# ╔═╡ 6128347f-8029-45ff-a47a-2ef21f090561
-policy2_ = proportiontoB2_ * totalopportunities
-
-# ╔═╡ d861ef63-4ac2-46dc-9c6f-7221393b7277
-# distribution under policy 1
-policy1 = ((totalopportunities - policy1_) * discountA_, policy1_ )
-
-# ╔═╡ f84727eb-011d-4679-912a-beb99afb25bc
-# distribution under policy 2
-policy2 = ((totalopportunities - policy2_) * discountA_, policy2_)
-
-# ╔═╡ 5f37b1e0-eb9a-4c06-90bb-f67bf0da1f2e
-baseline = (baselineA_,baselineB_)
-
-# ╔═╡ ec526f2a-a990-4ea5-b1ba-43a0c56cef60
-totalops = totalopportunities + baseline[1] + baseline[2]
-
-# ╔═╡ b1893f3e-6cd9-417b-96d7-5f53c0b3cca8
-dt1 = (policy1[1] + baseline[1],policy1[2] + baseline[2])
-
-# ╔═╡ 9ca98b60-7953-4bfa-86e0-b449d154b98d
-dt2 = (policy2[1] + baseline[1],policy2[2] + baseline[2])
-
-# ╔═╡ 2eed9e35-394a-4ad9-9c39-290065432cc2
-function tr(t)
-	round(t; digits=2)
-end
+# ╔═╡ 668f0185-6f4e-4497-b5a4-9dc33da4113d
+md" the following is a plot of A's weighted interests, B's weighted interests, and the sum of their interests. this plot basically shows how policy 1 compares with alternative policies from the point of view of balancing the interests of A and B. if the balance is above 0 and to the left of the current policy line, this typically means A will have a claim against the policy. if it is above 0 and to the right, this trpically means B will have a claim against the policy." 
 
 # ╔═╡ 4f81db11-2811-4008-b09c-56335160d0c9
-md"## pairwise comparison of policies"
+md"## pairwise comparison of policies (basic case)"
 
 # ╔═╡ c70a0cb0-0900-402b-90f4-c4e254e2f8d5
-# we'll compare policies with a function 
+md" one of the main things we want to do is compare some policy p1 with another policy p2. indeed for many purposes what we want is to compare all the other policies against our policy1. so we define a function that compares some policy just given as a proportion of the total opportunities given to B against policy1. we can then use this function to get things like the unweighted and weighted diffs"
+
+# ╔═╡ e92a100d-d61d-43c3-8190-9fbcb07c5c71
+md"the following plots the unweighted interests of A and B in alternative policies over policy 1:"
+
+# ╔═╡ 6094125e-4e0d-4a6a-8118-0b339bfab678
+md"here are the functions for getting the weighted interests. these are plotted above:"
+
+# ╔═╡ 5808ab27-f325-402a-9859-7a985c557ace
+# ╠═╡ disabled = true
+#=╠═╡
+# this one just works out what the 
+sum0 = [getreporthelper(i) for i in range(0, 1, length=101) if isapprox(getwsum2D(i),0, atol=0.00001)] 
+  ╠═╡ =#
 
 # ╔═╡ 70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
-md"### ... generalised 
+md"## pairwise comparison of policies (advanced)
 
-we are now going to compare all policies at each available total level of opportunities. when we pick a policy, it will be a policy that distributes some total number of opportunities in some way. we will compare against policies that distribute different numbers of opportunities in different ways. our z axis in our plot is going to be the total number of opportunities distributed. our x axis will be the different chances for B for different distributions of the same total. and our y axis is going to be, for now, B's weighted interest in the alternative policy (relative to the policy chosen). "
+we are now going to compare all policies at each available total level of opportunities. when we pick a policy, it will be a policy that distributes some total number of opportunities in some way. we will compare against policies that distribute different numbers of opportunities in different ways. 
+
+our z axis in our plot is going to be the total number of opportunities distributed. our x axis will be the different chances for B for different distributions of the same total. and our y axis is going to be, for now, B's weighted interest in the alternative policy (relative to the policy chosen). "
+
+# ╔═╡ 5c02c1be-6b9e-4c67-b383-0ab1429b33a4
+scaled = 1
+
+# ╔═╡ de6e82e1-8c51-4986-930e-a193e2cd1218
+proportiontoB1_
 
 # ╔═╡ 10bb2145-4069-4e88-8852-bd2d892a2627
 md"## finding the fair policies
@@ -268,6 +219,119 @@ function looselyfairgrouped(xs)
 end
 
 
+
+# ╔═╡ b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
+md"## ability settings
+
+here is where we can change the ability settings available for the model.
+
+"
+
+# ╔═╡ 778a0587-959b-4ced-baff-c95defa65a27
+# ╠═╡ disabled = true
+#=╠═╡
+function ability()
+	plot(oprange, [A(i) for i in oprange], label=false)
+	plot!(oprange, [B(i) for i in oprange], label=false)
+	# Add titles and labels
+	title!("ability")
+	xlabel!("opportunities")
+	ylabel!("outcomes")
+	vline!([policy1[1]+baseline[1]], label=false, color=:blue)
+	vline!([policy1[2]+baseline[2]], label=false, color=:green)
+end
+  ╠═╡ =#
+
+# ╔═╡ 6c731bce-6fef-4d69-a64c-65ecbb08eee9
+@bind scaleall NumberField(0:0.1:10, default=1)
+
+# ╔═╡ b706f625-6c87-4681-9cdf-172ca30255fc
+@bind lowmax NumberField(0:200, default=55)
+
+# ╔═╡ e6b9420a-5187-4cdf-9f15-a60fd6855a8f
+@bind lowmid NumberField(0:200, default=50)
+
+# ╔═╡ 0e097004-9b9c-4517-ad2f-aa6840226158
+@bind lowsteep NumberField(0:0.01:2, default=0.1)
+
+# ╔═╡ de1ac2da-61a5-49ff-a0be-e0d05ccfdf5f
+@bind midmax NumberField(0:200, default=80)
+
+# ╔═╡ b8fe0439-61fc-4634-93e8-d0aa05a87035
+@bind midmid NumberField(0:200, default=50)
+
+# ╔═╡ 52bc5a38-926b-4311-8868-1d32a6f21408
+@bind midsteep NumberField(0:0.01:2, default=0.1)
+
+# ╔═╡ d805916b-8c7a-47b4-8ea8-0ad782c3148d
+@bind highmax NumberField(0:200, default=100)
+
+# ╔═╡ 6c1a19b1-a66a-4b63-8413-063dc883537d
+@bind highmid NumberField(0:200, default=50)
+
+# ╔═╡ 053e5999-291d-4638-a066-942d2a61f0e9
+@bind highsteep NumberField(0:0.01:2, default=0.1)
+
+# ╔═╡ 1350ddba-a676-45c7-8552-d13b607610cd
+md"## model settings
+
+many, but not all, of the model settings live here. i've tried to separate the UI from the model settings. so in many cases the settings set in the UI appear here.
+
+"
+
+# ╔═╡ 65594757-7ded-4552-97cb-695eb82cf4c8
+# total number of opportunities available to distribute
+totalopportunities = totalopportunities_
+
+# ╔═╡ bab019fe-911d-4357-94dc-92bba228b5c2
+totalopportunities * scaled
+
+# ╔═╡ e94755e2-b707-4a16-a751-9e5cc04f1b29
+policy1_ = proportiontoB1_ * totalopportunities
+
+# ╔═╡ d861ef63-4ac2-46dc-9c6f-7221393b7277
+# distribution under policy 1
+policy1 = ((totalopportunities - policy1_) * discountA_, policy1_ )
+
+# ╔═╡ 6128347f-8029-45ff-a47a-2ef21f090561
+policy2_ = proportiontoB2_ * totalopportunities
+
+# ╔═╡ f84727eb-011d-4679-912a-beb99afb25bc
+# distribution under policy 2
+policy2 = ((totalopportunities - policy2_) * discountA_, policy2_)
+
+# ╔═╡ 5f37b1e0-eb9a-4c06-90bb-f67bf0da1f2e
+baseline = (baselineA_,baselineB_)
+
+# ╔═╡ b1893f3e-6cd9-417b-96d7-5f53c0b3cca8
+dt1 = (policy1[1] + baseline[1],policy1[2] + baseline[2])
+
+# ╔═╡ 50b0d101-3c19-4272-b91b-07122d2bf315
+scaledistribution = (dt1[1] * scaled, dt1[2] * scaled)
+
+# ╔═╡ 9ca98b60-7953-4bfa-86e0-b449d154b98d
+dt2 = (policy2[1] + baseline[1],policy2[2] + baseline[2])
+
+# ╔═╡ 2eed9e35-394a-4ad9-9c39-290065432cc2
+function tr(t)
+	round(t; digits=2)
+end
+
+# ╔═╡ e552a0a9-0f56-4456-8395-f12ef677835c
+# unit cost of an opportunity 
+unitcost = unitcost_
+
+# ╔═╡ 1aea36b9-3736-442f-abf1-eeb5654b201e
+# social baseline
+sbl = 1000
+
+# ╔═╡ 0cde042c-6e7a-4c7a-9f87-8146f0995eff
+# proportion for top ranked (set above)
+pptop = toplifeprospects_
+
+# ╔═╡ 4e1cbb11-306a-4eda-8d06-d11f73ae162e
+# proportion for bottom ranked (set above)
+ppbot = bottomlifeprospects_
 
 # ╔═╡ ef84633d-cc13-4573-9203-940fb2a14f35
 md"## model engine"
@@ -350,6 +414,19 @@ end
 # ╔═╡ 6a1a187e-2f6c-4acf-98e6-744cbb1f5873
 @bind B Select([highability,midability,lowability], default=highability)
 
+# ╔═╡ 3803eba4-a40d-4849-888f-2f3cd0ecc7d1
+begin
+	plot(range(0,100), [highability(i) for i in range(0,100)], label="high average")
+	plot!(range(0,100), [midability(i) for i in range(0,100)], label="mid average" )
+	plot!(range(0,100), [lowability(i) for i in range(0,100)], label="low average" )
+	# Add titles and labels
+	title!("ability")
+	xlabel!("opportunities")
+	ylabel!("outcomes")
+	vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
+	vline!([policy1[2]+baseline[2]], label="B's opportunities", color=:green)
+end
+
 # ╔═╡ 965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
 # Function to model educational outcomes for high ability
 function educational_outcome_high(n)
@@ -376,38 +453,6 @@ function educational_outcome_low(n)
     return distribution
 end
 
-# ╔═╡ 7c36cbdc-8181-4388-a679-5101da90bc71
-oprange = 0:100
-
-# ╔═╡ 778a0587-959b-4ced-baff-c95defa65a27
-function ability()
-	plot(oprange, [A(i) for i in oprange], label=false)
-	plot!(oprange, [B(i) for i in oprange], label=false)
-	# Add titles and labels
-	title!("ability")
-	xlabel!("opportunities")
-	ylabel!("outcomes")
-	vline!([policy1[1]+baseline[1]], label=false, color=:blue)
-	vline!([policy1[2]+baseline[2]], label=false, color=:green)
-end
-
-# ╔═╡ 3803eba4-a40d-4849-888f-2f3cd0ecc7d1
-begin
-	plot(oprange, [highability(i) for i in oprange], label="high average")
-	plot!(oprange, [midability(i) for i in oprange], label="mid average" )
-	plot!(oprange, [lowability(i) for i in oprange], label="low average" )
-	# Add titles and labels
-	title!("ability")
-	xlabel!("opportunities")
-	ylabel!("outcomes")
-	vline!([policy1[1]+baseline[1]], label="A's opportunities", color=:blue)
-	vline!([policy1[2]+baseline[2]], label="B's opportunities", color=:green)
-end
-
-# ╔═╡ e552a0a9-0f56-4456-8395-f12ef677835c
-# unit cost of an opportunity 
-unitcost = unitcost_
-
 # ╔═╡ 5ccfe20e-cf68-4413-a833-3154437a0a6f
 function edubenefits(n)
 	L = 200 # Maximum outcome
@@ -426,18 +471,6 @@ function benefits()
 	ylabel!("benefits")
 
 end
-
-# ╔═╡ 1aea36b9-3736-442f-abf1-eeb5654b201e
-# social baseline
-sbl = 1000
-
-# ╔═╡ 0cde042c-6e7a-4c7a-9f87-8146f0995eff
-# proportion for top ranked (set above)
-pptop = toplifeprospects_
-
-# ╔═╡ 4e1cbb11-306a-4eda-8d06-d11f73ae162e
-# proportion for bottom ranked (set above)
-ppbot = bottomlifeprospects_
 
 # ╔═╡ 500ea6f5-9e50-4a93-9832-dd48e3727eb0
 # function to get the average outcomes on a distribution
@@ -459,9 +492,6 @@ function scalebenefits(s,e)
 	return (scaledsbl + scaledben)
 end
 	
-
-# ╔═╡ e90cd186-946e-4600-99bc-3c8628d5dc2c
-scalebenefits(100,edubenefits(150))
 
 # ╔═╡ dd77135b-c68d-486d-9333-249475176d11
 # function for calculating life prospects given chances, average outcomes, and cost of provision 
@@ -608,6 +638,228 @@ function runmodel(dt1,dt2) # d1 is the baseline
 	)
 end
 
+# ╔═╡ 2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
+# compare some policy x, against policy.
+
+function getreporthelper(x) 
+   proportiontoB = x * totalopportunities 
+   proportiontoA = ((1 - x) * discountA_) * totalopportunities
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2] 
+   report = runmodel(dt1,(totaltoA,totaltoB))
+   return (report) 
+end
+
+# ╔═╡ 1cb27925-26f4-44e6-ad00-05ddf647088e
+# get the unweighted 
+function getuwsum2D(x) 
+   report = getreporthelper(x)
+   return report.uw_sum
+end
+
+# ╔═╡ 88306a77-c85c-4dde-861e-f7ace7c0115c
+function getuwdiffsA(x) 
+   report = getreporthelper(x)
+   return report.uw_diffs[1]
+end
+
+# ╔═╡ 92f08b2f-632a-4c2d-bbb0-2058d4dcf923
+function getuwdiffsB(x) 
+   report = getreporthelper(x)
+   return report.uw_diffs[2]
+end
+
+# ╔═╡ acf6e66a-79c6-4e29-9890-edc2c8b5adc5
+function getwsum2D(x) 
+   report = getreporthelper(x)
+   return report.w_sum
+end
+
+# ╔═╡ a7db1f6f-4350-4fef-bd5b-fae0de2421bf
+function getwdiffsA(x) 
+   report = getreporthelper(x)
+   return report.w_diffs[1]
+end
+
+# ╔═╡ 8c88a658-512c-4a72-a252-5a245b3e791d
+function getwdiffsB(x) 
+   report = getreporthelper(x)
+   return report.w_diffs[2]
+end
+
+# ╔═╡ 7d10e574-c928-4104-9d18-b897021d7a5f
+# we need a function from x and y where x is the % of the total B gets and y is total number of opportunities to be distributed. it returns the sum diff 
+
+function getwsum3Dvar(x,y) 
+   proportiontoB = x * y 
+   proportiontoA = ((1 - x) * discountA_) * y 
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2] 
+   report = runmodel(scaledistribution,(totaltoA,totaltoB))
+   return report.w_sum
+end
+
+# ╔═╡ 82cfcc8b-9aa6-4848-8a44-72a805218302
+function getwdiffA3D(x,y) 
+   proportiontoB = x * y 
+   proportiontoA = ((1 - x) * discountA_) * y 
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2] 
+   report = runmodel(scaledistribution,(totaltoA,totaltoB))
+   return report.w_diffs[1]
+end
+
+# ╔═╡ 24dc2d54-a377-4313-9b29-62af2d6d3136
+function getwdiffB3D(x,y) 
+   proportiontoB = x * y 
+   proportiontoA = ((1 - x) * discountA_) * y 
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2] 
+   report = runmodel(scaledistribution,(totaltoA,totaltoB))
+   return report.w_diffs[2]
+end
+
+# ╔═╡ a328a25e-c9aa-4dd0-8b24-b7ff2c642eb2
+begin 
+
+x_vals = range(0, 1, step=0.05)
+y_vals = range(0, totalopportunities) 
+
+plot(x_vals, y_vals, getwdiffA3D, label="A", st=:wireframe,) 
+plot!(x_vals, y_vals, getwdiffA3D, label="A", st=:surface, opacity=0.4) 
+plot!(x_vals, y_vals, getwdiffB3D, label="B", st=:wireframe,) 
+plot!(x_vals, y_vals, getwdiffB3D, label="B", st=:surface, opacity=0.4)
+plot!(x_vals, y_vals, getwsum3Dvar, label="Balance", st=:wireframe,) 
+plot!(x_vals, y_vals, getwsum3Dvar, label="Balance", st=:surface,  opacity=0.8)
+scatter!([proportiontoB1_],[(totalopportunities * scaled)], [getwsum3Dvar(proportiontoB1_,(totalopportunities * scaled))], marker=:cross, 
+          markersize=2, label=false)
+end
+
+# ╔═╡ d342d102-da15-4e0f-8054-bd54d2def8e8
+function getreporthelper3D(x,y) 
+   proportiontoB = x * totalopportunities 
+   proportiontoA = ((1 - x) * discountA_) * totalopportunities
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2]  
+   proportiontoBy = y * totalopportunities 
+   proportiontoAy = ((1 - y) * discountA_) * totalopportunities
+   totaltoAy = proportiontoAy + baseline[1] 
+   totaltoBy = proportiontoBy + baseline[2] 
+   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
+   return (report) 
+end
+
+# ╔═╡ 2c4779c5-238d-4328-aac6-cc5fcbe8f6b3
+function getwsum3D(x,y) 
+   report = getreporthelper3D(x,y)
+   return report.w_sum
+end
+
+# ╔═╡ fcd7edcf-4df1-47cf-98f2-190a921c3606
+begin 
+plot(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed Surface", st=:wireframe)
+plot!(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
+end
+
+# ╔═╡ 97d1e787-cf26-451b-a027-4eefe916a795
+## this function gets the strictly fair policies
+
+getstrictlyfair = [x for x in range(0, 1, length=101) if all(z -> z < 0.0000001, map(z -> getwsum3D(z,x),range(0, 1, length=101)))]
+
+# ╔═╡ f45d9483-ac5e-4731-a2c1-acb34a8c3d7b
+## this function gets the loosely fair policies
+
+getlooselyfair = [x for x in range(0, 1, step=0.01) if all(z -> z < 0.002, map(z -> getwsum3D(z,x),range(0, 1, step=0.01)))]
+
+# ╔═╡ a1d54e9b-9af6-4a1d-8b88-7beb098e5df9
+glfgroups = split_into_groups(getlooselyfair,0.01)
+
+# ╔═╡ 716e0ea5-1097-4e93-bbe6-f7a0a72491a2
+begin
+	plot(range(0, 1, length=100), getwdiffsA, title="weighted interests", label="A's interests", palette = :Dark2_5)
+	plot!(range(0, 1, length=100), getwdiffsB, label="B's interests")
+	plot!(range(0, 1, length=100), getwsum2D, label="balance")
+	vline!([proportiontoB1_], label="current policy", color=:grey)
+	vspan!([[minimum(i),maximum(i)] for i in glfgroups], label=false, color="light blue", opacity=0.2)
+end
+
+# ╔═╡ e82b4050-8a19-4dcf-bd9f-32b19971458f
+begin
+	plot(range(0, 1, length=100), getuwdiffsA, title="unweighted interests", label="A's interests", palette = :Dark2_5)
+	plot!(range(0, 1, length=100), getuwdiffsB, label="B's interests")
+	plot!(range(0, 1, length=100), getwsum2D, label="balance")
+	vline!([proportiontoB1_], label="current policy", color=:grey)
+	vspan!([[minimum(i),maximum(i)] for i in glfgroups], label=false, color="light blue", opacity=0.2)
+end
+
+# ╔═╡ fa988726-e491-46e9-9478-92621ff30e77
+function getwdiffsB3D(x,y) 
+   report = getreporthelper3D(x,y)
+   return report.w_diffs[2]
+end
+
+# ╔═╡ fa934ffa-a874-49df-a785-34354d26f2b0
+begin 
+plot(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:wireframe)
+plot!(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
+end
+
+# ╔═╡ fe3dcaee-a713-4aab-bfee-a41573c1291f
+# this one just works out what the 
+sum03D = [getreporthelper3D(x,y) for x in range(0, 1, length=101), y in range(0, 1, length=101) if isapprox(getwsum3D(x,y),0, atol=0.00001)] 
+
+# ╔═╡ cf430baf-e199-4060-9128-ccc359783e58
+# this is the mother of all functions 
+# it compares policies considered as proportion/total pairs 
+# it compares one such against another such 
+
+function getreporthelper3DALL((x1,x2),(y1,y2)) 
+   proportiontoB = x1 * x2
+   proportiontoA = ((1 - x1) * discountA_) * x2
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2]  
+   proportiontoBy = y1 * y2
+   proportiontoAy = ((1 - y1) * discountA_) * y2
+   totaltoAy = proportiontoAy + baseline[1] 
+   totaltoBy = proportiontoBy + baseline[2] 
+   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
+   return (report) 
+end
+
+# ╔═╡ 1d4d1957-c620-4150-8250-f886e5beb2be
+function getwsum3DALL((x1,x2),(y1,y2))
+   report = getreporthelper3DALL((x1,x2),(y1,y2))
+   return report.w_sum
+end
+
+# ╔═╡ 2a9cd28b-a55e-4db3-b472-ea536da0213b
+function getstrictlyfairALL()
+	thexs1 = range(0, 1, step=0.05)
+    thexs2 = range(0,totalopportunities)
+    theys = [(y1,y2) for y1 in range(0, 1, step=0.05), y2 in range(0,totalopportunities)] 
+    return([(x1,x2) for x1 in thexs1, x2 in thexs2 if all(y -> y < 0.0000001,(map(z -> getwsum3DALL(z,(x1,x2)),theys)))])
+end
+
+# ╔═╡ 7a1229ba-67b8-49af-9392-e7ec384068ba
+# ╠═╡ disabled = true
+#=╠═╡
+getstrictlyfairALL()
+  ╠═╡ =#
+
+# ╔═╡ 60c5173d-efa0-40c1-8afc-bb189a6ae7de
+function getlooselyfairALL()
+	thexs1 = range(0, 1, step=0.05)
+    thexs2 = range(0,totalopportunities)
+    theys = [(y1,y2) for y1 in range(0, 1, step=0.05), y2 in range(0,totalopportunities)] 
+    return([(x1,x2) for x1 in thexs1, x2 in thexs2 if all(y -> y < 0.002,(map(z -> getwsum3DALL(z,(x1,x2)),theys)))])
+end
+
+# ╔═╡ 60e940d8-df1e-4d4b-b894-9c6897479bac
+# ╠═╡ disabled = true
+#=╠═╡
+getlooselyfairALL()
+  ╠═╡ =#
+
 # ╔═╡ 99a7a989-c37b-46d8-9d72-87d67b9d5d9f
 report1 = runmodel(dt1,dt2)
 
@@ -681,204 +933,11 @@ here is an extended report:
 " 
 
 
-# ╔═╡ 2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
-function getreporthelper(x) 
-   proportiontoB = x * totalopportunities 
-   proportiontoA = ((1 - x) * discountA_) * totalopportunities
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2] 
-   report = runmodel(dt1,(totaltoA,totaltoB))
-   return (report) 
-end
-
-# ╔═╡ acf6e66a-79c6-4e29-9890-edc2c8b5adc5
-function getwsum2D(x) 
-   report = getreporthelper(x)
-   return report.w_sum
-end
-
-# ╔═╡ 5808ab27-f325-402a-9859-7a985c557ace
-# this one just works out what the 
-sum0 = [getreporthelper(i) for i in range(0, 1, length=101) if isapprox(getwsum2D(i),0, atol=0.00001)] 
-
-# ╔═╡ 1cb27925-26f4-44e6-ad00-05ddf647088e
-function getuwsum2D(x) 
-   report = getreporthelper(x)
-   return report.uw_sum
-end
-
-# ╔═╡ 88306a77-c85c-4dde-861e-f7ace7c0115c
-function getuwdiffsA(x) 
-   report = getreporthelper(x)
-   return report.uw_diffs[1]
-end
-
-# ╔═╡ 92f08b2f-632a-4c2d-bbb0-2058d4dcf923
-function getuwdiffsB(x) 
-   report = getreporthelper(x)
-   return report.uw_diffs[2]
-end
-
-# ╔═╡ a7db1f6f-4350-4fef-bd5b-fae0de2421bf
-function getwdiffsA(x) 
-   report = getreporthelper(x)
-   return report.w_diffs[1]
-end
-
-# ╔═╡ 8c88a658-512c-4a72-a252-5a245b3e791d
-function getwdiffsB(x) 
-   report = getreporthelper(x)
-   return report.w_diffs[2]
-end
-
-# ╔═╡ 7d10e574-c928-4104-9d18-b897021d7a5f
-# we need a function from x and y where x is the % of the total B gets and y is total number of opportunities to be distributed. it returns the sum diff 
-
-function getwsum3Dvar(x,y) 
-   proportiontoB = x * y 
-   proportiontoA = ((1 - x) * discountA_) * y 
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2] 
-   report = runmodel(dt1,(totaltoA,totaltoB))
-   return report.w_sum
-end
-
-# ╔═╡ a328a25e-c9aa-4dd0-8b24-b7ff2c642eb2
-begin 
-
-# Step 1: Extract x, y, z values
-x_vals = range(0, 1, length=100)
-y_vals = range(0, totalopportunities, length=100)
-
-# scatter(x_vals, y_vals, z_vals, xlabel="X-axis", ylabel="Y-axis", zlabel="Z-axis", camera=(45, 25))
-plot(x_vals, y_vals, getwsum3Dvar, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, zlim=(-0.04, 0.04))
-plot!(x_vals, y_vals, getwsum3Dvar, label="Smoothed Surface", st=:wireframe, zlim=(-0.04, 0.04))
-end
-
-# ╔═╡ d342d102-da15-4e0f-8054-bd54d2def8e8
-function getreporthelper3D(x,y) 
-   proportiontoB = x * totalopportunities 
-   proportiontoA = ((1 - x) * discountA_) * totalopportunities
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2]  
-   proportiontoBy = y * totalopportunities 
-   proportiontoAy = ((1 - y) * discountA_) * totalopportunities
-   totaltoAy = proportiontoAy + baseline[1] 
-   totaltoBy = proportiontoBy + baseline[2] 
-   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
-   return (report) 
-end
-
-# ╔═╡ 2c4779c5-238d-4328-aac6-cc5fcbe8f6b3
-function getwsum3D(x,y) 
-   report = getreporthelper3D(x,y)
-   return report.w_sum
-end
-
-# ╔═╡ fcd7edcf-4df1-47cf-98f2-190a921c3606
-begin 
-plot(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed Surface", st=:wireframe)
-plot!(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
-end
-
-# ╔═╡ 97d1e787-cf26-451b-a027-4eefe916a795
-## this function gets the strictly fair policies
-
-getstrictlyfair = [x for x in range(0, 1, length=101) if all(z -> z < 0.0000001, map(z -> getwsum3D(z,x),range(0, 1, length=101)))]
-
-# ╔═╡ f45d9483-ac5e-4731-a2c1-acb34a8c3d7b
-## this function gets the loosely fair policies
-
-getlooselyfair = [x for x in range(0, 1, step=0.01) if all(z -> z < 0.002, map(z -> getwsum3D(z,x),range(0, 1, step=0.01)))]
-
-# ╔═╡ a1d54e9b-9af6-4a1d-8b88-7beb098e5df9
-glfgroups = split_into_groups(getlooselyfair,0.01)
-
-# ╔═╡ e82b4050-8a19-4dcf-bd9f-32b19971458f
-begin
-	plot(range(0, 1, length=100), getuwdiffsA, title="unweighted interests", label="A's interests", palette = :Dark2_5)
-	plot!(range(0, 1, length=100), getuwdiffsB, label="B's interests")
-	plot!(range(0, 1, length=100), getwsum2D, label="balance")
-	vline!([proportiontoB1_], label="current policy", color=:grey)
-	vspan!([[minimum(i),maximum(i)] for i in glfgroups], label=false, color="light blue", opacity=0.2)
-end
-
-# ╔═╡ 716e0ea5-1097-4e93-bbe6-f7a0a72491a2
-begin
-	plot(range(0, 1, length=100), getwdiffsA, title="weighted interests", label="A's interests", palette = :Dark2_5)
-	plot!(range(0, 1, length=100), getwdiffsB, label="B's interests")
-	plot!(range(0, 1, length=100), getwsum2D, label="balance")
-	vline!([proportiontoB1_], label="current policy", color=:grey)
-	vspan!([[minimum(i),maximum(i)] for i in glfgroups], label=false, color="light blue", opacity=0.2)
-end
-
-# ╔═╡ fa988726-e491-46e9-9478-92621ff30e77
-function getwdiffsB3D(x,y) 
-   report = getreporthelper3D(x,y)
-   return report.w_diffs[2]
-end
-
-# ╔═╡ fa934ffa-a874-49df-a785-34354d26f2b0
-begin 
-plot(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:wireframe)
-plot!(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
-end
-
-# ╔═╡ fe3dcaee-a713-4aab-bfee-a41573c1291f
-# this one just works out what the 
-sum03D = [getreporthelper3D(x,y) for x in range(0, 1, length=101), y in range(0, 1, length=101) if isapprox(getwsum3D(x,y),0, atol=0.00001)] 
-
-# ╔═╡ cf430baf-e199-4060-9128-ccc359783e58
-# this is the mother of all functions 
-# it compares policies considered as proportion/total pairs 
-# it compares one such against another such 
-
-function getreporthelper3DALL((x1,x2),(y1,y2)) 
-   proportiontoB = x1 * x2
-   proportiontoA = ((1 - x1) * discountA_) * x2
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2]  
-   proportiontoBy = y1 * y2
-   proportiontoAy = ((1 - y1) * discountA_) * y2
-   totaltoAy = proportiontoAy + baseline[1] 
-   totaltoBy = proportiontoBy + baseline[2] 
-   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
-   return (report) 
-end
-
-# ╔═╡ 1d4d1957-c620-4150-8250-f886e5beb2be
-function getwsum3DALL((x1,x2),(y1,y2))
-   report = getreporthelper3DALL((x1,x2),(y1,y2))
-   return report.w_sum
-end
-
-# ╔═╡ 2a9cd28b-a55e-4db3-b472-ea536da0213b
-function getstrictlyfairALL()
-	thexs1 = range(0, 1, step=0.05)
-    thexs2 = range(0,totalopportunities)
-    theys = [(y1,y2) for y1 in range(0, 1, step=0.05), y2 in range(0,totalopportunities)] 
-    return([(x1,x2) for x1 in thexs1, x2 in thexs2 if all(y -> y < 0.0000001,(map(z -> getwsum3DALL(z,(x1,x2)),theys)))])
-end
-
-# ╔═╡ 7a1229ba-67b8-49af-9392-e7ec384068ba
-getstrictlyfairALL()
-
-# ╔═╡ 60c5173d-efa0-40c1-8afc-bb189a6ae7de
-function getlooselyfairALL()
-	thexs1 = range(0, 1, step=0.05)
-    thexs2 = range(0,totalopportunities)
-    theys = [(y1,y2) for y1 in range(0, 1, step=0.05), y2 in range(0,totalopportunities)] 
-    return([(x1,x2) for x1 in thexs1, x2 in thexs2 if all(y -> y < 0.002,(map(z -> getwsum3DALL(z,(x1,x2)),theys)))])
-end
-
-# ╔═╡ 60e940d8-df1e-4d4b-b894-9c6897479bac
-getlooselyfairALL()
-
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
+PlotlyBase = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -886,7 +945,7 @@ QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 
 [compat]
 Distributions = "~0.25.113"
-PGFPlotsX = "~1.6.2"
+PlotlyBase = "~0.8.19"
 Plots = "~1.40.8"
 PlutoUI = "~0.7.60"
 QuadGK = "~2.11.1"
@@ -898,7 +957,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.5"
 manifest_format = "2.0"
-project_hash = "24489e1ff85e1f16b014e9e71addcbc8de285c14"
+project_hash = "753424069f4fd6365f40619f32dc0adebcabe75b"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -911,11 +970,6 @@ deps = ["PtrArrays", "Random"]
 git-tree-sha1 = "9876e1e164b144ca45e9e3198d0b689cadfed9ff"
 uuid = "66dad0bd-aa9a-41b7-9441-69ab47430ed8"
 version = "1.1.3"
-
-[[deps.ArgCheck]]
-git-tree-sha1 = "a3a402a35a2f7e0b87828ccabbd5ebfbebe356b4"
-uuid = "dce04be8-c92d-5529-be00-80e4d2c0e197"
-version = "2.3.0"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -1015,11 +1069,6 @@ git-tree-sha1 = "1d0a14036acb104d9e89698bd408f63ab58cdc82"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 version = "0.18.20"
 
-[[deps.DataValueInterfaces]]
-git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
-uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
-version = "1.0.0"
-
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -1029,12 +1078,6 @@ deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "fc173b380865f70627d7dd1190dc2fce6cc105af"
 uuid = "ee1fde0b-3d02-5ea6-8484-8dfef6360eab"
 version = "1.14.10+0"
-
-[[deps.DefaultApplication]]
-deps = ["InteractiveUtils"]
-git-tree-sha1 = "c0dfa5a35710a193d83f03124356eef3386688fc"
-uuid = "3f0dd361-4fe0-5fc6-8523-80b14ec94d85"
-version = "1.1.0"
 
 [[deps.DelimitedFiles]]
 deps = ["Mmap"]
@@ -1228,11 +1271,6 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.2.2"
-
-[[deps.IteratorInterfaceExtensions]]
-git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
-uuid = "82899510-4779-5014-852e-03e436cf321d"
-version = "1.0.0"
 
 [[deps.JLFzf]]
 deps = ["Pipe", "REPL", "Random", "fzf_jll"]
@@ -1517,24 +1555,6 @@ git-tree-sha1 = "949347156c25054de2db3b166c52ac4728cbad65"
 uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
 version = "0.11.31"
 
-[[deps.PGFPlotsX]]
-deps = ["ArgCheck", "Dates", "DefaultApplication", "DocStringExtensions", "MacroTools", "OrderedCollections", "Parameters", "Requires", "Tables"]
-git-tree-sha1 = "e5df51ffc01f8771d94c8db2d164be1f6927849c"
-uuid = "8314cec4-20b6-5062-9cdb-752b83310925"
-version = "1.6.2"
-
-    [deps.PGFPlotsX.extensions]
-    ColorsExt = "Colors"
-    ContourExt = "Contour"
-    MeasurementsExt = "Measurements"
-    StatsBaseExt = "StatsBase"
-
-    [deps.PGFPlotsX.weakdeps]
-    Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
-    Contour = "d38c429a-6771-53c6-b99e-75d170b6e991"
-    Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
-    StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-
 [[deps.Pango_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "e127b609fb9ecba6f201ba7ab753d5a605d53801"
@@ -1580,6 +1600,12 @@ deps = ["ColorSchemes", "Colors", "Dates", "PrecompileTools", "Printf", "Random"
 git-tree-sha1 = "3ca9a356cd2e113c420f2c13bea19f8d3fb1cb18"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
 version = "1.4.3"
+
+[[deps.PlotlyBase]]
+deps = ["ColorSchemes", "Dates", "DelimitedFiles", "DocStringExtensions", "JSON", "LaTeXStrings", "Logging", "Parameters", "Pkg", "REPL", "Requires", "Statistics", "UUIDs"]
+git-tree-sha1 = "56baf69781fc5e61607c3e46227ab17f7040ffa2"
+uuid = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
+version = "0.8.19"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "PrecompileTools", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "TOML", "UUIDs", "UnicodeFun", "UnitfulLatexify", "Unzip"]
@@ -1813,18 +1839,6 @@ version = "7.2.1+1"
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
-
-[[deps.TableTraits]]
-deps = ["IteratorInterfaceExtensions"]
-git-tree-sha1 = "c06b2f539df1c6efa794486abfb6ed2022561a39"
-uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
-version = "1.0.1"
-
-[[deps.Tables]]
-deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "OrderedCollections", "TableTraits"]
-git-tree-sha1 = "598cd7c1f68d1e205689b1c2fe65a9f85846f297"
-uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.12.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -2225,54 +2239,35 @@ version = "1.4.1+1"
 # ╟─53444608-183c-4bc4-a619-cf0704515a77
 # ╟─97bad24c-f88a-4709-9130-7187536fb99b
 # ╟─b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
-# ╠═33be0c01-b712-406e-8827-1c194f2fa863
-# ╠═e93e06f4-dd06-4a10-967d-9dab8d30e198
-# ╠═e94755e2-b707-4a16-a751-9e5cc04f1b29
-# ╠═3d595998-60e4-404e-94ed-1e89f6de26ae
-# ╠═a17bff12-2789-43f5-ab04-25e5e021fda4
-# ╠═6128347f-8029-45ff-a47a-2ef21f090561
+# ╟─33be0c01-b712-406e-8827-1c194f2fa863
+# ╟─e93e06f4-dd06-4a10-967d-9dab8d30e198
+# ╟─3d595998-60e4-404e-94ed-1e89f6de26ae
+# ╟─a17bff12-2789-43f5-ab04-25e5e021fda4
+# ╟─668f0185-6f4e-4497-b5a4-9dc33da4113d
+# ╟─716e0ea5-1097-4e93-bbe6-f7a0a72491a2
 # ╟─722f971d-d8a7-4ea8-81e9-09bba8db8a90
-# ╠═99a7a989-c37b-46d8-9d72-87d67b9d5d9f
-# ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
-# ╟─778a0587-959b-4ced-baff-c95defa65a27
-# ╟─3803eba4-a40d-4849-888f-2f3cd0ecc7d1
-# ╠═6c731bce-6fef-4d69-a64c-65ecbb08eee9
-# ╠═b706f625-6c87-4681-9cdf-172ca30255fc
-# ╠═e6b9420a-5187-4cdf-9f15-a60fd6855a8f
-# ╠═0e097004-9b9c-4517-ad2f-aa6840226158
-# ╟─cdd1fc12-2027-45df-8867-fe7fe3265999
-# ╠═de1ac2da-61a5-49ff-a0be-e0d05ccfdf5f
-# ╠═b8fe0439-61fc-4634-93e8-d0aa05a87035
-# ╠═52bc5a38-926b-4311-8868-1d32a6f21408
-# ╟─02d51a56-26ea-423b-a60c-c50c75cec26c
-# ╠═d805916b-8c7a-47b4-8ea8-0ad782c3148d
-# ╠═6c1a19b1-a66a-4b63-8413-063dc883537d
-# ╠═053e5999-291d-4638-a066-942d2a61f0e9
-# ╟─b96458b3-6f68-4071-bb82-6b3e1dcff8f7
-# ╟─ec526f2a-a990-4ea5-b1ba-43a0c56cef60
-# ╟─1350ddba-a676-45c7-8552-d13b607610cd
-# ╠═d861ef63-4ac2-46dc-9c6f-7221393b7277
-# ╠═f84727eb-011d-4679-912a-beb99afb25bc
-# ╠═65594757-7ded-4552-97cb-695eb82cf4c8
-# ╠═5f37b1e0-eb9a-4c06-90bb-f67bf0da1f2e
-# ╠═b1893f3e-6cd9-417b-96d7-5f53c0b3cca8
-# ╠═9ca98b60-7953-4bfa-86e0-b449d154b98d
-# ╠═2eed9e35-394a-4ad9-9c39-290065432cc2
 # ╟─4f81db11-2811-4008-b09c-56335160d0c9
-# ╠═c70a0cb0-0900-402b-90f4-c4e254e2f8d5
-# ╠═2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
-# ╠═acf6e66a-79c6-4e29-9890-edc2c8b5adc5
-# ╠═5808ab27-f325-402a-9859-7a985c557ace
-# ╠═1cb27925-26f4-44e6-ad00-05ddf647088e
-# ╠═88306a77-c85c-4dde-861e-f7ace7c0115c
-# ╠═92f08b2f-632a-4c2d-bbb0-2058d4dcf923
-# ╠═e82b4050-8a19-4dcf-bd9f-32b19971458f
+# ╟─c70a0cb0-0900-402b-90f4-c4e254e2f8d5
+# ╟─2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
+# ╟─1cb27925-26f4-44e6-ad00-05ddf647088e
+# ╟─88306a77-c85c-4dde-861e-f7ace7c0115c
+# ╟─92f08b2f-632a-4c2d-bbb0-2058d4dcf923
+# ╟─e92a100d-d61d-43c3-8190-9fbcb07c5c71
+# ╟─e82b4050-8a19-4dcf-bd9f-32b19971458f
+# ╟─6094125e-4e0d-4a6a-8118-0b339bfab678
+# ╟─acf6e66a-79c6-4e29-9890-edc2c8b5adc5
 # ╠═a7db1f6f-4350-4fef-bd5b-fae0de2421bf
 # ╠═8c88a658-512c-4a72-a252-5a245b3e791d
-# ╠═716e0ea5-1097-4e93-bbe6-f7a0a72491a2
+# ╠═5808ab27-f325-402a-9859-7a985c557ace
 # ╟─70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
+# ╠═5c02c1be-6b9e-4c67-b383-0ab1429b33a4
+# ╠═50b0d101-3c19-4272-b91b-07122d2bf315
 # ╠═a328a25e-c9aa-4dd0-8b24-b7ff2c642eb2
+# ╠═bab019fe-911d-4357-94dc-92bba228b5c2
+# ╠═de6e82e1-8c51-4986-930e-a193e2cd1218
 # ╠═7d10e574-c928-4104-9d18-b897021d7a5f
+# ╠═82cfcc8b-9aa6-4848-8a44-72a805218302
+# ╠═24dc2d54-a377-4313-9b29-62af2d6d3136
 # ╠═fcd7edcf-4df1-47cf-98f2-190a921c3606
 # ╠═d342d102-da15-4e0f-8054-bd54d2def8e8
 # ╠═2c4779c5-238d-4328-aac6-cc5fcbe8f6b3
@@ -2291,24 +2286,49 @@ version = "1.4.1+1"
 # ╠═7a1229ba-67b8-49af-9392-e7ec384068ba
 # ╠═60c5173d-efa0-40c1-8afc-bb189a6ae7de
 # ╠═60e940d8-df1e-4d4b-b894-9c6897479bac
-# ╟─ef84633d-cc13-4573-9203-940fb2a14f35
-# ╠═8b840cfb-c22e-498f-a052-8404ee68e153
-# ╟─6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
-# ╠═7374becb-cf8b-4416-8e4b-08fe2f62aceb
-# ╠═dfa36663-3f67-4809-9071-a68a0c985be1
-# ╠═965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
-# ╠═6d00b682-dbf8-41ef-95f6-04c210f128a1
-# ╟─7c36cbdc-8181-4388-a679-5101da90bc71
+# ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
+# ╟─778a0587-959b-4ced-baff-c95defa65a27
+# ╟─3803eba4-a40d-4849-888f-2f3cd0ecc7d1
+# ╠═6c731bce-6fef-4d69-a64c-65ecbb08eee9
+# ╠═b706f625-6c87-4681-9cdf-172ca30255fc
+# ╠═e6b9420a-5187-4cdf-9f15-a60fd6855a8f
+# ╠═0e097004-9b9c-4517-ad2f-aa6840226158
+# ╟─cdd1fc12-2027-45df-8867-fe7fe3265999
+# ╠═de1ac2da-61a5-49ff-a0be-e0d05ccfdf5f
+# ╠═b8fe0439-61fc-4634-93e8-d0aa05a87035
+# ╠═52bc5a38-926b-4311-8868-1d32a6f21408
+# ╟─02d51a56-26ea-423b-a60c-c50c75cec26c
+# ╠═d805916b-8c7a-47b4-8ea8-0ad782c3148d
+# ╠═6c1a19b1-a66a-4b63-8413-063dc883537d
+# ╠═053e5999-291d-4638-a066-942d2a61f0e9
+# ╟─b96458b3-6f68-4071-bb82-6b3e1dcff8f7
+# ╟─1350ddba-a676-45c7-8552-d13b607610cd
+# ╟─e94755e2-b707-4a16-a751-9e5cc04f1b29
+# ╠═d861ef63-4ac2-46dc-9c6f-7221393b7277
+# ╟─6128347f-8029-45ff-a47a-2ef21f090561
+# ╠═f84727eb-011d-4679-912a-beb99afb25bc
+# ╠═65594757-7ded-4552-97cb-695eb82cf4c8
+# ╠═5f37b1e0-eb9a-4c06-90bb-f67bf0da1f2e
+# ╠═b1893f3e-6cd9-417b-96d7-5f53c0b3cca8
+# ╠═9ca98b60-7953-4bfa-86e0-b449d154b98d
+# ╟─99a7a989-c37b-46d8-9d72-87d67b9d5d9f
+# ╠═2eed9e35-394a-4ad9-9c39-290065432cc2
 # ╠═e552a0a9-0f56-4456-8395-f12ef677835c
-# ╠═5ccfe20e-cf68-4413-a833-3154437a0a6f
-# ╠═895c3a3d-9769-4af4-aad5-c0fb14b6dd27
 # ╠═1aea36b9-3736-442f-abf1-eeb5654b201e
 # ╠═0cde042c-6e7a-4c7a-9f87-8146f0995eff
 # ╠═4e1cbb11-306a-4eda-8d06-d11f73ae162e
+# ╟─ef84633d-cc13-4573-9203-940fb2a14f35
+# ╟─8b840cfb-c22e-498f-a052-8404ee68e153
+# ╟─6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
+# ╟─7374becb-cf8b-4416-8e4b-08fe2f62aceb
+# ╟─dfa36663-3f67-4809-9071-a68a0c985be1
+# ╟─965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
+# ╟─6d00b682-dbf8-41ef-95f6-04c210f128a1
+# ╠═5ccfe20e-cf68-4413-a833-3154437a0a6f
+# ╠═895c3a3d-9769-4af4-aad5-c0fb14b6dd27
 # ╠═500ea6f5-9e50-4a93-9832-dd48e3727eb0
 # ╠═24e949ba-9794-4bf2-8d36-19bbbf7c7087
 # ╠═0c5bd66f-3c6a-4c31-a889-ae07c58d0fdd
-# ╠═e90cd186-946e-4600-99bc-3c8628d5dc2c
 # ╠═dd77135b-c68d-486d-9333-249475176d11
 # ╠═5cef23cd-77bf-4c7f-9733-d1b415337b3b
 # ╠═d4db49d9-ef20-4ab0-8d7a-ed05f0c06ac1
