@@ -1,19 +1,17 @@
 ### A Pluto.jl notebook ###
-# v0.20.3
+# v0.19.46
 
 using Markdown
 using InteractiveUtils
 
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
-    #! format: off
     quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
-    #! format: on
 end
 
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
@@ -106,25 +104,33 @@ add average outcomes (default=0):"
 @bind addavout NumberField(0:100, default=0)
 
 # ╔═╡ 3168827b-1e31-408d-9ec3-53e725872e5e
-md"choose the default life prospects for the top ranked (default=0.8):" 
+md"---
+
+choose the default life prospects for the top ranked (default=0.8):" 
 
 # ╔═╡ 943a2a24-5ee7-42b9-bed3-868148d1781a
 @bind toplifeprospects_ NumberField(0:0.05:1, default=0.8)
 
 # ╔═╡ 24794095-f20d-4fe8-9aa9-e862d8d73786
-md"choose the default life prospects for the bottom ranked (default=0.5):" 
+md"---
+
+choose the default life prospects for the bottom ranked (default=0.5):" 
 
 # ╔═╡ 37e0d7dc-c92f-4163-a239-ef794cbefa3e
 @bind bottomlifeprospects_ NumberField(0:0.05:1, default=0.5)
 
 # ╔═╡ b7bd8235-5bf9-4bbc-ac30-07ef17bd9d8b
-md"choose the unit cost of an opportunity (default=0):"
+md"---
+
+choose the unit cost of an opportunity (default=0):"
 
 # ╔═╡ 7588880c-2c3a-4b19-950d-e21faf015105
 @bind unitcost_ NumberField(0:20, default=0)
 
 # ╔═╡ 8f7951a7-1fde-4783-8cf4-26412041fc77
-md"choose the default life prospects for bystanders (default=0.5):" 
+md"---
+
+choose the default life prospects for bystanders (default=0.5):" 
 
 # ╔═╡ 53444608-183c-4bc4-a619-cf0704515a77
 @bind bystanderlifeprospects_ NumberField(0:0.05:1, default=0.5)
@@ -139,19 +145,79 @@ md"the first thing we do is look at how a chosen policy stands in relation to al
 md"choose a proportion of the total available opportunities to go to B on policy 1 (default=0.5):" 
 
 # ╔═╡ e93e06f4-dd06-4a10-967d-9dab8d30e198
-@bind proportiontoB1_ NumberField(0:0.01:1, default=0.5)
+@bind proportiontoB1_ Slider(0:0.01:1, default=0.5)
+
+# ╔═╡ afc48b2c-8147-4dcd-ad28-cc8f2b755eb2
+proportiontoB1_
 
 # ╔═╡ 3d595998-60e4-404e-94ed-1e89f6de26ae
 md"choose a proportion of the total available opportunities to go to B on policy 2 (default=0.5):" 
 
 # ╔═╡ a17bff12-2789-43f5-ab04-25e5e021fda4
-@bind proportiontoB2_ NumberField(0:0.01:1, default=0.5)
+@bind proportiontoB2_ Slider(0:0.01:1, default=0.5)
+
+# ╔═╡ f188961a-9e5b-4980-a0f8-39a058b87fe9
+proportiontoB2_
 
 # ╔═╡ 668f0185-6f4e-4497-b5a4-9dc33da4113d
 md" the following is a plot of A's weighted interests, B's weighted interests, and the sum of their interests. this plot basically shows how policy 1 compares with alternative policies from the point of view of balancing the interests of A and B. if the balance is above 0 and to the left of the current policy line, this typically means A will have a claim against the policy. if it is above 0 and to the right, this trpically means B will have a claim against the policy." 
 
+# ╔═╡ 716e0ea5-1097-4e93-bbe6-f7a0a72491a2
+#=╠═╡
+function plotweightedinterests()
+	plot(range(0, 1, step=0.01), getwdiffsA, legend=false, label="A's interests", size=(400, 300), color="black", linestyle=:dash, linewidth=1)
+	plot!(range(0, 1, length=100), getwdiffsB, label="B's interests", color="black", linestyle=:dot, linewidth=1)
+	plot!(range(0, 1, length=100), getwsum2D, label="balance", color="black", linewidth=1)
+	# vline!([gethighestfairchance()], label="equal chances", color=:gray, opacity=0.8, linestyle=:dash) 
+	vline!(getstrictlyfair, label="strictly fair", color=:gray, opacity=0.4)
+	# vline!(getroughlyequal, label="equal chances", color=:gray, opacity=0.4)
+	vline!([proportiontoB1_], label="current policy", color=:gray)
+	vspan!([[minimum(i),maximum(i)] for i in glfgroups], color=:gray, label=false, opacity=0.1)
+	plot!(ticklabelstyle="font={Times New Roman, \\small}")
+	# plot!(twiny(),map(getBschances,range(0, 1, step=0.01)), getwdiffsA, label=nothing, opacity=0.0, xlims=(0, 1)) getstrictlyfair
+end
+ 
+  ╠═╡ =#
+
 # ╔═╡ 2d57d65d-1fe3-4fda-9f41-5cf68746708b
 # savefig(plotweightedinterestsagainstchances(),  "weightedinterests2.tikz")
+
+# ╔═╡ 3dbffed2-36e9-48a0-98e3-4dd7f874b388
+#=╠═╡
+plotweightedinterestsagainstchances()
+  ╠═╡ =#
+
+# ╔═╡ 7c7fbe50-2781-48f0-b4c9-4307927c24cc
+#=╠═╡
+function plotweightedinterestsagainstchances() 
+	myrange = range(0, 1, step=0.01) 
+	chances = map(getBschances,myrange)
+	plot(chances, map(getwdiffsA,myrange), legend=false, label="A's interests", size=(400, 300), color="black", linestyle=:dash, linewidth=1, xlims=(0, 1))
+	plot!(chances, map(getwdiffsB,myrange), label="B's interests", color="black", linestyle=:dot, linewidth=1)
+	plot!(chances, map(getwsum2D,myrange), label="balance", color="black", linewidth=1)
+	# vline!([gethighestfairchance()], label="equal chances", color=:gray, opacity=0.8, linestyle=:dash) 
+	vline!(map(getBschances,getstrictlyfair), label="strictly fair", color=:gray, opacity=1)
+	# vline!(getroughlyequal, label="equal chances", color=:gray, opacity=0.4)
+	vline!(map(getBschances,[proportiontoB1_]), label="current policy", color=:gray)
+	vspan!([[minimum(i),maximum(i)] for i in map(z-> map(getBschances,z),glfgroups)], color=:gray, label=false, opacity=0.1)
+	plot!(ticklabelstyle="font={Times New Roman, \\small}")
+	# plot!(twiny(),map(getBschances,range(0, 1, step=0.01)), getwdiffsA, label=nothing, opacity=0.0, xlims=(0, 1)) getstrictlyfair
+end
+  ╠═╡ =#
+
+# ╔═╡ ee5b8b7d-c99f-4bdc-a48e-28a71905a9b4
+md"## plotting
+
+we define our plotting functions here and use them elsewhere. plotting functions included here are: 
+
+* plot differences in weighted interests in pairwise comparison of policies with policy 1. optionally includes strictly balanced polocy, the loosely balanced policies, the fair policy, the most efficient policy, the maximin policy, the equal chances policy, the equal inputs policy. 
+
+" 
+
+# ╔═╡ cebb36b4-52af-4456-aef0-b80cac5d9579
+function plotzeroline() 
+	hline!([0], label=false, color=:gray)
+end
 
 # ╔═╡ b00a896e-26b8-4581-8405-8dd26a9c9ad4
 md"## dashboard"
@@ -168,24 +234,16 @@ md"## pairwise comparison of policies (basic case)"
 # ╔═╡ c70a0cb0-0900-402b-90f4-c4e254e2f8d5
 md" one of the main things we want to do is compare some policy p1 with another policy p2. indeed for many purposes what we want is to compare all the other policies against our policy1. so we define a function that compares some policy just given as a proportion of the total opportunities given to B against policy1. we can then use this function to get things like the unweighted and weighted diffs"
 
-# ╔═╡ e92a100d-d61d-43c3-8190-9fbcb07c5c71
-md"the following plots the unweighted interests of A and B in alternative policies over policy 1:"
-
-# ╔═╡ 5308dba8-4923-4f93-8d26-c413d5ef5053
-
-
-# ╔═╡ 6094125e-4e0d-4a6a-8118-0b339bfab678
-md"here are the functions for getting the weighted interests. these are plotted above:"
+# ╔═╡ 208af900-c745-4673-b1d1-7eaa9deda626
+# the standard range is the range of different proportions of some total number of opportunties that we are considering. 
+STANDARDRANGE = range(0,1, step=0.01)
 
 # ╔═╡ 70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
-# ╠═╡ disabled = true
-#=╠═╡
 md"## pairwise comparison of policies (advanced)
 
 we are now going to compare all policies at each available total level of opportunities. when we pick a policy, it will be a policy that distributes some total number of opportunities in some way. we will compare against policies that distribute different numbers of opportunities in different ways. 
 
 our z axis in our plot is going to be the total number of opportunities distributed. our x axis will be the different chances for B for different distributions of the same total. and our y axis is going to be, for now, B's weighted interest in the alternative policy (relative to the policy chosen). "
-  ╠═╡ =#
 
 # ╔═╡ 5c02c1be-6b9e-4c67-b383-0ab1429b33a4
 # ╠═╡ disabled = true
@@ -305,14 +363,97 @@ plot!(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed
 end
   ╠═╡ =#
 
+# ╔═╡ d342d102-da15-4e0f-8054-bd54d2def8e8
+# ╠═╡ disabled = true
+#=╠═╡
+function getreporthelper3D(x,y) 
+   proportiontoB = x * totalopportunities 
+   proportiontoA = ((1 - x) * discountA_) * totalopportunities
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2]  
+   proportiontoBy = y * totalopportunities 
+   proportiontoAy = ((1 - y) * discountA_) * totalopportunities
+   totaltoAy = proportiontoAy + baseline[1] 
+   totaltoBy = proportiontoBy + baseline[2] 
+   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
+   return (report) 
+end
+  ╠═╡ =#
+
+# ╔═╡ 2c4779c5-238d-4328-aac6-cc5fcbe8f6b3
+#=╠═╡
+function getwsum3D(x,y) 
+   report = getreporthelper3D(x,y)
+   return report.w_sum
+end
+  ╠═╡ =#
+
+# ╔═╡ fa934ffa-a874-49df-a785-34354d26f2b0
+#=╠═╡
+begin 
+plot(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:wireframe)
+plot!(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
+end
+  ╠═╡ =#
+
+# ╔═╡ fa988726-e491-46e9-9478-92621ff30e77
+#=╠═╡
+function getwdiffsB3D(x,y) 
+   report = getreporthelper3D(x,y)
+   return report.w_diffs[2]
+end
+  ╠═╡ =#
+
+# ╔═╡ fe3dcaee-a713-4aab-bfee-a41573c1291f
+#=╠═╡
+# this one just works out what the 
+sum03D = [getreporthelper3D(x,y) for x in range(0, 1, length=101), y in range(0, 1, length=101) if isapprox(getwsum3D(x,y),0, atol=0.00001)] 
+  ╠═╡ =#
+
 # ╔═╡ 10bb2145-4069-4e88-8852-bd2d892a2627
-md"## finding the fair policies
+md"## policy finding 
 
-this is going to be computationally expensive, so I won't include it in the plot above, which is for playing with. this time, we compare every policy against every other policy and then filter out the results that meet two different standards of fairness: strict and loose. 
+here are various functions for finding policies with particular properties. functions here include functions for: 
 
+* finding the the policy / policies where the balance of weighted interests in the policy / policies over some given policy is zero: 
+   * `findstrictlybalanced`
+* finding the policies where the balance of weighted interests in those policies over some given policy is below some threshold: 
+   * `findlooselybalanced`
+* finding the policies where the the balance of weighted interests in those policies over some given policy is below some threshold but which maximise the minimium chances: 
+   * `findfairchances`
+* finding the most efficient policy / the policy that maximises the sum of life prospects: 
+   * `findmostefficient`
+* finding the policy that maximises the life prospects for the bottom ranked: 
+   * `findmaximin`
+* finding the policy that equalises chances 
+   * `findequalchances`
 " 
 
 
+
+# ╔═╡ 5f94a895-3f72-4082-8c7a-f26ddfc7f66f
+function getmin(x) 
+    return(x[1],minimum(x[2]))
+end
+
+# ╔═╡ 1aeb1f85-8ec4-4888-b779-6a14b961fbec
+# ╠═╡ disabled = true
+#=╠═╡
+getroughlyequal = [x for x in range(0, 1, step=0.001) if getchances(0,x) > 0.499 && getchances(0,x) < 0.501] 
+  ╠═╡ =#
+
+# ╔═╡ e75cb9cb-fa17-4a58-ab1b-1f223cad5025
+#=╠═╡
+getchances(0,0.5)
+  ╠═╡ =#
+
+# ╔═╡ f443b4b9-a6cc-42a9-8587-c9d956267667
+#=╠═╡
+function getchances(x,y) 
+   report = getreporthelper3D(x,y)
+   return report.chances_b_1
+end
+  ╠═╡ =#
 
 # ╔═╡ 6d63ad59-4f9c-43be-80bf-4a1295a3d8c1
 function split_into_groups(numbers, n)
@@ -366,6 +507,35 @@ function looselyfairgrouped(xs)
 end
 
 
+
+# ╔═╡ cf430baf-e199-4060-9128-ccc359783e58
+# ╠═╡ disabled = true
+#=╠═╡
+# this is the mother of all functions 
+# it compares policies considered as proportion/total pairs 
+# it compares one such against another such 
+
+function getreporthelper3DALL((x1,x2),(y1,y2)) 
+   proportiontoB = x1 * x2
+   proportiontoA = ((1 - x1) * discountA_) * x2
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2]  
+   proportiontoBy = y1 * y2
+   proportiontoAy = ((1 - y1) * discountA_) * y2
+   totaltoAy = proportiontoAy + baseline[1] 
+   totaltoBy = proportiontoBy + baseline[2] 
+   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
+   return (report) 
+end
+  ╠═╡ =#
+
+# ╔═╡ 1d4d1957-c620-4150-8250-f886e5beb2be
+#=╠═╡
+function getwsum3DALL((x1,x2),(y1,y2))
+   report = getreporthelper3DALL((x1,x2),(y1,y2))
+   return report.w_sum
+end
+  ╠═╡ =#
 
 # ╔═╡ 2a9cd28b-a55e-4db3-b472-ea536da0213b
 # ╠═╡ disabled = true
@@ -518,6 +688,38 @@ function weighteddiff(x, y)
     end
 end
 
+# ╔═╡ 6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
+# ╠═╡ disabled = true
+#=╠═╡
+# using sampling
+function probability_x_greater_than_y(d1, d2)
+	num_samples=100000
+    count = 0
+    for _ in 1:num_samples
+        x = rand(d1)  # Draw a sample from distribution d1
+        y = rand(d2)  # Draw a sample from distribution d2
+        if x > y
+            count += 1
+        end
+    end
+    return count / num_samples  # Calculate the probability
+end
+  ╠═╡ =#
+
+# ╔═╡ 7374becb-cf8b-4416-8e4b-08fe2f62aceb
+# using numerical integration
+function probability_x_greater_than_y(d1, d2)
+    # Define the PDF of Y
+    pdf_y(y) = pdf(d2, y)
+
+    # Define the CDF of X
+    cdf_x(y) = cdf(d1, y)
+
+    # Calculate the integral
+    integral = quadgk(y -> (1 - cdf_x(y)) * pdf_y(y), -Inf, Inf)[1]
+    return integral
+end
+
 # ╔═╡ dfa36663-3f67-4809-9071-a68a0c985be1
 # Logistic function
 function logistic(n, L, k, x0)
@@ -553,6 +755,20 @@ end
 
 # ╔═╡ 6a1a187e-2f6c-4acf-98e6-744cbb1f5873
 @bind B Select([highability,midability,lowability], default=highability)
+
+# ╔═╡ 08d95249-ed59-4c5e-a280-2fb5c17e7e1e
+function getaverageoutcomes(x,y)
+   proportiontoB = x * totalopportunities 
+   proportiontoA = ((1 - x) * discountA_) * totalopportunities
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2]  
+   proportiontoBy = y * totalopportunities 
+   proportiontoAy = ((1 - y) * discountA_) * totalopportunities
+   totaltoAy = proportiontoAy + baseline[1] 
+   totaltoBy = proportiontoBy + baseline[2] 
+   avout = A(totaltoAy) + B(totaltoBy)
+   return avout
+end
 
 # ╔═╡ 3803eba4-a40d-4849-888f-2f3cd0ecc7d1
 begin
@@ -625,6 +841,49 @@ function getwdiffs(alp1,alp2,blp1,blp2)
    return (weighteddiff(alp2,alp1),weighteddiff(blp2,blp1))
 end
 
+# ╔═╡ 5e88a846-a6e1-490b-a946-afc9d3b65bb4
+# this function calculates the unweighted difference between a pair of distributions
+function quickwsum(dt1,dt2) 
+	d1 = policy1
+	d2 = policy2
+    d1chA = probability_x_greater_than_y(educational_outcome_high(dt1[1]), educational_outcome_low(dt1[2])) # A's chances on d1
+	d1chB = 1 - d1chA # B's chances on d1 
+	d2chA = probability_x_greater_than_y(educational_outcome_high(dt2[1]), educational_outcome_low(dt2[2])) # A's chances on d2
+	d2chB = 1 - d2chA # B's chances on d2
+	d1avoutA = A(dt1[1])
+	d1avoutB = B(dt1[2])
+	d2avoutA = A(dt2[1])
+	d2avoutB = B(dt2[2])
+	d1avout = d1avoutA + d1avoutB # average outcomes on d1
+	d2avout = d2avoutA + d2avoutB # average outcomes on d2 
+	d1cost = costofprovision((dt1[1] - baseline[1], dt1[2] - baseline[2])) 
+	d2cost = costofprovision((dt2[1] - baseline[1], dt2[2] - baseline[2])) 
+	d1lpA = getlifeprospects(d1chA,d1avout,d1cost)
+	d1lpB = getlifeprospects(d1chB,d1avout,d1cost) 
+	d2lpA = getlifeprospects(d2chA,d2avout,d2cost) 
+	d2lpB = getlifeprospects(d2chB,d2avout,d2cost) 
+
+	wdiffs = getwdiffs(d1lpA,d2lpA,d1lpB,d2lpB) 
+	wsum =  wdiffs[2] + wdiffs[1]
+	return (wsum)
+end
+
+# ╔═╡ 7162b0d4-f9f6-4b98-abcd-08f6c26305d6
+# compare some policy x, against some policy y.
+
+function getreporthelper(x,y)
+   proportiontoB = x * totalopportunities 
+   proportiontoA = ((1 - x) * discountA_) * totalopportunities
+   totaltoA = proportiontoA + baseline[1] 
+   totaltoB = proportiontoB + baseline[2]  
+   proportiontoBy = y * totalopportunities 
+   proportiontoAy = ((1 - y) * discountA_) * totalopportunities
+   totaltoAy = proportiontoAy + baseline[1] 
+   totaltoBy = proportiontoBy + baseline[2] 
+   report = quickwsum((totaltoAy,totaltoBy),(totaltoA,totaltoB))
+   return (report) 
+end
+
 # ╔═╡ 35587cb6-f68a-4423-b524-43bc2d1da908
 # a record type for storing the results of running the model 
 struct Report 
@@ -652,8 +911,6 @@ struct Report
 	w_diffs::Tuple{Float64, Float64} # weighted difference between 1 and 2 for A and B
 	w_sum::Float64 # sum of the weighted difference between 1 and 2 for A and B
 	uw_sum::Float64 # sum of the unweighted difference between 1 and 2 for A and B
-	a_claim::Float64
-	b_claim::Float64
 	v_add1::Float64
 	v_add2::Float64 
 	c_ben1::Float64 
@@ -692,14 +949,6 @@ function runmodel(dt1,dt2)
 	wdiffs = getwdiffs(d1lpA,d2lpA,d1lpB,d2lpB) 
 	wsum =  wdiffs[2] + wdiffs[1]
 	uwsum = uwdiffs[2] + uwdiffs[1]
-	bclaim = if ((wdiffs[2] > 0) && ((wdiffs[2] + wdiffs[1]) > 0))
-		(wdiffs[2] + wdiffs[1])
-	    else 0
-	end 
-	aclaim = if ((wdiffs[1] > 0) && ((wdiffs[1] + wdiffs[2]) > 0 ))
-		(wdiffs[1] + wdiffs[2])
-	    else 0
-	end 
 	valueadd1 = (scaleavout * d1avout) + addavout
 	valueadd2 = (scaleavout * d2avout) + addavout
 	costbenefit1 = ((scaleavout * d1avout) - d1cost + addavout) 
@@ -735,8 +984,6 @@ function runmodel(dt1,dt2)
 		    , wdiffs
 		    , wsum
 		    , uwsum
-		    , bclaim 
-		    , aclaim
 		    , valueadd1 
 		    , valueadd2
 		    , costbenefit1 
@@ -752,7 +999,7 @@ function runmodel(dt1,dt2)
 end
 
 # ╔═╡ 2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
-# compare some policy x, against policy.
+# compare some policy x, against policy 1.
 
 function getreporthelper(x) 
    proportiontoB = x * totalopportunities 
@@ -775,47 +1022,47 @@ end
 # ╔═╡ 11afffae-29b2-438a-8e53-a94a534043d4
 plot(range(0, 1, length=100),shareofthepie, title="B's share of the pie", ylim=(0,1))
 
+# ╔═╡ 10a35a0d-433d-40db-bd0d-83ad1b16764d
+allreports = map(getreporthelper,STANDARDRANGE)
+
 # ╔═╡ 1cb27925-26f4-44e6-ad00-05ddf647088e
-# get the unweighted 
-function getuwsum2D(x) 
-   report = getreporthelper(x)
-   return report.uw_sum
-end
+getuwsums = map(x -> x.uw_sum,allreports)
 
 # ╔═╡ 88306a77-c85c-4dde-861e-f7ace7c0115c
-function getuwdiffsA(x) 
-   report = getreporthelper(x)
-   return report.uw_diffs[1]
-end
+getuwdiffsA = map(x -> x.uw_diffs[1],allreports)
 
 # ╔═╡ 92f08b2f-632a-4c2d-bbb0-2058d4dcf923
-function getuwdiffsB(x) 
-   report = getreporthelper(x)
-   return report.uw_diffs[2]
-end
+getuwdiffsB = map(x -> x.uw_diffs[2],allreports)
 
-# ╔═╡ acf6e66a-79c6-4e29-9890-edc2c8b5adc5
-function getwsum2D(x) 
-   report = getreporthelper(x)
-   return report.w_sum
-end
+# ╔═╡ 574bfcad-ef67-40ae-a7ad-ebfde093996f
+getwsums = map(x -> x.w_sum,allreports)
 
 # ╔═╡ a7db1f6f-4350-4fef-bd5b-fae0de2421bf
-function getwdiffsA(x) 
-   report = getreporthelper(x)
-   return report.w_diffs[1]
-end
+getwdiffsA = map(x -> x.w_diffs[1],allreports)
 
 # ╔═╡ 8c88a658-512c-4a72-a252-5a245b3e791d
-function getwdiffsB(x) 
-   report = getreporthelper(x)
-   return report.w_diffs[2]
-end
+getwdiffsB = map(x -> x.w_diffs[2],allreports)
+
+# ╔═╡ 2a40c010-a046-4b02-bbf5-2dc2fa33eb62
+justBschances = map(x -> x.chances_b_2,allreports)
 
 # ╔═╡ e56258ed-3334-402c-8cc3-4ccadd4340fd
 function getBschances(x) 
    report = getreporthelper(x)
    return report.chances_b_2
+end
+
+# ╔═╡ 59c21b15-425c-4979-84ce-f157d14a61b4
+Bschances =  map(getBschances,STANDARDRANGE)
+
+# ╔═╡ 350fa1f3-1131-494a-810b-8eea294f2c43
+function plotequalinputs() 
+	vline!([getBschances(0.5)], label="equal inputs")
+end
+
+# ╔═╡ b3732227-f2ac-4f1d-b9e0-9577a28fa563
+function plotcurrentpolicy() 
+	vline!([getBschances(proportiontoB1_)], label="current policy")
 end
 
 # ╔═╡ 5054f9a4-1169-4dfe-8631-99df940287d2
@@ -898,6 +1145,23 @@ plot(range(0, 1, length=100),Bsshareofthesizeofthepiew, title="life prospects as
 plot!(range(0, 1, length=100),Asshareofthesizeofthepiew, ylim=(0,1), label="A's life prospects") 
 end
 
+# ╔═╡ 6463bef1-5940-42a0-8cfd-1088f7af33f4
+allaverageoutcomes = [(y,getaverageoutcomes(y)) for y in STANDARDRANGE]
+
+# ╔═╡ db4bab70-28b6-472d-9afe-2b287ee63b69
+function findmostefficient() 
+	sorted = reverse(sort(allaverageoutcomes, by = x -> x[2]))
+    sorted[1][1]
+end
+
+# ╔═╡ e52d82f0-a64b-4474-ade9-ca0b89ece8d4
+function plotmostefficientCH() 
+	vline!([getBschances(findmostefficient())], label="most efficient")
+end
+
+# ╔═╡ 1683e563-8f38-4478-a09c-a50755be83dd
+findmostefficient()
+
 # ╔═╡ 50c57118-e9b6-4965-9d5a-39a365dae7b2
 function getAsaverageoutcomes(x) 
    report = getreporthelper(x)
@@ -938,9 +1202,6 @@ function getBsprospects(x)
    return report.prospects_b_2
 end
 
-
-
-
 # ╔═╡ 49d14f08-4bff-449a-9409-b15f79e15000
 function getAsprospects(x) 
    report = getreporthelper(x)
@@ -960,44 +1221,51 @@ begin
 	plot!(anotherlocalrange, map(getAsprospects,anotherlocalrange), xlabel="B's chances",xlims=(0, 1))
 end
 
-# ╔═╡ 5808ab27-f325-402a-9859-7a985c557ace
-# this one just works out what the 
-sum0 = [getreporthelper(i) for i in range(0, 1, length=101) if isapprox(getwsum2D(i),0, atol=0.00001)] 
-
-# ╔═╡ d342d102-da15-4e0f-8054-bd54d2def8e8
-function getreporthelper3D(x,y) 
-   proportiontoB = x * totalopportunities 
-   proportiontoA = ((1 - x) * discountA_) * totalopportunities
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2]  
-   proportiontoBy = y * totalopportunities 
-   proportiontoAy = ((1 - y) * discountA_) * totalopportunities
-   totaltoAy = proportiontoAy + baseline[1] 
-   totaltoBy = proportiontoBy + baseline[2] 
-   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
-   return (report) 
+# ╔═╡ e8aacc9d-c3db-4325-98d6-51aaef395e26
+function getweightedsum(x,y)
+   wsum = getreporthelper(x,y)
+   return wsum
 end
 
-# ╔═╡ 2c4779c5-238d-4328-aac6-cc5fcbe8f6b3
-function getwsum3D(x,y) 
-   report = getreporthelper3D(x,y)
-   return report.w_sum
+# ╔═╡ ffa7810c-3ef0-44e3-bb0d-f87aea0fed57
+allweightedsums = [(y,map(z -> getweightedsum(z,y),STANDARDRANGE)) for y in STANDARDRANGE]
+
+# ╔═╡ 38c72475-70e8-4f6e-a50b-5bec831ac436
+allweightedsumsmins = map(getmin,allweightedsums) 
+
+# ╔═╡ 8fed40f0-79dc-4a5a-a403-ba13d8392521
+# find the policy/policies where the weighted difference in interests is exactly balanced
+function findstrictlybalanced()
+	sorted = sort(allweightedsumsmins, by = x -> x[2])
+    sorted[1][1]
 end
 
-# ╔═╡ 97d1e787-cf26-451b-a027-4eefe916a795
-## this function gets the strictly fair policies
+# ╔═╡ 833c1db0-5ec9-49fe-b64b-da4370dd19b4
+function plotstrictlybalancedCH() 
+	vline!([findstrictlybalanced()], label="strictly balanced")
+end
 
-getstrictlyfair = [x for x in range(0, 1, step=0.01) if all(z -> z < 0.0000001, map(z -> getwsum3D(z,x),range(0, 1, length=101)))]
+# ╔═╡ 20fe2f9e-1acb-41bd-bbf8-846db2d4d9f2
+findstrictlybalanced()
 
-# ╔═╡ f45d9483-ac5e-4731-a2c1-acb34a8c3d7b
-## this function gets the loosely fair policies
+# ╔═╡ a57f224b-7e94-4520-a533-96815f987cb0
+# find the policy/policies where the weighted difference in interests is loosely balanced 
+function findlooselybalanced()
+	threshold = 0.002 # the threshold
+	[x for x in STANDARDRANGE if all(z -> z < threshold, map(z -> getweightedsum(z,x),STANDARDRANGE))]
+end
 
-getlooselyfair = [x for x in range(0, 1, step=0.01) if all(z -> z < 0.002, map(z -> getwsum3D(z,x),range(0, 1, step=0.01)))]
+# ╔═╡ 27dbca46-82e4-4afd-813e-3aa53796b424
+function plotlooselybalancedCH() 
+	glfgroups = map(x -> map(getBschances,x),split_into_groups(findlooselybalanced(),0.01))
+    vspan!([[minimum(i),maximum(i)] for i in glfgroups], opacity=0.1, label="loosely balanced")
+end
 
 # ╔═╡ 55e05e57-8f66-4de7-9f30-50ab13afa8e7
 function gethighestfairchance()
-	mymax = maximum(getlooselyfair) 
-    mymin = minimum(getlooselyfair)
+	lf = map(getBschances,findlooselybalanced())
+	mymax = maximum(lf) 
+    mymin = minimum(lf)
     if mymax < 0.5 
 		mymax 
 	elseif mymin > 0.5 
@@ -1006,109 +1274,39 @@ function gethighestfairchance()
 	end
 end
 
-# ╔═╡ ff41c3b4-8953-4628-9722-3a8fae9a1e69
-gethighestfairchance()
+# ╔═╡ 4a2fca11-fd3c-4895-8049-38f475bc6114
+function plothighestfairchanceCH() 
+	vline!([gethighestfairchance()], label="highest fair chance")
+end
 
-# ╔═╡ a1d54e9b-9af6-4a1d-8b88-7beb098e5df9
-glfgroups = split_into_groups(getlooselyfair,0.01)
-
-# ╔═╡ 716e0ea5-1097-4e93-bbe6-f7a0a72491a2
+# ╔═╡ c09bac89-58bf-4637-9765-5c26ffe3b79d
 function plotweightedinterests()
-	plot(range(0, 1, step=0.01), getwdiffsA, legend=false, label="A's interests", size=(400, 300), color="black", linestyle=:dash, linewidth=1)
-	plot!(range(0, 1, length=100), getwdiffsB, label="B's interests", color="black", linestyle=:dot, linewidth=1)
-	plot!(range(0, 1, length=100), getwsum2D, label="balance", color="black", linewidth=1)
-	# vline!([gethighestfairchance()], label="equal chances", color=:gray, opacity=0.8, linestyle=:dash) 
-	vline!(getstrictlyfair, label="strictly fair", color=:gray, opacity=0.4)
-	# vline!(getroughlyequal, label="equal chances", color=:gray, opacity=0.4)
-	vline!([proportiontoB1_], label="current policy", color=:gray)
-	vspan!([[minimum(i),maximum(i)] for i in glfgroups], color=:gray, label=false, opacity=0.1)
-	plot!(ticklabelstyle="font={Times New Roman, \\small}")
-	# plot!(twiny(),map(getBschances,range(0, 1, step=0.01)), getwdiffsA, label=nothing, opacity=0.0, xlims=(0, 1)) getstrictlyfair
+	plot(Bschances,getwsums, label="balance", legend=:outertopright, size=(600, 300), xlims=(0,1))
+	plot!(Bschances,getwdiffsA, label="A's interest")
+	plot!(Bschances,getwdiffsB, label="B's interest")
+	xaxis!(xlabel="chances")
+	yaxis!(ylabel="difference")
+	plot!(plotstrictlybalancedCH())
+	plot!(plotlooselybalancedCH())
+	plot!(plothighestfairchanceCH())
+	plot!(plotmostefficientCH())
+	plot!(plotequalinputs())
+	plot!(plotcurrentpolicy())
+	plot!(plotzeroline())
 end
  
 
 # ╔═╡ 3221520f-33d5-46d3-b715-88f7c4d0de11
 plotweightedinterests()
 
-# ╔═╡ 7c7fbe50-2781-48f0-b4c9-4307927c24cc
-function plotweightedinterestsagainstchances() 
-	myrange = range(0, 1, step=0.01) 
-	chances = map(getBschances,myrange)
-	plot(chances, map(getwdiffsA,myrange), legend=false, label="A's interests", size=(400, 300), color="black", linestyle=:dash, linewidth=1, xlims=(0, 1))
-	plot!(chances, map(getwdiffsB,myrange), label="B's interests", color="black", linestyle=:dot, linewidth=1)
-	plot!(chances, map(getwsum2D,myrange), label="balance", color="black", linewidth=1)
-	# vline!([gethighestfairchance()], label="equal chances", color=:gray, opacity=0.8, linestyle=:dash) 
-	vline!(map(getBschances,getstrictlyfair), label="strictly fair", color=:gray, opacity=1)
-	# vline!(getroughlyequal, label="equal chances", color=:gray, opacity=0.4)
-	vline!(map(getBschances,[proportiontoB1_]), label="current policy", color=:gray)
-	vspan!([[minimum(i),maximum(i)] for i in map(z-> map(getBschances,z),glfgroups)], color=:gray, label=false, opacity=0.1)
-	plot!(ticklabelstyle="font={Times New Roman, \\small}")
-	# plot!(twiny(),map(getBschances,range(0, 1, step=0.01)), getwdiffsA, label=nothing, opacity=0.0, xlims=(0, 1)) getstrictlyfair
-end
+# ╔═╡ 2d2474c2-2b43-4dd0-ae51-ad66925e2c18
+plotweightedinterests()
 
-# ╔═╡ 3dbffed2-36e9-48a0-98e3-4dd7f874b388
-plotweightedinterestsagainstchances()
+# ╔═╡ a7362fe6-9f5d-405b-af96-ddb4bcef5f4e
+md"strictly balanced is at $(findstrictlybalanced()), maximum loosely balanced is at $(tr(getBschances(maximum(findlooselybalanced())))), and highest fair chance is at $(tr(gethighestfairchance())), the most efficient is as $(tr(getBschances(findmostefficient()))), B's chances on equal inputs are at $(tr(getBschances(proportiontoB1_)))"
 
-# ╔═╡ e82b4050-8a19-4dcf-bd9f-32b19971458f
-begin
-	plot(range(0, 1, length=100), getuwdiffsA, title="unweighted interests", label="A's interests", palette = :Dark2_5)
-	plot!(range(0, 1, length=100), getuwdiffsB, label="B's interests")
-	plot!(range(0, 1, length=100), getwsum2D, label="balance")
-	vline!([proportiontoB1_], label="current policy", color=:grey)
-	vspan!([[minimum(i),maximum(i)] for i in glfgroups], label=false, color="light blue", opacity=0.2)
-end
-
-# ╔═╡ fa988726-e491-46e9-9478-92621ff30e77
-function getwdiffsB3D(x,y) 
-   report = getreporthelper3D(x,y)
-   return report.w_diffs[2]
-end
-
-# ╔═╡ fa934ffa-a874-49df-a785-34354d26f2b0
-begin 
-plot(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:wireframe)
-plot!(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
-end
-
-# ╔═╡ fe3dcaee-a713-4aab-bfee-a41573c1291f
-# this one just works out what the 
-sum03D = [getreporthelper3D(x,y) for x in range(0, 1, length=101), y in range(0, 1, length=101) if isapprox(getwsum3D(x,y),0, atol=0.00001)] 
-
-# ╔═╡ f443b4b9-a6cc-42a9-8587-c9d956267667
-function getchances(x,y) 
-   report = getreporthelper3D(x,y)
-   return report.chances_b_1
-end
-
-# ╔═╡ 1aeb1f85-8ec4-4888-b779-6a14b961fbec
-getroughlyequal = [x for x in range(0, 1, step=0.001) if getchances(0,x) > 0.499 && getchances(0,x) < 0.501] 
-
-# ╔═╡ e75cb9cb-fa17-4a58-ab1b-1f223cad5025
-getchances(0,0.5)
-
-# ╔═╡ cf430baf-e199-4060-9128-ccc359783e58
-# this is the mother of all functions 
-# it compares policies considered as proportion/total pairs 
-# it compares one such against another such 
-
-function getreporthelper3DALL((x1,x2),(y1,y2)) 
-   proportiontoB = x1 * x2
-   proportiontoA = ((1 - x1) * discountA_) * x2
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2]  
-   proportiontoBy = y1 * y2
-   proportiontoAy = ((1 - y1) * discountA_) * y2
-   totaltoAy = proportiontoAy + baseline[1] 
-   totaltoBy = proportiontoBy + baseline[2] 
-   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
-   return (report) 
-end
-
-# ╔═╡ 1d4d1957-c620-4150-8250-f886e5beb2be
-function getwsum3DALL((x1,x2),(y1,y2))
-   report = getreporthelper3DALL((x1,x2),(y1,y2))
-   return report.w_sum
-end
+# ╔═╡ ff41c3b4-8953-4628-9722-3a8fae9a1e69
+gethighestfairchance()
 
 # ╔═╡ 99a7a989-c37b-46d8-9d72-87d67b9d5d9f
 report1 = runmodel(dt1,dt2)
@@ -1155,8 +1353,6 @@ some important comparisons:
     * A's weighted interest in policy 2 over policy 1: $(report1.w_diffs[1])
     * B's weighted interest in policy 2 over policy 1: $(report1.w_diffs[2])
     * the sum of A and B's weighted interests: $(report1.w_sum) 
-    * A's claim: $(report1.a_claim)
-    * B's claim: $(report1.b_claim)
 
 here is an extended report:
 
@@ -1183,38 +1379,6 @@ here is an extended report:
 " 
 
 
-# ╔═╡ 6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
-# ╠═╡ disabled = true
-#=╠═╡
-# using sampling
-function probability_x_greater_than_y(d1, d2)
-	num_samples=100000
-    count = 0
-    for _ in 1:num_samples
-        x = rand(d1)  # Draw a sample from distribution d1
-        y = rand(d2)  # Draw a sample from distribution d2
-        if x > y
-            count += 1
-        end
-    end
-    return count / num_samples  # Calculate the probability
-end
-  ╠═╡ =#
-
-# ╔═╡ 7374becb-cf8b-4416-8e4b-08fe2f62aceb
-# using numerical integration
-function probability_x_greater_than_y(d1, d2)
-    # Define the PDF of Y
-    pdf_y(y) = pdf(d2, y)
-
-    # Define the CDF of X
-    cdf_x(y) = cdf(d1, y)
-
-    # Calculate the integral
-    integral = quadgk(y -> (1 - cdf_x(y)) * pdf_y(y), -Inf, Inf)[1]
-    return integral
-end
-
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -1235,9 +1399,9 @@ QuadGK = "~2.11.1"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.1"
+julia_version = "1.10.5"
 manifest_format = "2.0"
-project_hash = "b00710c25a11040a1b5cbbd334b0230273b9e124"
+project_hash = "4855ef5994a729f8cad0da6bca039b76ce514249"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -1253,15 +1417,13 @@ version = "1.1.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
-version = "1.1.2"
+version = "1.1.1"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
-version = "1.11.0"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
-version = "1.11.0"
 
 [[deps.BitFlags]]
 git-tree-sha1 = "0691e34b3bb8be9307330f88d1a3c3f25466c24d"
@@ -1354,7 +1516,6 @@ version = "0.18.20"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
-version = "1.11.0"
 
 [[deps.Dbus_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
@@ -1427,7 +1588,6 @@ version = "4.4.4+1"
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
-version = "1.11.0"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra"]
@@ -1550,7 +1710,6 @@ version = "0.2.5"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
-version = "1.11.0"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
@@ -1634,17 +1793,16 @@ version = "0.6.4"
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "8.6.0+0"
+version = "8.4.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "LibGit2_jll", "NetworkOptions", "Printf", "SHA"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
-version = "1.11.0"
 
 [[deps.LibGit2_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll"]
 uuid = "e37daf67-58a4-590a-8e99-b0245dd2ffc5"
-version = "1.7.2+0"
+version = "1.6.4+0"
 
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
@@ -1653,7 +1811,6 @@ version = "1.11.0+1"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
-version = "1.11.0"
 
 [[deps.Libffi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1706,7 +1863,6 @@ version = "2.40.2+0"
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-version = "1.11.0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
@@ -1726,7 +1882,6 @@ version = "0.3.28"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
-version = "1.11.0"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
@@ -1748,7 +1903,6 @@ version = "0.5.13"
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
-version = "1.11.0"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "MozillaCACerts_jll", "NetworkOptions", "Random", "Sockets"]
@@ -1759,7 +1913,7 @@ version = "1.1.9"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.6+0"
+version = "2.28.2+1"
 
 [[deps.Measures]]
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
@@ -1774,11 +1928,10 @@ version = "1.2.0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
-version = "1.11.0"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2023.12.12"
+version = "2023.1.10"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
@@ -1799,7 +1952,7 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.27+1"
+version = "0.3.23+4"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1870,13 +2023,9 @@ uuid = "30392449-352a-5448-841d-b1acce4e97dc"
 version = "0.43.4+0"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.11.0"
-weakdeps = ["REPL"]
-
-    [deps.Pkg.extensions]
-    REPLExt = "REPL"
+version = "1.10.0"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]
@@ -1931,7 +2080,6 @@ version = "1.4.3"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-version = "1.11.0"
 
 [[deps.PtrArrays]]
 git-tree-sha1 = "77a42d78b6a92df47ab37e177b2deac405e1c88f"
@@ -1975,14 +2123,12 @@ version = "2.11.1"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
 [[deps.REPL]]
-deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]
+deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
-version = "1.11.0"
 
 [[deps.Random]]
 deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-version = "1.11.0"
 
 [[deps.RecipesBase]]
 deps = ["PrecompileTools"]
@@ -2037,7 +2183,6 @@ version = "1.2.1"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
-version = "1.11.0"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -2052,7 +2197,6 @@ version = "1.2.0"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
-version = "1.11.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
@@ -2063,7 +2207,7 @@ version = "1.2.1"
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-version = "1.11.0"
+version = "1.10.0"
 
 [[deps.SpecialFunctions]]
 deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
@@ -2084,14 +2228,9 @@ uuid = "860ef19b-820b-49d6-a774-d7a799459cd3"
 version = "1.0.2"
 
 [[deps.Statistics]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "ae3bb1eb3bba077cd276bc5cfc337cc65c3075c0"
+deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-version = "1.11.1"
-weakdeps = ["SparseArrays"]
-
-    [deps.Statistics.extensions]
-    SparseArraysExt = ["SparseArrays"]
+version = "1.10.0"
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
@@ -2119,10 +2258,6 @@ version = "1.3.2"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
     InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
 
-[[deps.StyledStrings]]
-uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
-version = "1.11.0"
-
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
@@ -2130,7 +2265,7 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "7.7.0+0"
+version = "7.2.1+1"
 
 [[deps.TOML]]
 deps = ["Dates"]
@@ -2151,7 +2286,6 @@ version = "0.1.1"
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-version = "1.11.0"
 
 [[deps.TranscodingStreams]]
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
@@ -2171,11 +2305,9 @@ version = "1.5.1"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
-version = "1.11.0"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
-version = "1.11.0"
 
 [[deps.UnicodeFun]]
 deps = ["REPL"]
@@ -2234,9 +2366,9 @@ version = "2.13.5+0"
 
 [[deps.XSLT_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libgcrypt_jll", "Libgpg_error_jll", "Libiconv_jll", "XML2_jll", "Zlib_jll"]
-git-tree-sha1 = "a54ee957f4c86b526460a720dbc882fa5edcbefc"
+git-tree-sha1 = "7d1671acbe47ac88e981868a078bd6b4e27c5191"
 uuid = "aed1982a-8fda-507f-9586-7b0439959a61"
-version = "1.1.41+0"
+version = "1.1.42+0"
 
 [[deps.XZ_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -2479,7 +2611,7 @@ version = "1.1.6+0"
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
-version = "1.59.0+0"
+version = "1.52.0+1"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -2525,7 +2657,7 @@ version = "1.4.1+1"
 # ╟─3719315e-be18-4eee-a5b7-c804071da8bf
 # ╟─954742dc-6a4d-46c8-a94a-c24cc6d9187f
 # ╟─e5482ba8-5828-4d86-8652-fabfa572cbe9
-# ╠═25f6fc1f-9ed3-4730-8a45-ac98db44e7d8
+# ╟─25f6fc1f-9ed3-4730-8a45-ac98db44e7d8
 # ╟─3168827b-1e31-408d-9ec3-53e725872e5e
 # ╟─943a2a24-5ee7-42b9-bed3-868148d1781a
 # ╟─24794095-f20d-4fe8-9aa9-e862d8d73786
@@ -2538,8 +2670,10 @@ version = "1.4.1+1"
 # ╟─b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
 # ╟─33be0c01-b712-406e-8827-1c194f2fa863
 # ╟─e93e06f4-dd06-4a10-967d-9dab8d30e198
+# ╟─afc48b2c-8147-4dcd-ad28-cc8f2b755eb2
 # ╟─3d595998-60e4-404e-94ed-1e89f6de26ae
 # ╟─a17bff12-2789-43f5-ab04-25e5e021fda4
+# ╟─f188961a-9e5b-4980-a0f8-39a058b87fe9
 # ╟─668f0185-6f4e-4497-b5a4-9dc33da4113d
 # ╠═3221520f-33d5-46d3-b715-88f7c4d0de11
 # ╠═716e0ea5-1097-4e93-bbe6-f7a0a72491a2
@@ -2547,6 +2681,18 @@ version = "1.4.1+1"
 # ╠═3dbffed2-36e9-48a0-98e3-4dd7f874b388
 # ╠═7c7fbe50-2781-48f0-b4c9-4307927c24cc
 # ╟─722f971d-d8a7-4ea8-81e9-09bba8db8a90
+# ╟─ee5b8b7d-c99f-4bdc-a48e-28a71905a9b4
+# ╠═59c21b15-425c-4979-84ce-f157d14a61b4
+# ╠═833c1db0-5ec9-49fe-b64b-da4370dd19b4
+# ╠═e52d82f0-a64b-4474-ade9-ca0b89ece8d4
+# ╠═27dbca46-82e4-4afd-813e-3aa53796b424
+# ╠═4a2fca11-fd3c-4895-8049-38f475bc6114
+# ╠═350fa1f3-1131-494a-810b-8eea294f2c43
+# ╠═b3732227-f2ac-4f1d-b9e0-9577a28fa563
+# ╠═cebb36b4-52af-4456-aef0-b80cac5d9579
+# ╠═c09bac89-58bf-4637-9765-5c26ffe3b79d
+# ╠═2d2474c2-2b43-4dd0-ae51-ad66925e2c18
+# ╟─a7362fe6-9f5d-405b-af96-ddb4bcef5f4e
 # ╟─b00a896e-26b8-4581-8405-8dd26a9c9ad4
 # ╠═5054f9a4-1169-4dfe-8631-99df940287d2
 # ╠═343ddeb7-07f2-4915-b012-6477b35f2851
@@ -2567,17 +2713,16 @@ version = "1.4.1+1"
 # ╠═c5e72caf-5893-4aa3-b596-f93e677652a9
 # ╟─4f81db11-2811-4008-b09c-56335160d0c9
 # ╟─c70a0cb0-0900-402b-90f4-c4e254e2f8d5
+# ╟─208af900-c745-4673-b1d1-7eaa9deda626
 # ╟─2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
-# ╟─1cb27925-26f4-44e6-ad00-05ddf647088e
-# ╟─88306a77-c85c-4dde-861e-f7ace7c0115c
-# ╟─92f08b2f-632a-4c2d-bbb0-2058d4dcf923
-# ╟─e92a100d-d61d-43c3-8190-9fbcb07c5c71
-# ╠═e82b4050-8a19-4dcf-bd9f-32b19971458f
-# ╠═5308dba8-4923-4f93-8d26-c413d5ef5053
-# ╟─6094125e-4e0d-4a6a-8118-0b339bfab678
-# ╟─acf6e66a-79c6-4e29-9890-edc2c8b5adc5
+# ╠═10a35a0d-433d-40db-bd0d-83ad1b16764d
+# ╠═1cb27925-26f4-44e6-ad00-05ddf647088e
+# ╠═88306a77-c85c-4dde-861e-f7ace7c0115c
+# ╠═92f08b2f-632a-4c2d-bbb0-2058d4dcf923
+# ╠═574bfcad-ef67-40ae-a7ad-ebfde093996f
 # ╠═a7db1f6f-4350-4fef-bd5b-fae0de2421bf
 # ╠═8c88a658-512c-4a72-a252-5a245b3e791d
+# ╠═2a40c010-a046-4b02-bbf5-2dc2fa33eb62
 # ╠═e56258ed-3334-402c-8cc3-4ccadd4340fd
 # ╠═f9ee30f1-e9a5-42eb-97bb-17aaaebae02b
 # ╠═8db6baef-ee08-4ba7-a527-3acdff34294d
@@ -2586,8 +2731,7 @@ version = "1.4.1+1"
 # ╠═1fa12067-b14c-48e9-80a7-1d3a09ee7312
 # ╠═5eec0844-9987-4fb9-bad2-104511629d4b
 # ╠═49d14f08-4bff-449a-9409-b15f79e15000
-# ╠═5808ab27-f325-402a-9859-7a985c557ace
-# ╠═70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
+# ╟─70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
 # ╠═5c02c1be-6b9e-4c67-b383-0ab1429b33a4
 # ╠═50b0d101-3c19-4272-b91b-07122d2bf315
 # ╠═a328a25e-c9aa-4dd0-8b24-b7ff2c642eb2
@@ -2606,14 +2750,23 @@ version = "1.4.1+1"
 # ╠═fa988726-e491-46e9-9478-92621ff30e77
 # ╠═fe3dcaee-a713-4aab-bfee-a41573c1291f
 # ╟─10bb2145-4069-4e88-8852-bd2d892a2627
-# ╠═97d1e787-cf26-451b-a027-4eefe916a795
-# ╠═f45d9483-ac5e-4731-a2c1-acb34a8c3d7b
+# ╟─7162b0d4-f9f6-4b98-abcd-08f6c26305d6
+# ╟─e8aacc9d-c3db-4325-98d6-51aaef395e26
+# ╟─08d95249-ed59-4c5e-a280-2fb5c17e7e1e
+# ╠═ffa7810c-3ef0-44e3-bb0d-f87aea0fed57
+# ╠═38c72475-70e8-4f6e-a50b-5bec831ac436
+# ╟─5f94a895-3f72-4082-8c7a-f26ddfc7f66f
+# ╟─8fed40f0-79dc-4a5a-a403-ba13d8392521
+# ╠═20fe2f9e-1acb-41bd-bbf8-846db2d4d9f2
+# ╟─a57f224b-7e94-4520-a533-96815f987cb0
+# ╟─6463bef1-5940-42a0-8cfd-1088f7af33f4
+# ╟─db4bab70-28b6-472d-9afe-2b287ee63b69
+# ╠═1683e563-8f38-4478-a09c-a50755be83dd
 # ╠═55e05e57-8f66-4de7-9f30-50ab13afa8e7
 # ╠═ff41c3b4-8953-4628-9722-3a8fae9a1e69
 # ╠═1aeb1f85-8ec4-4888-b779-6a14b961fbec
 # ╠═e75cb9cb-fa17-4a58-ab1b-1f223cad5025
 # ╠═f443b4b9-a6cc-42a9-8587-c9d956267667
-# ╠═a1d54e9b-9af6-4a1d-8b88-7beb098e5df9
 # ╟─6d63ad59-4f9c-43be-80bf-4a1295a3d8c1
 # ╟─5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
 # ╠═cf430baf-e199-4060-9128-ccc359783e58
@@ -2624,7 +2777,7 @@ version = "1.4.1+1"
 # ╠═60e940d8-df1e-4d4b-b894-9c6897479bac
 # ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
 # ╟─778a0587-959b-4ced-baff-c95defa65a27
-# ╠═3803eba4-a40d-4849-888f-2f3cd0ecc7d1
+# ╟─3803eba4-a40d-4849-888f-2f3cd0ecc7d1
 # ╠═6c731bce-6fef-4d69-a64c-65ecbb08eee9
 # ╠═b706f625-6c87-4681-9cdf-172ca30255fc
 # ╠═e6b9420a-5187-4cdf-9f15-a60fd6855a8f
@@ -2649,22 +2802,23 @@ version = "1.4.1+1"
 # ╟─9ca98b60-7953-4bfa-86e0-b449d154b98d
 # ╟─99a7a989-c37b-46d8-9d72-87d67b9d5d9f
 # ╟─2eed9e35-394a-4ad9-9c39-290065432cc2
-# ╠═e552a0a9-0f56-4456-8395-f12ef677835c
-# ╠═0cde042c-6e7a-4c7a-9f87-8146f0995eff
-# ╠═4e1cbb11-306a-4eda-8d06-d11f73ae162e
+# ╟─e552a0a9-0f56-4456-8395-f12ef677835c
+# ╟─0cde042c-6e7a-4c7a-9f87-8146f0995eff
+# ╟─4e1cbb11-306a-4eda-8d06-d11f73ae162e
 # ╟─ef84633d-cc13-4573-9203-940fb2a14f35
 # ╟─8b840cfb-c22e-498f-a052-8404ee68e153
-# ╠═6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
-# ╠═7374becb-cf8b-4416-8e4b-08fe2f62aceb
-# ╠═dfa36663-3f67-4809-9071-a68a0c985be1
-# ╠═965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
-# ╠═6d00b682-dbf8-41ef-95f6-04c210f128a1
-# ╠═500ea6f5-9e50-4a93-9832-dd48e3727eb0
-# ╠═24e949ba-9794-4bf2-8d36-19bbbf7c7087
+# ╟─6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
+# ╟─7374becb-cf8b-4416-8e4b-08fe2f62aceb
+# ╟─dfa36663-3f67-4809-9071-a68a0c985be1
+# ╟─965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
+# ╟─6d00b682-dbf8-41ef-95f6-04c210f128a1
+# ╟─500ea6f5-9e50-4a93-9832-dd48e3727eb0
+# ╟─24e949ba-9794-4bf2-8d36-19bbbf7c7087
 # ╠═dd77135b-c68d-486d-9333-249475176d11
-# ╠═5cef23cd-77bf-4c7f-9733-d1b415337b3b
-# ╠═d4db49d9-ef20-4ab0-8d7a-ed05f0c06ac1
+# ╟─5cef23cd-77bf-4c7f-9733-d1b415337b3b
+# ╟─d4db49d9-ef20-4ab0-8d7a-ed05f0c06ac1
 # ╠═14a6c1d8-48cf-4bfc-b7f9-f56fd0406ead
+# ╠═5e88a846-a6e1-490b-a946-afc9d3b65bb4
 # ╠═35587cb6-f68a-4423-b524-43bc2d1da908
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
