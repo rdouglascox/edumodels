@@ -197,178 +197,6 @@ function toweighted(x)
 	return ((1 - x) ^ 2)
 end
 
-# ╔═╡ 70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
-md"## pairwise comparison of policies (advanced)
-
-we are now going to compare all policies at each available total level of opportunities. when we pick a policy, it will be a policy that distributes some total number of opportunities in some way. we will compare against policies that distribute different numbers of opportunities in different ways. 
-
-our z axis in our plot is going to be the total number of opportunities distributed. our x axis will be the different chances for B for different distributions of the same total. and our y axis is going to be, for now, B's weighted interest in the alternative policy (relative to the policy chosen). "
-
-# ╔═╡ 5c02c1be-6b9e-4c67-b383-0ab1429b33a4
-# ╠═╡ disabled = true
-#=╠═╡
-scaled = 0.75
-  ╠═╡ =#
-
-# ╔═╡ 50b0d101-3c19-4272-b91b-07122d2bf315
-# ╠═╡ disabled = true
-#=╠═╡
-scaledistribution = (dt1[1] * scaled, dt1[2] * scaled)
-  ╠═╡ =#
-
-# ╔═╡ a328a25e-c9aa-4dd0-8b24-b7ff2c642eb2
-# ╠═╡ disabled = true
-#=╠═╡
-begin 
-
-x_vals = range(0, 1, step=0.05)
-y_vals = range(0, totalopportunities) 
-
-#plot(x_vals, y_vals, getwdiffA3D, label="A", st=:wireframe,) 
-#plot!(x_vals, y_vals, getwdiffA3D, label="A", st=:surface, opacity=0.4) 
-#plot!(x_vals, y_vals, getwdiffB3D, label="B", st=:wireframe,) 
-#plot!(x_vals, y_vals, getwdiffB3D, label="B", st=:surface, opacity=0.4)
-plot(x_vals, y_vals, getwsum3Dvar, label="Balance", st=:wireframe,) 
-plot!(x_vals, y_vals, getwsum3Dvar, label="Balance", st=:surface,  opacity=0.8)
-#scatter!([proportiontoB1_],[(totalopportunities * scaled)], [getwsum3Dvar(proportiontoB1_,(totalopportunities * scaled))], marker=:cross, markersize=2, label=false)
-end
-  ╠═╡ =#
-
-# ╔═╡ bab019fe-911d-4357-94dc-92bba228b5c2
-# ╠═╡ disabled = true
-#=╠═╡
-totalopportunities * scaled
-  ╠═╡ =#
-
-# ╔═╡ de6e82e1-8c51-4986-930e-a193e2cd1218
-# ╠═╡ disabled = true
-#=╠═╡
-proportiontoB1_
-  ╠═╡ =#
-
-# ╔═╡ 7d10e574-c928-4104-9d18-b897021d7a5f
-#=╠═╡
-# we need a function from x and y where x is the % of the total B gets and y is total number of opportunities to be distributed. it returns the sum diff 
-
-function getwsum3Dvar(x,y) 
-   proportiontoB = x * y 
-   proportiontoA = ((1 - x) * discountA_) * y 
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2] 
-   report = runmodel(scaledistribution,(totaltoA,totaltoB))
-   return report.w_sum
-end
-  ╠═╡ =#
-
-# ╔═╡ 12c9c8b6-6e1b-47c4-855e-a092b71e3401
-#=╠═╡
-# we need a function from x and y where x is the % of the total B gets and y is total number of opportunities to be distributed. it returns the sum diff 
-
-function getcostbenefit(x,y) 
-   proportiontoB = x * y 
-   proportiontoA = ((1 - x) * discountA_) * y 
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2] 
-   report = runmodel(scaledistribution,(totaltoA,totaltoB))
-   return report.c_ben2
-end
-  ╠═╡ =#
-
-# ╔═╡ ddf5fb39-4878-4011-beaa-8acef2124290
-#=╠═╡
-function plotcostbenefit()
-    x_vals = range(0, 1, step=0.05)
-    y_vals = range(0, totalopportunities) 
-    plot(x_vals, y_vals, getcostbenefit, label="A", st=:wireframe,) 
-    plot!(x_vals, y_vals, getcostbenefit, label="A", st=:surface, opacity=0.4) 
-end
-  ╠═╡ =#
-
-# ╔═╡ 25de665f-39eb-48cc-9c0d-b46d59d76324
-#=╠═╡
-plotcostbenefit()
-  ╠═╡ =#
-
-# ╔═╡ 82cfcc8b-9aa6-4848-8a44-72a805218302
-#=╠═╡
-function getwdiffA3D(x,y) 
-   proportiontoB = x * y 
-   proportiontoA = ((1 - x) * discountA_) * y 
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2] 
-   report = runmodel(scaledistribution,(totaltoA,totaltoB))
-   return report.w_diffs[1]
-end
-  ╠═╡ =#
-
-# ╔═╡ 24dc2d54-a377-4313-9b29-62af2d6d3136
-#=╠═╡
-function getwdiffB3D(x,y) 
-   proportiontoB = x * y 
-   proportiontoA = ((1 - x) * discountA_) * y 
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2] 
-   report = runmodel(scaledistribution,(totaltoA,totaltoB))
-   return report.w_diffs[2]
-end
-  ╠═╡ =#
-
-# ╔═╡ fcd7edcf-4df1-47cf-98f2-190a921c3606
-# ╠═╡ disabled = true
-#=╠═╡
-begin 
-plot(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed Surface", st=:wireframe)
-plot!(range(0, 1, length=20), range(0, 1, length=20), getwsum3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
-end
-  ╠═╡ =#
-
-# ╔═╡ d342d102-da15-4e0f-8054-bd54d2def8e8
-# ╠═╡ disabled = true
-#=╠═╡
-function getreporthelper3D(x,y) 
-   proportiontoB = x * totalopportunities 
-   proportiontoA = ((1 - x) * discountA_) * totalopportunities
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2]  
-   proportiontoBy = y * totalopportunities 
-   proportiontoAy = ((1 - y) * discountA_) * totalopportunities
-   totaltoAy = proportiontoAy + baseline[1] 
-   totaltoBy = proportiontoBy + baseline[2] 
-   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
-   return (report) 
-end
-  ╠═╡ =#
-
-# ╔═╡ 2c4779c5-238d-4328-aac6-cc5fcbe8f6b3
-#=╠═╡
-function getwsum3D(x,y) 
-   report = getreporthelper3D(x,y)
-   return report.w_sum
-end
-  ╠═╡ =#
-
-# ╔═╡ fa934ffa-a874-49df-a785-34354d26f2b0
-#=╠═╡
-begin 
-plot(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:wireframe)
-plot!(range(0, 1, length=20), range(0, 1, length=20), getwdiffsB3D, label="Smoothed Surface", st=:surface, c=:viridis, opacity=0.8, legend=false)
-end
-  ╠═╡ =#
-
-# ╔═╡ fa988726-e491-46e9-9478-92621ff30e77
-#=╠═╡
-function getwdiffsB3D(x,y) 
-   report = getreporthelper3D(x,y)
-   return report.w_diffs[2]
-end
-  ╠═╡ =#
-
-# ╔═╡ fe3dcaee-a713-4aab-bfee-a41573c1291f
-#=╠═╡
-# this one just works out what the 
-sum03D = [getreporthelper3D(x,y) for x in range(0, 1, length=101), y in range(0, 1, length=101) if isapprox(getwsum3D(x,y),0, atol=0.00001)] 
-  ╠═╡ =#
-
 # ╔═╡ 10bb2145-4069-4e88-8852-bd2d892a2627
 md"## policy finding 
 
@@ -394,25 +222,6 @@ here are various functions for finding policies with particular properties. func
 function getmin(x) 
     return(x[1],minimum(x[2]))
 end
-
-# ╔═╡ 1aeb1f85-8ec4-4888-b779-6a14b961fbec
-# ╠═╡ disabled = true
-#=╠═╡
-getroughlyequal = [x for x in range(0, 1, step=0.001) if getchances(0,x) > 0.499 && getchances(0,x) < 0.501] 
-  ╠═╡ =#
-
-# ╔═╡ e75cb9cb-fa17-4a58-ab1b-1f223cad5025
-#=╠═╡
-getchances(0,0.5)
-  ╠═╡ =#
-
-# ╔═╡ f443b4b9-a6cc-42a9-8587-c9d956267667
-#=╠═╡
-function getchances(x,y) 
-   report = getreporthelper3D(x,y)
-   return report.chances_b_1
-end
-  ╠═╡ =#
 
 # ╔═╡ 6d63ad59-4f9c-43be-80bf-4a1295a3d8c1
 function split_into_groups(numbers, n)
@@ -466,63 +275,6 @@ function looselyfairgrouped(xs)
 end
 
 
-
-# ╔═╡ cf430baf-e199-4060-9128-ccc359783e58
-# ╠═╡ disabled = true
-#=╠═╡
-# this is the mother of all functions 
-# it compares policies considered as proportion/total pairs 
-# it compares one such against another such 
-
-function getreporthelper3DALL((x1,x2),(y1,y2)) 
-   proportiontoB = x1 * x2
-   proportiontoA = ((1 - x1) * discountA_) * x2
-   totaltoA = proportiontoA + baseline[1] 
-   totaltoB = proportiontoB + baseline[2]  
-   proportiontoBy = y1 * y2
-   proportiontoAy = ((1 - y1) * discountA_) * y2
-   totaltoAy = proportiontoAy + baseline[1] 
-   totaltoBy = proportiontoBy + baseline[2] 
-   report = runmodel((totaltoAy,totaltoBy),(totaltoA,totaltoB))
-   return (report) 
-end
-  ╠═╡ =#
-
-# ╔═╡ 1d4d1957-c620-4150-8250-f886e5beb2be
-#=╠═╡
-function getwsum3DALL((x1,x2),(y1,y2))
-   report = getreporthelper3DALL((x1,x2),(y1,y2))
-   return report.w_sum
-end
-  ╠═╡ =#
-
-# ╔═╡ 2a9cd28b-a55e-4db3-b472-ea536da0213b
-# ╠═╡ disabled = true
-#=╠═╡
-function getstrictlyfairALL()
-	thexs1 = range(0, 1, step=0.05)
-    thexs2 = range(0,totalopportunities)
-    theys = [(y1,y2) for y1 in range(0, 1, step=0.05), y2 in range(0,totalopportunities)] 
-    return([(x1,x2) for x1 in thexs1, x2 in thexs2 if all(y -> y < 0.0000001,(map(z -> getwsum3DALL(z,(x1,x2)),theys)))])
-end
-  ╠═╡ =#
-
-# ╔═╡ 7a1229ba-67b8-49af-9392-e7ec384068ba
-# ╠═╡ disabled = true
-#=╠═╡
-getstrictlyfairALL()
-  ╠═╡ =#
-
-# ╔═╡ 60c5173d-efa0-40c1-8afc-bb189a6ae7de
-# ╠═╡ disabled = true
-#=╠═╡
-function getlooselyfairALL()
-	thexs1 = range(0, 1, step=0.05)
-    thexs2 = range(0,totalopportunities)
-    theys = [(y1,y2) for y1 in range(0, 1, step=0.05), y2 in range(0,totalopportunities)] 
-    return([(x1,x2) for x1 in thexs1, x2 in thexs2 if all(y -> y < 0.002,(map(z -> getwsum3DALL(z,(x1,x2)),theys)))])
-end
-  ╠═╡ =#
 
 # ╔═╡ 60e940d8-df1e-4d4b-b894-9c6897479bac
 # ╠═╡ disabled = true
@@ -1030,11 +782,11 @@ end
 plotwprospects()
 
 # ╔═╡ 8db6baef-ee08-4ba7-a527-3acdff34294d
-getallaverageoutcomes = map(x -> x.av_out_2,allreports)
+getallaverageoutcomes = map(y -> (scaleavout * y) + addavout,map(x -> x.av_out_2,allreports))
 
 # ╔═╡ 42e0f7de-40c6-41ec-9edd-ddde3ee51161
 function plotoutcomes() 
-	plot(bschances,getallaverageoutcomes, label="total outcomes", xlabel="B's chances", legend=:outertopright, size=(600, 300), xlims=(0,1))
+	plot(bschances,getallaverageoutcomes, label="total outcomes", xlabel="B's chances", legend=:outertopright, size=(600, 300), xlims=(0,1), ylims=(0,120))
 end
 
 # ╔═╡ cb5f1029-4a79-4c70-b7e1-6c938cf6d02f
@@ -2573,24 +2325,6 @@ version = "1.4.1+1"
 # ╠═50c57118-e9b6-4965-9d5a-39a365dae7b2
 # ╠═323d5571-f048-471a-af21-02fbbdd579ec
 # ╠═1fa12067-b14c-48e9-80a7-1d3a09ee7312
-# ╟─70b07da6-c0a6-4935-a9f9-7d06e2ff7ea0
-# ╠═5c02c1be-6b9e-4c67-b383-0ab1429b33a4
-# ╠═50b0d101-3c19-4272-b91b-07122d2bf315
-# ╠═a328a25e-c9aa-4dd0-8b24-b7ff2c642eb2
-# ╠═bab019fe-911d-4357-94dc-92bba228b5c2
-# ╠═de6e82e1-8c51-4986-930e-a193e2cd1218
-# ╠═7d10e574-c928-4104-9d18-b897021d7a5f
-# ╠═12c9c8b6-6e1b-47c4-855e-a092b71e3401
-# ╠═ddf5fb39-4878-4011-beaa-8acef2124290
-# ╠═25de665f-39eb-48cc-9c0d-b46d59d76324
-# ╠═82cfcc8b-9aa6-4848-8a44-72a805218302
-# ╠═24dc2d54-a377-4313-9b29-62af2d6d3136
-# ╠═fcd7edcf-4df1-47cf-98f2-190a921c3606
-# ╠═d342d102-da15-4e0f-8054-bd54d2def8e8
-# ╠═2c4779c5-238d-4328-aac6-cc5fcbe8f6b3
-# ╠═fa934ffa-a874-49df-a785-34354d26f2b0
-# ╠═fa988726-e491-46e9-9478-92621ff30e77
-# ╠═fe3dcaee-a713-4aab-bfee-a41573c1291f
 # ╟─10bb2145-4069-4e88-8852-bd2d892a2627
 # ╟─7162b0d4-f9f6-4b98-abcd-08f6c26305d6
 # ╟─e8aacc9d-c3db-4325-98d6-51aaef395e26
@@ -2598,21 +2332,13 @@ version = "1.4.1+1"
 # ╠═ffa7810c-3ef0-44e3-bb0d-f87aea0fed57
 # ╠═38c72475-70e8-4f6e-a50b-5bec831ac436
 # ╟─5f94a895-3f72-4082-8c7a-f26ddfc7f66f
-# ╟─8fed40f0-79dc-4a5a-a403-ba13d8392521
+# ╠═8fed40f0-79dc-4a5a-a403-ba13d8392521
 # ╠═20fe2f9e-1acb-41bd-bbf8-846db2d4d9f2
 # ╟─a57f224b-7e94-4520-a533-96815f987cb0
 # ╠═55e05e57-8f66-4de7-9f30-50ab13afa8e7
 # ╠═ff41c3b4-8953-4628-9722-3a8fae9a1e69
-# ╠═1aeb1f85-8ec4-4888-b779-6a14b961fbec
-# ╠═e75cb9cb-fa17-4a58-ab1b-1f223cad5025
-# ╠═f443b4b9-a6cc-42a9-8587-c9d956267667
 # ╟─6d63ad59-4f9c-43be-80bf-4a1295a3d8c1
 # ╟─5ff56ae3-c8f4-4148-8ef9-b3032117c1c5
-# ╠═cf430baf-e199-4060-9128-ccc359783e58
-# ╠═1d4d1957-c620-4150-8250-f886e5beb2be
-# ╠═2a9cd28b-a55e-4db3-b472-ea536da0213b
-# ╠═7a1229ba-67b8-49af-9392-e7ec384068ba
-# ╠═60c5173d-efa0-40c1-8afc-bb189a6ae7de
 # ╠═60e940d8-df1e-4d4b-b894-9c6897479bac
 # ╟─b4b7e927-70e1-4be9-ac42-08ee0bbefd3b
 # ╟─778a0587-959b-4ced-baff-c95defa65a27
