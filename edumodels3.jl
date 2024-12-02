@@ -1,17 +1,19 @@
 ### A Pluto.jl notebook ###
-# v0.19.46
+# v0.20.3
 
 using Markdown
 using InteractiveUtils
 
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
+    #! format: off
     quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
+    #! format: on
 end
 
 # ╔═╡ a3c707eb-2dbd-4ede-80e9-0e4c90e01154
@@ -20,15 +22,15 @@ begin
 	Plots, 
 	Distributions, 
 	QuadGK, 
-	Printf 
-	# PGFPlotsX
+	Printf ,
+	PGFPlotsX
 	# PlotlyBase, 
 	# PlotlyKaleido
 	
 end
 
 # ╔═╡ 41571ca1-d1a0-4761-8672-c20d30e37786
-# pgfplotsx()
+pgfplotsx()
 # plotly()
 # pythonplot()
 # gr()
@@ -90,7 +92,7 @@ md"---
 scale the average outcomes (default=1):" 
 
 # ╔═╡ 954742dc-6a4d-46c8-a94a-c24cc6d9187f
-@bind scaleavout NumberField(0:0.05:4, default=1.0)
+@bind scaleavout NumberField(0:0.01:4, default=1.0)
 
 # ╔═╡ e5482ba8-5828-4d86-8652-fabfa572cbe9
 md"---
@@ -99,7 +101,7 @@ md"---
 add average outcomes (default=0):" 
 
 # ╔═╡ 25f6fc1f-9ed3-4730-8a45-ac98db44e7d8
-@bind addavout NumberField(0:100, default=0)
+@bind addavout NumberField(-100:100, default=0)
 
 # ╔═╡ 3168827b-1e31-408d-9ec3-53e725872e5e
 md"---
@@ -160,8 +162,8 @@ proportiontoB2_
 # ╔═╡ 668f0185-6f4e-4497-b5a4-9dc33da4113d
 md" this is a plot of A's weighted interests, B's weighted interests, and the sum of their interests. this plot basically shows how policy 1 compares with alternative policies from the point of view of balancing the interests of A and B. if the balance is above 0 and to the left of the current policy line, this typically means A will have a claim against the policy. if it is above 0 and to the right, this trpically means B will have a claim against the policy." 
 
-# ╔═╡ 2d57d65d-1fe3-4fda-9f41-5cf68746708b
-# savefig(plotweightedinterestsagainstchances(),  "weightedinterests2.tikz")
+# ╔═╡ 64fe98ea-a420-46ff-97e3-17acec93fe39
+md"Latex Plotting"
 
 # ╔═╡ ee5b8b7d-c99f-4bdc-a48e-28a71905a9b4
 md"## plotting
@@ -760,13 +762,26 @@ getBsprospects = map(x -> x.prospects_b_2,allreports)
 # ╔═╡ 6500c449-48d2-42ed-9d75-428d8dd35f70
 # plot unweighted life prospects
 function plotprospects()
-	plot(bschances, getAsprospects, label="A's propsects", xlabel="B's chances", legend=:outertopright, size=(600, 300), xlims=(0,1)) 
-	plot!(bschances, getBsprospects, label="B's prospects")
+	plot(bschances, getAsprospects, label="A's life propsects", xlabel="B's chances", legend=:outertopright, size=(600, 300), xlims=(0,1)) 
+	plot!(bschances, getBsprospects, label="B's life prospects")
 end
 
 
 # ╔═╡ e0671b51-bfdc-460a-a96d-c47464d2af38
 plotprospects()
+
+# ╔═╡ 43b92d76-57dd-4a67-9152-1daf594eed3b
+# plot unweighted life prospects
+function plotprospectsLATEX()
+	plot(bschances, getAsprospects, label="A's life propsects", xlabel="B's chances", legend=:outertopright, size=(300, 200), xlims=(0,1), color=:black, linestyle=:dot) 
+	plot!(bschances, getBsprospects, label="B's life prospects", color=:black, linestyle=:dash)
+end
+
+# ╔═╡ b1976137-7d12-41a8-928e-bb674e20afbb
+plotprospectsLATEX()
+
+# ╔═╡ 2d57d65d-1fe3-4fda-9f41-5cf68746708b
+savefig(plotprospectsLATEX(),  "prospects.tikz")
 
 # ╔═╡ f5de361e-29ef-4ac3-9f81-caa1c43104e2
 getBswprospects = map(toweighted,getBsprospects)
@@ -781,6 +796,19 @@ end
 # ╔═╡ b67aadaf-567e-417a-9b87-6e661737db2d
 plotwprospects()
 
+# ╔═╡ 1ee419ee-a39a-4e70-99af-c5a60a5239d2
+# plot unweighted life prospects
+function plotwprospectsLATEX()
+	plot(bschances, getAswprospects, label="A's weighted prospects", xlabel="B's chances", legend=:outertopright, size=(300, 200), xlims=(0,1), color=:black, linestyle=:dot)
+	plot!(bschances, getBswprospects, label="B's weighted prospects", color=:black, linestyle=:dash)
+end
+
+# ╔═╡ ccc54dc9-4d8f-4b21-add2-92f9a8b0863b
+plotwprospectsLATEX()
+
+# ╔═╡ 8da3a4a4-71a8-4afe-b912-d93f27f283d7
+savefig(plotwprospectsLATEX(),  "wprospects.tikz")
+
 # ╔═╡ 8db6baef-ee08-4ba7-a527-3acdff34294d
 getallaverageoutcomes = map(y -> (scaleavout * y) + addavout,map(x -> x.av_out_2,allreports))
 
@@ -791,6 +819,17 @@ end
 
 # ╔═╡ cb5f1029-4a79-4c70-b7e1-6c938cf6d02f
 plotoutcomes() 
+
+# ╔═╡ fa4ec057-8780-48cc-95cc-9af14778098e
+function plotoutcomesLATEX() 
+	plot(bschances,getallaverageoutcomes, label="total outcomes", xlabel="B's chances", legend=:outertopright, size=(300, 200), xlims=(0,1), ylims=(0,120), color=:black)
+end
+
+# ╔═╡ b6dae495-9c4c-4251-88c6-147bc7b30e83
+plotoutcomesLATEX()
+
+# ╔═╡ 8fbbab61-f714-489e-91d3-d6756f9c1b03
+savefig(plotoutcomesLATEX(),  "outcomes.tikz")
 
 # ╔═╡ e56258ed-3334-402c-8cc3-4ccadd4340fd
 function getBschances(x) 
@@ -898,8 +937,7 @@ function plotweightedinterests()
 	plot(bschances,getwdiffsA , label="A's interests", legend=:outertopright, size=(600, 300), xlims=(0,1))
 	plot!(bschances,getwdiffsB, label="B's interests")
 	plot!(bschances,getwsums, label="balance")
-	xaxis!(xlabel="chances")
-	yaxis!(ylabel="difference")
+	xaxis!(xlabel="B's chances")
 	plot!(plotstrictlybalancedCH())
 	plot!(plotlooselybalancedCH())
 	plot!(plothighestfairchanceCH())
@@ -991,6 +1029,7 @@ here is an extended report:
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -998,6 +1037,7 @@ QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 
 [compat]
 Distributions = "~0.25.113"
+PGFPlotsX = "~1.5.1"
 Plots = "~1.40.9"
 PlutoUI = "~0.7.60"
 QuadGK = "~2.11.1"
@@ -1007,9 +1047,9 @@ QuadGK = "~2.11.1"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.5"
+julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "4855ef5994a729f8cad0da6bca039b76ce514249"
+project_hash = "45a5dc5839db67f45ac2504c80010510bc52a4e0"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -1023,15 +1063,22 @@ git-tree-sha1 = "9876e1e164b144ca45e9e3198d0b689cadfed9ff"
 uuid = "66dad0bd-aa9a-41b7-9441-69ab47430ed8"
 version = "1.1.3"
 
+[[deps.ArgCheck]]
+git-tree-sha1 = "a3a402a35a2f7e0b87828ccabbd5ebfbebe356b4"
+uuid = "dce04be8-c92d-5529-be00-80e4d2c0e197"
+version = "2.3.0"
+
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
-version = "1.1.1"
+version = "1.1.2"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+version = "1.11.0"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+version = "1.11.0"
 
 [[deps.BitFlags]]
 git-tree-sha1 = "0691e34b3bb8be9307330f88d1a3c3f25466c24d"
@@ -1121,15 +1168,27 @@ git-tree-sha1 = "1d0a14036acb104d9e89698bd408f63ab58cdc82"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 version = "0.18.20"
 
+[[deps.DataValueInterfaces]]
+git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
+uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
+version = "1.0.0"
+
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+version = "1.11.0"
 
 [[deps.Dbus_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "fc173b380865f70627d7dd1190dc2fce6cc105af"
 uuid = "ee1fde0b-3d02-5ea6-8484-8dfef6360eab"
 version = "1.14.10+0"
+
+[[deps.DefaultApplication]]
+deps = ["InteractiveUtils"]
+git-tree-sha1 = "c0dfa5a35710a193d83f03124356eef3386688fc"
+uuid = "3f0dd361-4fe0-5fc6-8523-80b14ec94d85"
+version = "1.1.0"
 
 [[deps.DelimitedFiles]]
 deps = ["Mmap"]
@@ -1196,6 +1255,7 @@ version = "4.4.4+1"
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
+version = "1.11.0"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra"]
@@ -1318,11 +1378,17 @@ version = "0.2.5"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+version = "1.11.0"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.2.2"
+
+[[deps.IteratorInterfaceExtensions]]
+git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
+uuid = "82899510-4779-5014-852e-03e436cf321d"
+version = "1.0.0"
 
 [[deps.JLFzf]]
 deps = ["Pipe", "REPL", "Random", "fzf_jll"]
@@ -1401,16 +1467,17 @@ version = "0.6.4"
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "8.4.0+0"
+version = "8.6.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "LibGit2_jll", "NetworkOptions", "Printf", "SHA"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
+version = "1.11.0"
 
 [[deps.LibGit2_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll"]
 uuid = "e37daf67-58a4-590a-8e99-b0245dd2ffc5"
-version = "1.6.4+0"
+version = "1.7.2+0"
 
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
@@ -1419,6 +1486,7 @@ version = "1.11.0+1"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+version = "1.11.0"
 
 [[deps.Libffi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1471,6 +1539,7 @@ version = "2.40.2+0"
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+version = "1.11.0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
@@ -1490,6 +1559,7 @@ version = "0.3.28"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+version = "1.11.0"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
@@ -1511,6 +1581,7 @@ version = "0.5.13"
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+version = "1.11.0"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "MozillaCACerts_jll", "NetworkOptions", "Random", "Sockets"]
@@ -1521,7 +1592,7 @@ version = "1.1.9"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.2+1"
+version = "2.28.6+0"
 
 [[deps.Measures]]
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
@@ -1536,10 +1607,11 @@ version = "1.2.0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+version = "1.11.0"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2023.1.10"
+version = "2023.12.12"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
@@ -1560,7 +1632,7 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.23+4"
+version = "0.3.27+1"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1607,11 +1679,23 @@ git-tree-sha1 = "949347156c25054de2db3b166c52ac4728cbad65"
 uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
 version = "0.11.31"
 
+[[deps.PGFPlotsX]]
+deps = ["ArgCheck", "DataStructures", "Dates", "DefaultApplication", "DocStringExtensions", "MacroTools", "Parameters", "Requires", "Tables"]
+git-tree-sha1 = "1d3729f2cd114a8150ce134f697d07f9ef2b9657"
+uuid = "8314cec4-20b6-5062-9cdb-752b83310925"
+version = "1.5.1"
+
 [[deps.Pango_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "e127b609fb9ecba6f201ba7ab753d5a605d53801"
 uuid = "36c8627f-9965-5494-a995-c6b170f724f3"
 version = "1.54.1+0"
+
+[[deps.Parameters]]
+deps = ["OrderedCollections", "UnPack"]
+git-tree-sha1 = "34c0e9ad262e5f7fc75b10a9952ca7692cfc5fbe"
+uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
@@ -1631,9 +1715,13 @@ uuid = "30392449-352a-5448-841d-b1acce4e97dc"
 version = "0.43.4+0"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.10.0"
+version = "1.11.0"
+weakdeps = ["REPL"]
+
+    [deps.Pkg.extensions]
+    REPLExt = "REPL"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]
@@ -1688,6 +1776,7 @@ version = "1.4.3"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+version = "1.11.0"
 
 [[deps.PtrArrays]]
 git-tree-sha1 = "77a42d78b6a92df47ab37e177b2deac405e1c88f"
@@ -1731,12 +1820,14 @@ version = "2.11.1"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
 [[deps.REPL]]
-deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
+deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+version = "1.11.0"
 
 [[deps.Random]]
 deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+version = "1.11.0"
 
 [[deps.RecipesBase]]
 deps = ["PrecompileTools"]
@@ -1791,6 +1882,7 @@ version = "1.2.1"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+version = "1.11.0"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -1805,6 +1897,7 @@ version = "1.2.0"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+version = "1.11.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
@@ -1815,7 +1908,7 @@ version = "1.2.1"
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-version = "1.10.0"
+version = "1.11.0"
 
 [[deps.SpecialFunctions]]
 deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
@@ -1836,9 +1929,14 @@ uuid = "860ef19b-820b-49d6-a774-d7a799459cd3"
 version = "1.0.2"
 
 [[deps.Statistics]]
-deps = ["LinearAlgebra", "SparseArrays"]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "ae3bb1eb3bba077cd276bc5cfc337cc65c3075c0"
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-version = "1.10.0"
+version = "1.11.1"
+weakdeps = ["SparseArrays"]
+
+    [deps.Statistics.extensions]
+    SparseArraysExt = ["SparseArrays"]
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
@@ -1866,6 +1964,10 @@ version = "1.3.2"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
     InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
 
+[[deps.StyledStrings]]
+uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
+version = "1.11.0"
+
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
@@ -1873,12 +1975,24 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "7.2.1+1"
+version = "7.7.0+0"
 
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
+
+[[deps.TableTraits]]
+deps = ["IteratorInterfaceExtensions"]
+git-tree-sha1 = "c06b2f539df1c6efa794486abfb6ed2022561a39"
+uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
+version = "1.0.1"
+
+[[deps.Tables]]
+deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "OrderedCollections", "TableTraits"]
+git-tree-sha1 = "598cd7c1f68d1e205689b1c2fe65a9f85846f297"
+uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+version = "1.12.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -1894,6 +2008,7 @@ version = "0.1.1"
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+version = "1.11.0"
 
 [[deps.TranscodingStreams]]
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
@@ -1913,9 +2028,16 @@ version = "1.5.1"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+version = "1.11.0"
+
+[[deps.UnPack]]
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
+uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+version = "1.0.2"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+version = "1.11.0"
 
 [[deps.UnicodeFun]]
 deps = ["REPL"]
@@ -2219,7 +2341,7 @@ version = "1.1.6+0"
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
-version = "1.52.0+1"
+version = "1.59.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -2246,9 +2368,9 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╟─a3c707eb-2dbd-4ede-80e9-0e4c90e01154
-# ╟─41571ca1-d1a0-4761-8672-c20d30e37786
-# ╟─fad8a8e2-141a-4f54-a822-150ecdcbde5a
+# ╠═a3c707eb-2dbd-4ede-80e9-0e4c90e01154
+# ╠═41571ca1-d1a0-4761-8672-c20d30e37786
+# ╠═fad8a8e2-141a-4f54-a822-150ecdcbde5a
 # ╟─7a83590e-488e-41b7-a4ed-303956cc0359
 # ╟─a3a348bf-6e2c-4775-b1c6-26fa602b319a
 # ╟─a7923940-392f-4ee5-a9a3-126c5b8ba9c3
@@ -2263,9 +2385,9 @@ version = "1.4.1+1"
 # ╟─9c87ab70-aa58-4130-989d-363779557d2c
 # ╟─eb6dc23e-6307-4585-9010-5cc9efb582e9
 # ╟─3719315e-be18-4eee-a5b7-c804071da8bf
-# ╟─954742dc-6a4d-46c8-a94a-c24cc6d9187f
+# ╠═954742dc-6a4d-46c8-a94a-c24cc6d9187f
 # ╟─e5482ba8-5828-4d86-8652-fabfa572cbe9
-# ╟─25f6fc1f-9ed3-4730-8a45-ac98db44e7d8
+# ╠═25f6fc1f-9ed3-4730-8a45-ac98db44e7d8
 # ╟─3168827b-1e31-408d-9ec3-53e725872e5e
 # ╟─943a2a24-5ee7-42b9-bed3-868148d1781a
 # ╟─24794095-f20d-4fe8-9aa9-e862d8d73786
@@ -2288,7 +2410,13 @@ version = "1.4.1+1"
 # ╟─e0671b51-bfdc-460a-a96d-c47464d2af38
 # ╟─b67aadaf-567e-417a-9b87-6e661737db2d
 # ╟─cb5f1029-4a79-4c70-b7e1-6c938cf6d02f
+# ╠═64fe98ea-a420-46ff-97e3-17acec93fe39
+# ╠═b1976137-7d12-41a8-928e-bb674e20afbb
 # ╠═2d57d65d-1fe3-4fda-9f41-5cf68746708b
+# ╠═b6dae495-9c4c-4251-88c6-147bc7b30e83
+# ╠═8fbbab61-f714-489e-91d3-d6756f9c1b03
+# ╠═ccc54dc9-4d8f-4b21-add2-92f9a8b0863b
+# ╠═8da3a4a4-71a8-4afe-b912-d93f27f283d7
 # ╟─722f971d-d8a7-4ea8-81e9-09bba8db8a90
 # ╟─ee5b8b7d-c99f-4bdc-a48e-28a71905a9b4
 # ╠═833c1db0-5ec9-49fe-b64b-da4370dd19b4
@@ -2300,8 +2428,11 @@ version = "1.4.1+1"
 # ╠═c09bac89-58bf-4637-9765-5c26ffe3b79d
 # ╠═2d2474c2-2b43-4dd0-ae51-ad66925e2c18
 # ╠═6500c449-48d2-42ed-9d75-428d8dd35f70
+# ╠═43b92d76-57dd-4a67-9152-1daf594eed3b
 # ╠═eb925a8b-1395-4a45-a805-d62814e9a2f4
+# ╠═1ee419ee-a39a-4e70-99af-c5a60a5239d2
 # ╠═42e0f7de-40c6-41ec-9edd-ddde3ee51161
+# ╠═fa4ec057-8780-48cc-95cc-9af14778098e
 # ╟─4f81db11-2811-4008-b09c-56335160d0c9
 # ╟─c70a0cb0-0900-402b-90f4-c4e254e2f8d5
 # ╟─208af900-c745-4673-b1d1-7eaa9deda626
