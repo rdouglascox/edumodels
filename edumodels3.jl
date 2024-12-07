@@ -22,7 +22,7 @@ begin
 	Plots, 
 	Distributions, 
 	QuadGK, 
-	Printf ,
+	Printf, 
 	PGFPlotsX
 	# PlotlyBase, 
 	# PlotlyKaleido
@@ -135,6 +135,11 @@ choose the default life prospects for bystanders (default=0.5):"
 # ╔═╡ 53444608-183c-4bc4-a619-cf0704515a77
 @bind bystanderlifeprospects_ NumberField(0:0.05:1, default=0.5)
 
+# ╔═╡ 6656ac28-6b17-416f-adb5-3e1815989eac
+md"---
+include direct instrumental benefits: 
+"
+
 # ╔═╡ 97bad24c-f88a-4709-9130-7187536fb99b
 md"## trade-offs"
 
@@ -162,8 +167,19 @@ proportiontoB2_
 # ╔═╡ 668f0185-6f4e-4497-b5a4-9dc33da4113d
 md" this is a plot of A's weighted interests, B's weighted interests, and the sum of their interests. this plot basically shows how policy 1 compares with alternative policies from the point of view of balancing the interests of A and B. if the balance is above 0 and to the left of the current policy line, this typically means A will have a claim against the policy. if it is above 0 and to the right, this trpically means B will have a claim against the policy." 
 
+# ╔═╡ c3cd6515-0dc6-41ef-8920-733296a6074d
+# doindirect
+
+@bind doindirect CheckBox()
+
 # ╔═╡ 64fe98ea-a420-46ff-97e3-17acec93fe39
 md"Latex Plotting"
+
+# ╔═╡ 8fbbab61-f714-489e-91d3-d6756f9c1b03
+# savefig(plotoutcomesLATEX(),  "outcomes.tikz")
+
+# ╔═╡ 8da3a4a4-71a8-4afe-b912-d93f27f283d7
+# savefig(plotwprospectsLATEX(),  "wprospects.tikz")
 
 # ╔═╡ ee5b8b7d-c99f-4bdc-a48e-28a71905a9b4
 md"## plotting
@@ -538,11 +554,22 @@ function costofprovision(d)
 	return((d[1] * unitcost) + (d[2] * unitcost))
 end
 
-# ╔═╡ dd77135b-c68d-486d-9333-249475176d11
-# function for calculating life prospects given chances, average outcomes, and cost of provision 
-function getlifeprospects(ch,avout,cp)
-    total = ((scaleavout * avout) - cp) * 0.01 
-	return ((ch * pptop * total) + ((1 - ch) * ppbot * total))
+# ╔═╡ bf8398f4-9d2a-4c32-a298-212e5f2d5ece
+# scale life prospects based on individual educational outcomes 
+function scaleshare(x,y)
+    addtoshare = logistic(y,100,0.1,50) * 0.01 
+	return(x + addtoshare)
+end
+
+# ╔═╡ 3e757a5f-42d1-448a-80f2-525bcfefecdd
+function getlifeprospects_(ch,tavout,iavout,cp)
+	if doindirect 
+		total = ((scaleavout * tavout) - cp) * 0.01 
+	    return ((ch * pptop * total) + ((1 - ch) * scaleshare(ppbot,iavout) * total))
+	else 
+		total = ((scaleavout * tavout) - cp) * 0.01 
+	    return ((ch * pptop * total) + ((1 - ch) * ppbot * total))
+	end
 end
 
 # ╔═╡ 5cef23cd-77bf-4c7f-9733-d1b415337b3b
@@ -574,10 +601,10 @@ function quickwsum(dt1,dt2)
 	d2avout = d2avoutA + d2avoutB # average outcomes on d2 
 	d1cost = costofprovision((dt1[1] - baseline[1], dt1[2] - baseline[2])) 
 	d2cost = costofprovision((dt2[1] - baseline[1], dt2[2] - baseline[2])) 
-	d1lpA = getlifeprospects(d1chA,d1avout,d1cost)
-	d1lpB = getlifeprospects(d1chB,d1avout,d1cost) 
-	d2lpA = getlifeprospects(d2chA,d2avout,d2cost) 
-	d2lpB = getlifeprospects(d2chB,d2avout,d2cost) 
+	d1lpA = getlifeprospects_(d1chA,d1avout,d1avoutA,d1cost)
+	d1lpB = getlifeprospects_(d1chB,d1avout,d1avoutB,d1cost) 
+	d2lpA = getlifeprospects_(d2chA,d2avout,d2avoutA,d2cost) 
+	d2lpB = getlifeprospects_(d2chB,d2avout,d2avoutB,d2cost) 
 
 	wdiffs = getwdiffs(d1lpA,d2lpA,d1lpB,d2lpB) 
 	wsum =  wdiffs[2] + wdiffs[1]
@@ -657,10 +684,10 @@ function runmodel(dt1,dt2)
 	d2avout = d2avoutA + d2avoutB # average outcomes on d2 
 	d1cost = costofprovision((dt1[1] - baseline[1], dt1[2] - baseline[2])) 
 	d2cost = costofprovision((dt2[1] - baseline[1], dt2[2] - baseline[2])) 
-	d1lpA = getlifeprospects(d1chA,d1avout,d1cost)
-	d1lpB = getlifeprospects(d1chB,d1avout,d1cost) 
-	d2lpA = getlifeprospects(d2chA,d2avout,d2cost) 
-	d2lpB = getlifeprospects(d2chB,d2avout,d2cost) 
+	d1lpA = getlifeprospects_(d1chA,d1avout,d1avoutA,d1cost)
+	d1lpB = getlifeprospects_(d1chB,d1avout,d1avoutB,d1cost) 
+	d2lpA = getlifeprospects_(d2chA,d2avout,d2avoutA,d2cost) 
+	d2lpB = getlifeprospects_(d2chB,d2avout,d2avoutB,d2cost) 
 	uwdiffs = getuwdiffs(d1lpA,d2lpA,d1lpB,d2lpB) 
 	wdiffs = getwdiffs(d1lpA,d2lpA,d1lpB,d2lpB) 
 	wsum =  wdiffs[2] + wdiffs[1]
@@ -806,9 +833,6 @@ end
 # ╔═╡ ccc54dc9-4d8f-4b21-add2-92f9a8b0863b
 plotwprospectsLATEX()
 
-# ╔═╡ 8da3a4a4-71a8-4afe-b912-d93f27f283d7
-savefig(plotwprospectsLATEX(),  "wprospects.tikz")
-
 # ╔═╡ 8db6baef-ee08-4ba7-a527-3acdff34294d
 getallaverageoutcomes = map(y -> (scaleavout * y) + addavout,map(x -> x.av_out_2,allreports))
 
@@ -827,9 +851,6 @@ end
 
 # ╔═╡ b6dae495-9c4c-4251-88c6-147bc7b30e83
 plotoutcomesLATEX()
-
-# ╔═╡ 8fbbab61-f714-489e-91d3-d6756f9c1b03
-savefig(plotoutcomesLATEX(),  "outcomes.tikz")
 
 # ╔═╡ e56258ed-3334-402c-8cc3-4ccadd4340fd
 function getBschances(x) 
@@ -2385,7 +2406,7 @@ version = "1.4.1+1"
 # ╟─9c87ab70-aa58-4130-989d-363779557d2c
 # ╟─eb6dc23e-6307-4585-9010-5cc9efb582e9
 # ╟─3719315e-be18-4eee-a5b7-c804071da8bf
-# ╠═954742dc-6a4d-46c8-a94a-c24cc6d9187f
+# ╟─954742dc-6a4d-46c8-a94a-c24cc6d9187f
 # ╟─e5482ba8-5828-4d86-8652-fabfa572cbe9
 # ╠═25f6fc1f-9ed3-4730-8a45-ac98db44e7d8
 # ╟─3168827b-1e31-408d-9ec3-53e725872e5e
@@ -2396,6 +2417,7 @@ version = "1.4.1+1"
 # ╟─7588880c-2c3a-4b19-950d-e21faf015105
 # ╟─8f7951a7-1fde-4783-8cf4-26412041fc77
 # ╟─53444608-183c-4bc4-a619-cf0704515a77
+# ╟─6656ac28-6b17-416f-adb5-3e1815989eac
 # ╟─97bad24c-f88a-4709-9130-7187536fb99b
 # ╟─b00c0a99-fa37-4dd2-8c3b-aa1f63bb1066
 # ╟─33be0c01-b712-406e-8827-1c194f2fa863
@@ -2408,6 +2430,7 @@ version = "1.4.1+1"
 # ╟─668f0185-6f4e-4497-b5a4-9dc33da4113d
 # ╟─a7362fe6-9f5d-405b-af96-ddb4bcef5f4e
 # ╟─e0671b51-bfdc-460a-a96d-c47464d2af38
+# ╟─c3cd6515-0dc6-41ef-8920-733296a6074d
 # ╟─b67aadaf-567e-417a-9b87-6e661737db2d
 # ╟─cb5f1029-4a79-4c70-b7e1-6c938cf6d02f
 # ╠═64fe98ea-a420-46ff-97e3-17acec93fe39
@@ -2505,17 +2528,18 @@ version = "1.4.1+1"
 # ╟─ef84633d-cc13-4573-9203-940fb2a14f35
 # ╟─8b840cfb-c22e-498f-a052-8404ee68e153
 # ╟─6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
-# ╟─7374becb-cf8b-4416-8e4b-08fe2f62aceb
+# ╠═7374becb-cf8b-4416-8e4b-08fe2f62aceb
 # ╟─dfa36663-3f67-4809-9071-a68a0c985be1
-# ╟─965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
+# ╠═965cfdc9-5e9f-4d4f-9ec3-0115dddc2e6d
 # ╟─6d00b682-dbf8-41ef-95f6-04c210f128a1
 # ╟─500ea6f5-9e50-4a93-9832-dd48e3727eb0
 # ╟─24e949ba-9794-4bf2-8d36-19bbbf7c7087
-# ╟─dd77135b-c68d-486d-9333-249475176d11
+# ╠═3e757a5f-42d1-448a-80f2-525bcfefecdd
+# ╠═bf8398f4-9d2a-4c32-a298-212e5f2d5ece
 # ╟─5cef23cd-77bf-4c7f-9733-d1b415337b3b
 # ╟─d4db49d9-ef20-4ab0-8d7a-ed05f0c06ac1
-# ╟─14a6c1d8-48cf-4bfc-b7f9-f56fd0406ead
-# ╟─5e88a846-a6e1-490b-a946-afc9d3b65bb4
+# ╠═14a6c1d8-48cf-4bfc-b7f9-f56fd0406ead
+# ╠═5e88a846-a6e1-490b-a946-afc9d3b65bb4
 # ╟─35587cb6-f68a-4423-b524-43bc2d1da908
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
