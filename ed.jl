@@ -4,17 +4,20 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 1c2cb753-2372-4307-915c-0f1a272c0ab9
-using Plots, Distributions, QuadGK
-
-# ╔═╡ fb9e0eae-b43f-11ef-2717-03c7a0402193
-# a record type for general statistics for a model
-struct GeneralStatistics 
-	totalopportunities::Float64 
-	totalcostofopportunities::Float64 
-	totaleducationaloutcomes::Float64 
-	grossdomesticproduct::Float64
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    #! format: off
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+    #! format: on
 end
+
+# ╔═╡ 1c2cb753-2372-4307-915c-0f1a272c0ab9
+using Plots, Distributions, QuadGK, PlutoUI
 
 # ╔═╡ cf4db89d-fc7a-4c98-809c-18da2755e3c2
 # a record type for individual statistics for a model
@@ -22,10 +25,26 @@ struct IndividualStatistics
 	opportunities::Float64
 	chances::Float64
 	averageoutcomes::Float64
-	unweightedlifeprospects::Float64 
-	weightedlifeprospects::Float64
+	lifeprospects::Float64 
 end
 	
+
+# ╔═╡ fb9e0eae-b43f-11ef-2717-03c7a0402193
+# a record type for general statistics for a model
+struct GeneralStatistics 
+	totalopportunities::Float64 
+	totalcostofopportunities::Float64 
+	totaleducationaloutcomes::Float64 
+	totaleducationalbenefits::Float64 
+	topprospects::Float64 
+	bottomprospects::Float64
+end
+
+# ╔═╡ 2a7857dd-7050-4a88-9e19-2f03a8615158
+function getindoutcomes(xs,ys) 
+    zipped = zip(xs,ys) 
+	map(x -> x[2](x[1]),zipped) 
+end
 
 # ╔═╡ 5841ec57-48a8-466d-a521-2b6f0daa83d2
 # a record type for pairwise comparisons of policies
@@ -39,46 +58,17 @@ struct PairwiseComparison
 	weightedsums::Vector{Float64}
 end
 
-# ╔═╡ c5ef3f05-a03b-4bfa-a4cb-73074b6c0524
-eg1a = IndividualStatistics(
-	100,
-	0.8,
-	100,
-	0.8,
-	0.2
-    ) 
-
-# ╔═╡ 74f719e6-cabb-4460-992a-6ebc19d2f381
-eg1b = IndividualStatistics(
-	100,
-	0.8,
-	100,
-	0.9,
-	0.2
-    ) 
-
-# ╔═╡ 90ea71a8-9765-45ba-9750-45af54fc6491
-eg2a = IndividualStatistics(
-	100,
-	0.8,
-	100,
-	0.9,
-	0.2
-    ) 
-
-# ╔═╡ c15781d3-8781-4b5d-999a-f6b0b5822620
-eg2b = IndividualStatistics(
-	100,
-	0.8,
-	100,
-	0.8,
-	0.2
-    ) 
-
-# ╔═╡ 7b2a2d23-608f-4edf-8a0e-0b80a53355fe
-
+# ╔═╡ ef03faa6-e09c-47a6-9cde-b5559193bdc1
+# get the balance of weighted interests in improvement 
+function getbalance(x,y) 
+    if x >= 0 && y <= 0
+		x + y 
+	else 0
+	end 
+end
 
 # ╔═╡ 703c05c5-6bd9-4dec-8319-5d998c279940
+# get the probability that some individual is top ranked
 function probhighest(i,pdfs::Vector{Distributions.Normal{Float64}})
 	num_individuals = length(pdfs)
 	integrand(x_i) = pdf(pdfs[i], x_i) * prod(j -> cdf(pdfs[j], x_i), setdiff(1:num_individuals, [i]))
@@ -92,20 +82,36 @@ function getchances(pdfs::Vector{Distributions.Normal{Float64}})
 	chances / sum(chances)
 end
 
+# ╔═╡ 92f48dd7-8847-44ac-94f7-167621f8b1e5
+function getpdfs(x::Vector{Float64},y::Vector{Function}) 
+	zipper = zip(x,y) 
+	map(z -> Normal(z[2](z[1]),20),zipper)
+end
+
 # ╔═╡ 0f19d840-ad37-4e90-a316-58a0a920a653
-function getuwlifeprospects(x::Float64) 
-	x * 0.8 + (1 - x) * 0.4 
+# this function gives unweighted life prospects given totalopportunities, totaloutcomes, and chances
+function getuwlifeprospects(t,b,ch)
+	return(t * ch + b * (1 - ch)) 
 end
 
-# ╔═╡ 1a5b52a0-5b72-4922-bb1c-e4d0b250ea9a
-# this is just a weighting function
-function toweighted(x)
-	return ((1 - x) ^ 2)
-end
-
-# ╔═╡ 41d57ca1-be29-436d-aed0-f3a27cd696a0
-function getwlifeprospects(x::Float64) 
-	toweighted(x * 0.8 + (1 - x) * 0.4)
+# ╔═╡ b49c798f-aac4-4a16-bc02-ed47c17a068f
+# run the model on a list of opportunities 
+function runmodel(x::Vector{Float64},y::Vector{Function})
+	ops = x
+	totalopportunities = sum(ops)  
+	pdfs = getpdfs(x,y)
+	chances = getchances(pdfs) 
+	outcomes = getindoutcomes(x,y)
+	totaloutcomes = sum(outcomes)
+	outsbenefit = totaloutcomes * 0.001
+	opscost = (totalopportunities - 160) * 0.005 
+	topprospects = 0.8 + (outsbenefit * 0.5) - (opscost * 0.5) 
+    bottomprospects = 0.4 + outsbenefit - opscost 
+	uwlp = map(z -> getuwlifeprospects(topprospects,bottomprospects,z),chances)
+	myzip = zip(ops,chances,outcomes,uwlp) 
+	indstats = [IndividualStatistics(x[1],x[2],x[3],x[4]) for x in myzip] 
+	gstats = [GeneralStatistics(totalopportunities,opscost,totaloutcomes,outsbenefit,topprospects,bottomprospects)]
+    return (indstats,gstats) # return individual and general statistics
 end
 
 # ╔═╡ 0b4c4e00-78ff-4eac-8a55-c69f51f36b5a
@@ -113,46 +119,57 @@ function weighteddiff(x, y)
     if x == y
         return 0
     elseif x < y
-        return (x - y) * ((1 - x) ^ 2)
+        return (x - y) * ((1 - x) ^ 2) 
     else  # This covers the case where y < x
-        return (x - y) * ((1 - y) ^ 2)
+        return  (x - y) * ((1 - y) ^ 2)
     end
 end
 
 # ╔═╡ fec8f84e-48d9-4f40-94b7-49dbcc592ea6
-# we compare the outcome of one policy against the outcome of another policy
-# the crucial step in this function is comparing what each individual has to gain by moving from policy 1 to policy 2, if they have anything to gain, against what the individual who stands to lose the most by moving to policy 2 will lose by
-function dopairwisecomparisons(s1::Vector{IndividualStatistics},s2::Vector{IndividualStatistics}) zipped = zip(s1,s2)
+# compare two policies 
+function dopairwisecomparisons(s1,s2) 
+    zipped = zip(s1,s2)
 	opdiff = map(x -> x[2].opportunities - x[1].opportunities, zipped) 
 	chdiff = map(x -> x[2].chances - x[1].chances, zipped) 
 	outdiff = map(x -> x[2].averageoutcomes - x[1].averageoutcomes, zipped) 
-	uwdiff = map(x -> x[2].unweightedlifeprospects - x[1].unweightedlifeprospects, zipped) 
-	wdiff = map(x -> weighteddiff(x[2].unweightedlifeprospects, x[1].unweightedlifeprospects), zipped)
+	uwdiff = map(x -> x[2].lifeprospects - x[1].lifeprospects, zipped) 
+	wdiff = map(x -> weighteddiff(x[2].lifeprospects, x[1].lifeprospects), zipped)
     minuwdiff = minimum(uwdiff) 
 	minwdiff = minimum(wdiff)  
 	uwsum = [ x + minuwdiff for x in uwdiff ] 
-	wsum = [ x + minwdiff for x in wdiff]
+	wsum = [ getbalance(x,minwdiff) for x in wdiff]
 	return PairwiseComparison( 
 		opdiff,
 		chdiff,
 		outdiff,
 		uwdiff,
-		wdiff,
+	  	wdiff,
 		uwsum,
 		wsum
-	)
+	) # return pairwise comparison of individual statistics
 end
 	
     
 
-# ╔═╡ 0e7c4cf6-2834-41bc-a2b9-92e348018455
-dopairwisecomparisons([eg1a,eg1b],[eg2a,eg2b])
-
 # ╔═╡ 90b7ca81-53bc-4042-b10e-cf18923fd820
-policyrange = 0.0:20.0
+policyrange = 0.0:0.1:20.0
+
+# ╔═╡ 31b1f7f0-84f0-402d-8f14-e4b23cffa87b
+baseline = 40
 
 # ╔═╡ eca15192-3693-405c-9eee-e1eef4232b41
-allpolicies = [ [40 + x, 40 + 20 - x,40,29] for x in policyrange]
+allpolicies = [ [baseline + 10, baseline + 10, baseline + x, baseline + x] for x in policyrange]
+
+# ╔═╡ e2167084-82f6-4deb-9ec6-6e258a591058
+@bind selected Slider(1:201, default=1)
+
+# ╔═╡ 6930f5d4-b57c-4d35-86c6-0e69ae189d90
+setpolicy = allpolicies[selected]
+
+# ╔═╡ d9a28eaf-299e-4453-8fb5-a6f47c46ec1d
+function r0(xs) 
+	map(x -> if x <= 0.0000000; NaN; else x;end,xs) 
+end
 
 # ╔═╡ bbc6da79-6742-4bbf-a484-35cdf3da39ce
 # Logistic function
@@ -165,32 +182,104 @@ function highlogistic(n)
 	logistic(n,100,0.1,50)
 end
 
-# ╔═╡ 92f48dd7-8847-44ac-94f7-167621f8b1e5
-function getpdfs(x::Vector{Float64}) 
-	[Normal(map(highlogistic,y),20) for y in x]
+# ╔═╡ 035a098e-cbbe-4edb-9dfb-f8bc0a00e231
+function lowlogistic(n) 
+	logistic(n,70,0.1,50)
 end
 
-# ╔═╡ b49c798f-aac4-4a16-bc02-ed47c17a068f
-function runmodel(x::Vector{Float64}) 
-	ops = x
-	pdfs = getpdfs(x)
-	chances = getchances(pdfs) 
-	outcomes =  map(x -> 10.0,x)
-	uwlp = map(getuwlifeprospects,chances)
-	wlp = map(getwlifeprospects,chances) 
-	myzip = zip(ops,chances,outcomes,uwlp,wlp) 
-	indstats = [IndividualStatistics(x[1],x[2],x[3],x[4],x[5]) for x in myzip]
-    return (indstats) 
-end
+# ╔═╡ a5e2a78f-1bc0-41df-bf01-26b5392404d4
+abilitylist = [highlogistic,lowlogistic,highlogistic,lowlogistic]
 
 # ╔═╡ ef7cc9a9-c14f-4e44-96c6-8db0e56bca01
-runmodel([21.0,20.0])
+runmodel([51.0,50.0,50.0,50.0],abilitylist)
 
 # ╔═╡ f1f6baf7-fcba-4187-86dd-c383b549f57b
-dopairwisecomparisons(runmodel([25.0,15.0]),runmodel([20.0,20.0]))
+dopairwisecomparisons(runmodel([50.0,50.0,50.0,50.0],abilitylist)[1],runmodel([50.0,50.0,50.0,50.0],abilitylist)[1])
+
+# ╔═╡ b87ecdc4-538c-4b21-9d1f-b58a6282a0da
+allind = map(x -> runmodel(x,abilitylist),allpolicies)
+
+# ╔═╡ 2500e6c3-da85-4c64-87b4-114cc34ebf33
+ch1 = map(x -> x[1][1].chances, allind)
+
+# ╔═╡ f6140528-9b8f-4dff-a846-19d0e86d38b9
+ch2 = map(x -> x[1][2].chances, allind)
+
+# ╔═╡ 063f4581-21fe-48c5-9bb1-4c63b6cf68c1
+ch3 = map(x -> x[1][3].chances, allind)
+
+# ╔═╡ 057794fc-3b6f-4b45-8cdf-5033cd84c82a
+ch4 = map(x -> x[1][4].chances, allind)
+
+# ╔═╡ bcbfd960-8c9b-43ff-bca5-7288e4f200b5
+function plotchances()
+	plot(policyrange,ch1)
+	plot!(policyrange,ch2)
+	plot!(policyrange,ch3)
+	plot!(policyrange,ch4)
+end
+
+# ╔═╡ e12a9f1e-87c1-4051-a1c2-62cd6b94088d
+plotchances()
+
+# ╔═╡ fa10f392-41c1-4bbe-9139-52969af0b091
+o1 = map(x -> x[1][1].averageoutcomes, allind)
+
+# ╔═╡ 2e4b8df6-cebd-4f16-9d46-c838887481eb
+o2 = map(x -> x[1][2].averageoutcomes, allind)
+
+# ╔═╡ 58288845-458c-450a-87a7-184866da8410
+o3 = map(x -> x[1][3].averageoutcomes, allind)
+
+# ╔═╡ 9a2f5104-af16-4521-a90b-6c0177a8a946
+o4 = map(x -> x[1][4].averageoutcomes, allind)
+
+# ╔═╡ bca92e66-e238-4525-8a55-15724a475421
+function plotaverageoutcomes()
+	plot(policyrange,o1)
+	plot!(policyrange,o2)
+	plot!(policyrange,o3)
+	plot!(policyrange,o4)
+end
+
+# ╔═╡ 736336c2-9be5-436d-b141-469686f0eac3
+plotaverageoutcomes()
+
+# ╔═╡ fc717766-a093-4f31-8994-fd55f604d839
+totaloutcomes = map(x->x[2][1].totaleducationaloutcomes,allind)
+
+# ╔═╡ e9450b42-ab32-40ac-98b5-797cb52306c1
+plot(policyrange,totaloutcomes)
+
+# ╔═╡ 1412e7a0-f61d-482c-abbf-5f30bbc1c93b
+totalcosts = map(x->x[2][1].totalcostofopportunities,allind)
+
+# ╔═╡ 50b360b9-5b87-4b81-8e0c-7c8803fa77e6
+plot(policyrange,totalcosts, ylims=(0,1))
+
+# ╔═╡ be0286cc-f445-48d2-a595-e0b297b5657e
+totalbenefits = map(x->x[2][1].totaleducationalbenefits,allind)
+
+# ╔═╡ d9b22119-0736-40d0-8ec0-1bc5b1c01f18
+plot(policyrange,totalbenefits)
+
+# ╔═╡ f667ba70-f1ab-4912-8750-88f9bab4725f
+topprospects = map(x->x[2][1].topprospects,allind)
+
+# ╔═╡ e64052eb-f0f3-4bad-b079-b2f34405b98d
+bottomprospects = map(x->x[2][1].bottomprospects,allind)
+
+# ╔═╡ f84dba47-54da-4d5d-8f33-b59ed85382a2
+function plotprospects() 
+	plot(policyrange,topprospects, ylim=(0,1))
+	plot!(policyrange,bottomprospects)
+end
+
+# ╔═╡ 4b44677e-791f-4809-990c-0e72bf69d22a
+plotprospects()
 
 # ╔═╡ 80027a94-08dc-411a-8065-30f36289ea54
-allpwcs = map(x -> dopairwisecomparisons(runmodel([55.0,45.0,40,29]),runmodel(x)),allpolicies)
+allpwcs = map(x -> dopairwisecomparisons(runmodel(setpolicy,abilitylist)[1],runmodel(x,abilitylist)[1]),allpolicies)
 
 # ╔═╡ ec6d1c0b-19da-4a9c-845b-67f23ba57a28
 diffs1 = map(x -> x.weighteddifferences[1],allpwcs)
@@ -206,10 +295,11 @@ diffs4 = map(x -> x.weighteddifferences[4],allpwcs)
 
 # ╔═╡ 62de8a05-a6a7-44ee-be92-0875acf44f78
 function plotdiffs()
-	plot(policyrange,diffs1)
-	plot!(policyrange,diffs2)
-	plot!(policyrange,diffs3)
-	plot!(policyrange,diffs4)
+	theme(:dracula)
+	plot(policyrange,diffs1, xlabel="additional opportunities to lower class background",ylabel="weighted interests in improvement",label="upper high", size=(700, 400), title="weighted interests in alternatives")
+	plot!(policyrange,diffs2,label="upper low")
+	plot!(policyrange,diffs3,label="lower high")
+	plot!(policyrange,diffs4,label="lower low")
 end
 
 # ╔═╡ 6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
@@ -217,6 +307,9 @@ plotdiffs()
 
 # ╔═╡ da4aa21b-baef-4a8a-98d0-b30b48edbf6a
 sums1 = map(x -> x.weightedsums[1],allpwcs)
+
+# ╔═╡ b1467ba7-d61c-4522-9ce2-a308309fe585
+r0(sums1)
 
 # ╔═╡ c8597145-e999-42d0-8c90-45e5f354b73b
 sums2 = map(x -> x.weightedsums[2],allpwcs)
@@ -229,16 +322,18 @@ sums4 = map(x -> x.weightedsums[4],allpwcs)
 
 # ╔═╡ 4ab4b692-d0cd-4044-b3fc-d9ab425bca65
 function plotsums()
-    plot(policyrange,sums1)
-	plot!(policyrange,sums2)
-	plot!(policyrange,sums3)
-	plot!(policyrange,sums4)
+    plot(policyrange,r0(sums1),ylims=(0.0,0.05))
+	plot!(policyrange,r0(sums2))
+	plot!(policyrange,r0(sums3))
+	plot!(policyrange,r0(sums4))
 end
 
 # ╔═╡ 0ba33293-5916-49b9-a5b3-1d14a9f1151d
 plotsums()
 
 # ╔═╡ 1009591d-6457-4a4a-a965-f342d782103b
+# ╠═╡ disabled = true
+#=╠═╡
 function find_combinations(target_sum, num_elements, current_combination=Float64[], current_sum=0.0, results=Vector{Vector{Float64}}())
     if length(current_combination) == num_elements
         if abs(current_sum - target_sum) < 1e-6  # Allowing for floating-point precision errors
@@ -257,69 +352,20 @@ function find_combinations(target_sum, num_elements, current_combination=Float64
 
     return results
 end
-
-# ╔═╡ ad4848b4-c213-4233-8cc9-fe00ed709a27
-stillmorepolicies = [[x[1] + 40.0,x[2] +40.0 ,x[3] + 40.0,x[4] + 40.0] for x in find_combinations(20.0,4.0)]
-
-# ╔═╡ 935b17c1-8a1d-4eb6-b519-d1d6661a7b3c
-stillmorepwcs = map(x -> dopairwisecomparisons(runmodel([45.0,45.0,45.0,20.0]),runmodel(x)),stillmorepolicies)
-
-# ╔═╡ eb53d139-205b-476c-9f18-e6fbd0702364
-superdiffs1 = (map(x -> x.weighteddifferences[1],stillmorepwcs))
-
-# ╔═╡ 800b5407-4d4e-4805-a1f0-708c4f624a7a
-superdiffs2 = (map(x -> x.weighteddifferences[2],stillmorepwcs))
-
-# ╔═╡ d42f5b5b-cc7f-4958-85c1-5c3dbb83cab4
-superdiffs3 = (map(x -> x.weighteddifferences[3],stillmorepwcs))
-
-# ╔═╡ 7d46e948-01f0-458e-a1d5-47e74a6591d8
-superdiffs4 = (map(x -> x.weighteddifferences[4],stillmorepwcs))
-
-# ╔═╡ 5e360c03-015b-410c-950b-9f2b7428442b
-function plotsuperdiffs()
-    plot(1:(length(superdiffs1)), superdiffs1)
-	plot!(1:(length(superdiffs1)), superdiffs2)
-	plot!(1:(length(superdiffs1)), superdiffs3)
-	plot!(1:(length(superdiffs1)), superdiffs4)
-end
-
-# ╔═╡ 46a9d338-3a61-431c-b4b2-a4b6e239d0f3
-plotsuperdiffs()
-
-# ╔═╡ 6d1e1880-abac-4b2a-b5f4-7c2fca107a4d
-supersums1 = (map(x -> x.weightedsums[1],stillmorepwcs))
-
-# ╔═╡ 40e70ccd-e00d-4808-a41c-a69445e6ae69
-supersums2 = (map(x -> x.weightedsums[2],stillmorepwcs))
-
-# ╔═╡ 0b0d5454-c26b-40ec-8ff0-53dd762a5b37
-supersums3 = (map(x -> x.weightedsums[3],stillmorepwcs))
-
-# ╔═╡ 07740213-c849-46d4-bd5e-a080c9eb4d04
-supersums4 = (map(x -> x.weightedsums[4],stillmorepwcs))
-
-# ╔═╡ bcd0ab73-998c-44ad-ab74-14cf50f6bd5c
-function plotsupersums()
-    plot(1:(length(superdiffs1)), supersums1)
-	plot!(1:(length(superdiffs1)), supersums2)
-	plot!(1:(length(superdiffs1)), supersums3)
-	plot!(1:(length(superdiffs1)), supersums4)
-end
-
-# ╔═╡ ac42bdf4-3f72-4d02-8bf0-f6a9cf5eff67
-plotsupersums()
+  ╠═╡ =#
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 
 [compat]
 Distributions = "~0.25.113"
 Plots = "~1.40.9"
+PlutoUI = "~0.7.60"
 QuadGK = "~2.11.1"
 """
 
@@ -329,7 +375,13 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "2f1a8ddd64cd077a1c67677af1d1f738ae694236"
+project_hash = "e8c602158c3309c0729a09a9d55d49b9e00854ee"
+
+[[deps.AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "6e1d2a35f2f90a4bc7c2ed98079b2ba09c35b83a"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.3.2"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -615,6 +667,24 @@ git-tree-sha1 = "b1c2585431c382e3fe5805874bda6aea90a95de9"
 uuid = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
 version = "0.3.25"
 
+[[deps.Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "179267cfa5e712760cd43dcae385d7ea90cc25a4"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.5"
+
+[[deps.HypertextLiteral]]
+deps = ["Tricks"]
+git-tree-sha1 = "7134810b1afce04bbc1045ca1985fbe81ce17653"
+uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+version = "0.9.5"
+
+[[deps.IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "b6d6bfdd7ce25b0f9b2f6b3dd56b2673a66c8770"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.5"
+
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -802,6 +872,11 @@ git-tree-sha1 = "f02b56007b064fbfddb4c9cd60161b6dd0f40df3"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 version = "1.1.0"
 
+[[deps.MIMEs]]
+git-tree-sha1 = "65f28ad4b594aebe22157d6fac869786a255b7eb"
+uuid = "6c6e2e6c-3030-632d-7369-2d6c69616d65"
+version = "0.1.4"
+
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
 git-tree-sha1 = "2fa9ee3e63fd3a4f7a9a4f4744a52f4856de82df"
@@ -972,6 +1047,12 @@ version = "1.40.9"
     IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
     ImageInTerminal = "d8c32880-2388-543b-8c61-d9f865259254"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[[deps.PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
+git-tree-sha1 = "eba4810d5e6a01f612b948c9fa94f905b49087b0"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.60"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
@@ -1214,6 +1295,11 @@ version = "1.11.0"
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.11.3"
+
+[[deps.Tricks]]
+git-tree-sha1 = "7822b97e99a1672bfb1b49b668a6d46d58d8cbcb"
+uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
+version = "0.1.9"
 
 [[deps.URIs]]
 git-tree-sha1 = "67db6cc7b3821e19ebe75791a9dd19c9b1188f2b"
@@ -1559,57 +1645,67 @@ version = "1.4.1+1"
 
 # ╔═╡ Cell order:
 # ╠═1c2cb753-2372-4307-915c-0f1a272c0ab9
-# ╠═fb9e0eae-b43f-11ef-2717-03c7a0402193
 # ╠═cf4db89d-fc7a-4c98-809c-18da2755e3c2
+# ╠═fb9e0eae-b43f-11ef-2717-03c7a0402193
+# ╠═b49c798f-aac4-4a16-bc02-ed47c17a068f
+# ╠═2a7857dd-7050-4a88-9e19-2f03a8615158
 # ╠═5841ec57-48a8-466d-a521-2b6f0daa83d2
 # ╠═fec8f84e-48d9-4f40-94b7-49dbcc592ea6
-# ╠═c5ef3f05-a03b-4bfa-a4cb-73074b6c0524
-# ╠═74f719e6-cabb-4460-992a-6ebc19d2f381
-# ╠═90ea71a8-9765-45ba-9750-45af54fc6491
-# ╠═c15781d3-8781-4b5d-999a-f6b0b5822620
-# ╠═0e7c4cf6-2834-41bc-a2b9-92e348018455
-# ╠═7b2a2d23-608f-4edf-8a0e-0b80a53355fe
+# ╠═ef03faa6-e09c-47a6-9cde-b5559193bdc1
 # ╠═703c05c5-6bd9-4dec-8319-5d998c279940
 # ╠═53b199f0-3126-4d6a-96cc-75834b74c5e5
 # ╠═92f48dd7-8847-44ac-94f7-167621f8b1e5
-# ╠═b49c798f-aac4-4a16-bc02-ed47c17a068f
-# ╠═41d57ca1-be29-436d-aed0-f3a27cd696a0
 # ╠═0f19d840-ad37-4e90-a316-58a0a920a653
-# ╠═1a5b52a0-5b72-4922-bb1c-e4d0b250ea9a
 # ╠═ef7cc9a9-c14f-4e44-96c6-8db0e56bca01
+# ╠═a5e2a78f-1bc0-41df-bf01-26b5392404d4
 # ╠═f1f6baf7-fcba-4187-86dd-c383b549f57b
 # ╠═0b4c4e00-78ff-4eac-8a55-c69f51f36b5a
 # ╠═90b7ca81-53bc-4042-b10e-cf18923fd820
+# ╠═31b1f7f0-84f0-402d-8f14-e4b23cffa87b
 # ╠═eca15192-3693-405c-9eee-e1eef4232b41
+# ╠═b87ecdc4-538c-4b21-9d1f-b58a6282a0da
+# ╠═2500e6c3-da85-4c64-87b4-114cc34ebf33
+# ╠═f6140528-9b8f-4dff-a846-19d0e86d38b9
+# ╠═063f4581-21fe-48c5-9bb1-4c63b6cf68c1
+# ╠═057794fc-3b6f-4b45-8cdf-5033cd84c82a
+# ╠═e12a9f1e-87c1-4051-a1c2-62cd6b94088d
+# ╠═fa10f392-41c1-4bbe-9139-52969af0b091
+# ╠═2e4b8df6-cebd-4f16-9d46-c838887481eb
+# ╠═58288845-458c-450a-87a7-184866da8410
+# ╠═9a2f5104-af16-4521-a90b-6c0177a8a946
+# ╠═736336c2-9be5-436d-b141-469686f0eac3
+# ╠═fc717766-a093-4f31-8994-fd55f604d839
+# ╠═e9450b42-ab32-40ac-98b5-797cb52306c1
+# ╠═1412e7a0-f61d-482c-abbf-5f30bbc1c93b
+# ╠═50b360b9-5b87-4b81-8e0c-7c8803fa77e6
+# ╠═be0286cc-f445-48d2-a595-e0b297b5657e
+# ╠═d9b22119-0736-40d0-8ec0-1bc5b1c01f18
+# ╠═f667ba70-f1ab-4912-8750-88f9bab4725f
+# ╠═e64052eb-f0f3-4bad-b079-b2f34405b98d
+# ╠═4b44677e-791f-4809-990c-0e72bf69d22a
+# ╠═f84dba47-54da-4d5d-8f33-b59ed85382a2
+# ╠═bcbfd960-8c9b-43ff-bca5-7288e4f200b5
+# ╠═bca92e66-e238-4525-8a55-15724a475421
 # ╠═80027a94-08dc-411a-8065-30f36289ea54
+# ╠═6930f5d4-b57c-4d35-86c6-0e69ae189d90
 # ╠═ec6d1c0b-19da-4a9c-845b-67f23ba57a28
 # ╠═bd505039-c0df-4ad1-a4c0-4c9a0e0594e6
 # ╠═df9afb2f-ffde-4746-86a9-e7ec8221ed24
 # ╠═067b6ac9-a6aa-40fb-9149-eab3ce048273
 # ╠═62de8a05-a6a7-44ee-be92-0875acf44f78
 # ╠═6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
+# ╠═e2167084-82f6-4deb-9ec6-6e258a591058
+# ╠═0ba33293-5916-49b9-a5b3-1d14a9f1151d
 # ╠═da4aa21b-baef-4a8a-98d0-b30b48edbf6a
 # ╠═c8597145-e999-42d0-8c90-45e5f354b73b
 # ╠═d67a8b87-a64b-4b9f-a7ca-f936203359e8
 # ╠═2092120d-4442-4506-a9d1-386762a0b6c3
 # ╠═4ab4b692-d0cd-4044-b3fc-d9ab425bca65
-# ╠═0ba33293-5916-49b9-a5b3-1d14a9f1151d
+# ╠═d9a28eaf-299e-4453-8fb5-a6f47c46ec1d
+# ╠═b1467ba7-d61c-4522-9ce2-a308309fe585
 # ╠═bbc6da79-6742-4bbf-a484-35cdf3da39ce
 # ╠═7abfd9a4-ae00-4a23-b644-1e75755ac4a5
+# ╠═035a098e-cbbe-4edb-9dfb-f8bc0a00e231
 # ╠═1009591d-6457-4a4a-a965-f342d782103b
-# ╠═ad4848b4-c213-4233-8cc9-fe00ed709a27
-# ╠═935b17c1-8a1d-4eb6-b519-d1d6661a7b3c
-# ╠═eb53d139-205b-476c-9f18-e6fbd0702364
-# ╠═800b5407-4d4e-4805-a1f0-708c4f624a7a
-# ╠═d42f5b5b-cc7f-4958-85c1-5c3dbb83cab4
-# ╠═7d46e948-01f0-458e-a1d5-47e74a6591d8
-# ╠═5e360c03-015b-410c-950b-9f2b7428442b
-# ╠═46a9d338-3a61-431c-b4b2-a4b6e239d0f3
-# ╠═6d1e1880-abac-4b2a-b5f4-7c2fca107a4d
-# ╠═40e70ccd-e00d-4808-a41c-a69445e6ae69
-# ╠═0b0d5454-c26b-40ec-8ff0-53dd762a5b37
-# ╠═07740213-c849-46d4-bd5e-a080c9eb4d04
-# ╠═bcd0ab73-998c-44ad-ab74-14cf50f6bd5c
-# ╠═ac42bdf4-3f72-4d02-8bf0-f6a9cf5eff67
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
