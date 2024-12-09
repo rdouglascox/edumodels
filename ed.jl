@@ -354,6 +354,33 @@ function find_combinations(target_sum, num_elements, current_combination=Float64
 end
   ╠═╡ =#
 
+# ╔═╡ f8ab4392-3d4d-4408-822f-805a163b1ae7
+begin
+	plot((1:100),x -> logistic(x,100,0.1,50),ylims=(0,120))
+	plot!((1:100),x -> logistic(x,120,0.1,50))
+	plot!((1:100),x -> logistic(x,50,0.1,45))
+	plot!((1:100),x -> (x * ((x - 25)  * 0.025)))
+end
+
+# ╔═╡ 59aecc04-903e-46f9-9273-ccdd5586aef8
+function costofprovision(x) 
+	return(x * ((x - 25)  * 0.025) * 4)
+end
+
+# ╔═╡ bc0151b2-6eb1-473e-b3b0-c0815e37b928
+costofprovision(75)
+
+# ╔═╡ 6ab98134-832d-4cf1-b9b5-a1fb64809814
+begin
+	plot((1:100),x -> logistic(x,100,0.1,50) * 4,ylims=(0,700))
+	plot!((1:100),x -> logistic(x,120,0.1,50) * 4)
+	plot!((1:100),x -> logistic(x,50,0.1,45) * 4)
+	plot!((1:100),x -> (x * ((x - 25)  * 0.025)) * 4)
+end
+
+# ╔═╡ c756f24c-da1d-4d59-ace2-ca987d1989f2
+plot((1:100),x -> ((logistic(x,120,0.1,50) * 4) - (x * ((x - 25)  * 0.025)) * 4))
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -1707,5 +1734,10 @@ version = "1.4.1+1"
 # ╠═7abfd9a4-ae00-4a23-b644-1e75755ac4a5
 # ╠═035a098e-cbbe-4edb-9dfb-f8bc0a00e231
 # ╠═1009591d-6457-4a4a-a965-f342d782103b
+# ╠═f8ab4392-3d4d-4408-822f-805a163b1ae7
+# ╠═59aecc04-903e-46f9-9273-ccdd5586aef8
+# ╠═bc0151b2-6eb1-473e-b3b0-c0815e37b928
+# ╠═6ab98134-832d-4cf1-b9b5-a1fb64809814
+# ╠═c756f24c-da1d-4d59-ace2-ca987d1989f2
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
