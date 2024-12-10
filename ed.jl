@@ -26,6 +26,7 @@ struct IndividualStatistics
 	chances::Float64
 	averageoutcomes::Float64
 	lifeprospects::Float64 
+	weightedlifeprospects::Float64
 end
 	
 
@@ -35,9 +36,35 @@ struct GeneralStatistics
 	totalopportunities::Float64 
 	totalcostofopportunities::Float64 
 	totaleducationaloutcomes::Float64 
-	totaleducationalbenefits::Float64 
+	costbenefit::Float64 
 	topprospects::Float64 
 	bottomprospects::Float64
+end
+
+# ╔═╡ 8fbaf828-615d-42e0-863d-a169a215083c
+const UNITCOST = 0.4
+
+# ╔═╡ be947608-a078-420b-a491-20727f36005c
+# life prospects as a function of the top and bottom income along with chances of bring among one or the other, with scope for individual outcomes, total outcomes, and the general size of the economy to affect one's prospects 
+
+function getlifeprospects(tp,bp,ch,outs,tot,cb)
+    map(x -> (x * tp) + ((1 - x) * bp), ch) 
+end
+	
+
+# ╔═╡ 4e42358b-ecd6-443b-b6d1-eafe8f61b358
+function scale_value(x, a, b, c, d)
+    return c + ((x - a) / (b - a)) * (d - c)
+end
+
+# ╔═╡ d0314281-ebaa-452f-8741-8c59465afb2d
+function setscale(x) 
+	scale_value(x,65,90,0.0,0.1)
+end
+
+# ╔═╡ 4c62bd7c-7c5c-4d81-a9b2-01a3ae04fcb9
+function toweighted(x)
+	return ((1 - x) ^ 2)
 end
 
 # ╔═╡ 2a7857dd-7050-4a88-9e19-2f03a8615158
@@ -61,9 +88,12 @@ end
 # ╔═╡ ef03faa6-e09c-47a6-9cde-b5559193bdc1
 # get the balance of weighted interests in improvement 
 function getbalance(x,y) 
-    if x >= 0 && y <= 0
+    if x >= 0 && y < 0
 		x + y 
-	else 0
+	elseif x >= 0 && y >= 0
+		x
+	else 
+		0
 	end 
 end
 
@@ -92,26 +122,6 @@ end
 # this function gives unweighted life prospects given totalopportunities, totaloutcomes, and chances
 function getuwlifeprospects(t,b,ch)
 	return(t * ch + b * (1 - ch)) 
-end
-
-# ╔═╡ b49c798f-aac4-4a16-bc02-ed47c17a068f
-# run the model on a list of opportunities 
-function runmodel(x::Vector{Float64},y::Vector{Function})
-	ops = x
-	totalopportunities = sum(ops)  
-	pdfs = getpdfs(x,y)
-	chances = getchances(pdfs) 
-	outcomes = getindoutcomes(x,y)
-	totaloutcomes = sum(outcomes)
-	outsbenefit = totaloutcomes * 0.001
-	opscost = (totalopportunities - 160) * 0.005 
-	topprospects = 0.8 + (outsbenefit * 0.5) - (opscost * 0.5) 
-    bottomprospects = 0.4 + outsbenefit - opscost 
-	uwlp = map(z -> getuwlifeprospects(topprospects,bottomprospects,z),chances)
-	myzip = zip(ops,chances,outcomes,uwlp) 
-	indstats = [IndividualStatistics(x[1],x[2],x[3],x[4]) for x in myzip] 
-	gstats = [GeneralStatistics(totalopportunities,opscost,totaloutcomes,outsbenefit,topprospects,bottomprospects)]
-    return (indstats,gstats) # return individual and general statistics
 end
 
 # ╔═╡ 0b4c4e00-78ff-4eac-8a55-c69f51f36b5a
@@ -155,10 +165,10 @@ end
 policyrange = 0.0:0.1:20.0
 
 # ╔═╡ 31b1f7f0-84f0-402d-8f14-e4b23cffa87b
-baseline = 40
+baseline = 60
 
 # ╔═╡ eca15192-3693-405c-9eee-e1eef4232b41
-allpolicies = [ [baseline + 10, baseline + 10, baseline + x, baseline + x] for x in policyrange]
+allpolicies = [ [baseline + 10, baseline + x, baseline + 10 + (1 * x), baseline + x + (1 * x)] for x in policyrange]
 
 # ╔═╡ e2167084-82f6-4deb-9ec6-6e258a591058
 @bind selected Slider(1:201, default=1)
@@ -178,17 +188,117 @@ function logistic(n, L, k, x0)
 end
 
 # ╔═╡ 7abfd9a4-ae00-4a23-b644-1e75755ac4a5
-function highlogistic(n) 
-	logistic(n,100,0.1,50)
+function highlogistic(n)
+	logistic(n,120.0,0.08,60.0)
 end
+
+# ╔═╡ 8ca35a19-97c2-421b-a212-d6760a14e681
+UpperHigh = (20,highlogistic,"UpperHigh") 
+
+# ╔═╡ 759347d5-2bbc-4501-af62-96d1b8eb22b5
+LowerHigh = (0,highlogistic,"LowerHigh") 
+
+# ╔═╡ f0a38cb3-cd39-42bc-801c-d40bceeb6167
+function midlogistic(n) 
+	logistic(n,100.0,0.08,60.0)
+end
+
+# ╔═╡ c8f5fa88-6b97-4c56-ab82-317048839ce3
+UpperAverage = (20,midlogistic,"UpperAverage") 
+
+# ╔═╡ c261f74a-b2b8-4013-8b7c-c561aa944c8f
+LowerAverage = (0,midlogistic,"LowerAverage") 
+
+# ╔═╡ 8d6bd8de-7553-4738-9502-a2da898ae583
+individuals = [UpperHigh,LowerHigh,UpperAverage,LowerAverage] 
+
+# ╔═╡ a5e2a78f-1bc0-41df-bf01-26b5392404d4
+abilitylist = Vector{Function}(map(x -> x[2],individuals))::Vector{Function}
+
+# ╔═╡ a8d8386c-bcf4-4ccc-b25f-21f605a74c90
+namelist = map(x -> x[3],individuals)
 
 # ╔═╡ 035a098e-cbbe-4edb-9dfb-f8bc0a00e231
 function lowlogistic(n) 
-	logistic(n,70,0.1,50)
+	logistic(n,50.0,0.1,45.0)
 end
 
-# ╔═╡ a5e2a78f-1bc0-41df-bf01-26b5392404d4
-abilitylist = [highlogistic,lowlogistic,highlogistic,lowlogistic]
+# ╔═╡ 3b23e2e1-3e66-4d5c-9377-2d1c68642ff8
+UpperLow = (20,lowlogistic,"UpperLow") 
+
+# ╔═╡ c2618ffb-3b75-45bc-a8e5-302a91603442
+LowerLow = (0,lowlogistic,"LowerLow")
+
+# ╔═╡ 59aecc04-903e-46f9-9273-ccdd5586aef8
+function costofprovision(x) 
+	return(((x * 0.2) + ((x - 30) )))
+end
+
+# ╔═╡ f8ab4392-3d4d-4408-822f-805a163b1ae7
+begin
+	plot((1:100),highlogistic,ylims=(0,120))
+	plot!((1:100),midlogistic)
+	plot!((1:100),lowlogistic)
+	plot!((1:100),costofprovision)
+end
+
+# ╔═╡ 74207beb-7b6d-4785-a070-75ee09efa617
+
+
+# ╔═╡ 6ab98134-832d-4cf1-b9b5-a1fb64809814
+begin
+	plot((1:100),x -> logistic(x,100,0.1,50) * 4,ylims=(0,700))
+	plot!((1:100),x -> logistic(x,120,0.1,50) * 4)
+	plot!((1:100),x -> logistic(x,50,0.1,45) * 4)
+	plot!((1:100),x -> ((x * 0.6) + ((x - 40) )) * 4)
+end
+
+# ╔═╡ c756f24c-da1d-4d59-ace2-ca987d1989f2
+plot((1:100),x -> ((logistic(x,120,0.1,50) * 4) - ((x * 0.7) + ((x - 45) )) * 4))
+
+# ╔═╡ c4b146b6-20ad-4f3d-868e-7b14d87fd38e
+function benefitsofprovision(xs) 
+	y -> sum(map(x -> x(y),xs))
+end
+
+# ╔═╡ 924e2a28-9c1b-4534-a95c-daa731d20d95
+function costbenefit(xs) 
+	getl = length(xs)
+	return(x -> ((benefitsofprovision(xs)(x)) - (costofprovision(x) * getl )))
+end
+
+# ╔═╡ 303b53af-869b-4de1-b784-1f5d3b805fa9
+begin
+	plot((1:130),costbenefit(abilitylist),xlims=(25,130),title="cost/benefit",xlabel="opportunities",ylabel="cost/benefits")
+		
+end
+
+# ╔═╡ 08029faa-7642-4b36-ae49-61b1a1772908
+const BPROSPECTS = 0.5 
+
+# ╔═╡ 78383c96-080d-44c4-956d-ec719eb2ec2b
+const TPROSPECTS = 0.7
+
+# ╔═╡ b49c798f-aac4-4a16-bc02-ed47c17a068f
+# run the model on a list of opportunities 
+function runmodel(ops::Vector{Float64},y::Vector{Function})
+	sections = length(ops)
+	totalopportunities = sum(ops)  
+	pdfs = getpdfs(ops,y)
+	chances = getchances(pdfs) 
+	outcomes = getindoutcomes(ops,y)
+	totaloutcomes = sum(outcomes)
+	opscost = UNITCOST * (totalopportunities - (baseline * sections))
+	costbenefit = ((totaloutcomes / sections) - opscost)
+	topprospects = TPROSPECTS + setscale(costbenefit)
+    botprospects = BPROSPECTS + setscale(costbenefit)
+	uwlp = getlifeprospects(topprospects,botprospects,chances,outcomes,totaloutcomes,costbenefit)
+	wlp = map(toweighted,uwlp)
+	myzip = zip(ops,chances,outcomes,uwlp,wlp) 
+	indstats = [IndividualStatistics(x[1],x[2],x[3],x[4],x[5]) for x in myzip] 
+	gstats = [GeneralStatistics(totalopportunities,opscost,totaloutcomes,costbenefit,topprospects,botprospects)]
+    return (indstats,gstats) # return individual and general statistics
+end
 
 # ╔═╡ ef7cc9a9-c14f-4e44-96c6-8db0e56bca01
 runmodel([51.0,50.0,50.0,50.0],abilitylist)
@@ -199,47 +309,23 @@ dopairwisecomparisons(runmodel([50.0,50.0,50.0,50.0],abilitylist)[1],runmodel([5
 # ╔═╡ b87ecdc4-538c-4b21-9d1f-b58a6282a0da
 allind = map(x -> runmodel(x,abilitylist),allpolicies)
 
-# ╔═╡ 2500e6c3-da85-4c64-87b4-114cc34ebf33
-ch1 = map(x -> x[1][1].chances, allind)
-
-# ╔═╡ f6140528-9b8f-4dff-a846-19d0e86d38b9
-ch2 = map(x -> x[1][2].chances, allind)
-
-# ╔═╡ 063f4581-21fe-48c5-9bb1-4c63b6cf68c1
-ch3 = map(x -> x[1][3].chances, allind)
-
-# ╔═╡ 057794fc-3b6f-4b45-8cdf-5033cd84c82a
-ch4 = map(x -> x[1][4].chances, allind)
+# ╔═╡ ec8ac283-5593-4909-98e3-304666e691f1
+chall = map(z -> map(x -> x[1][z].chances, allind),1:(length(allind[1][1])))
 
 # ╔═╡ bcbfd960-8c9b-43ff-bca5-7288e4f200b5
 function plotchances()
-	plot(policyrange,ch1)
-	plot!(policyrange,ch2)
-	plot!(policyrange,ch3)
-	plot!(policyrange,ch4)
+	plot(policyrange,chall, title="chances on policies",ylim=(0,1),labels=permutedims(namelist))
 end
 
 # ╔═╡ e12a9f1e-87c1-4051-a1c2-62cd6b94088d
 plotchances()
 
-# ╔═╡ fa10f392-41c1-4bbe-9139-52969af0b091
-o1 = map(x -> x[1][1].averageoutcomes, allind)
-
-# ╔═╡ 2e4b8df6-cebd-4f16-9d46-c838887481eb
-o2 = map(x -> x[1][2].averageoutcomes, allind)
-
-# ╔═╡ 58288845-458c-450a-87a7-184866da8410
-o3 = map(x -> x[1][3].averageoutcomes, allind)
-
-# ╔═╡ 9a2f5104-af16-4521-a90b-6c0177a8a946
-o4 = map(x -> x[1][4].averageoutcomes, allind)
+# ╔═╡ 3a9e797a-ecda-49ac-9e99-d8cad03936e9
+oall = map(z -> map(x -> x[1][z].averageoutcomes, allind),1:(length(allind[1][1])))
 
 # ╔═╡ bca92e66-e238-4525-8a55-15724a475421
 function plotaverageoutcomes()
-	plot(policyrange,o1)
-	plot!(policyrange,o2)
-	plot!(policyrange,o3)
-	plot!(policyrange,o4)
+	plot(policyrange,oall, title="average individual outcomes", labels=permutedims(namelist))
 end
 
 # ╔═╡ 736336c2-9be5-436d-b141-469686f0eac3
@@ -249,30 +335,30 @@ plotaverageoutcomes()
 totaloutcomes = map(x->x[2][1].totaleducationaloutcomes,allind)
 
 # ╔═╡ e9450b42-ab32-40ac-98b5-797cb52306c1
-plot(policyrange,totaloutcomes)
+plot(policyrange,totaloutcomes, title="average total outcomes", label="average total outcomes")
 
 # ╔═╡ 1412e7a0-f61d-482c-abbf-5f30bbc1c93b
 totalcosts = map(x->x[2][1].totalcostofopportunities,allind)
 
 # ╔═╡ 50b360b9-5b87-4b81-8e0c-7c8803fa77e6
-plot(policyrange,totalcosts, ylims=(0,1))
+plot(policyrange,totalcosts, title="cost of provision across policy range", label="costs")
 
-# ╔═╡ be0286cc-f445-48d2-a595-e0b297b5657e
-totalbenefits = map(x->x[2][1].totaleducationalbenefits,allind)
+# ╔═╡ d0fed50c-68cb-4e06-a609-52b592772f3e
+getcostbenefit = map(x->x[2][1].costbenefit,allind)
 
-# ╔═╡ d9b22119-0736-40d0-8ec0-1bc5b1c01f18
-plot(policyrange,totalbenefits)
+# ╔═╡ f448c93c-c7c8-4224-9026-18c133652fba
+plot(policyrange,getcostbenefit, title="cost/benefit across policy range", label="cost/benefit")
 
 # ╔═╡ f667ba70-f1ab-4912-8750-88f9bab4725f
-topprospects = map(x->x[2][1].topprospects,allind)
+tprospects = map(x->x[2][1].topprospects,allind)
 
 # ╔═╡ e64052eb-f0f3-4bad-b079-b2f34405b98d
-bottomprospects = map(x->x[2][1].bottomprospects,allind)
+bprospects = map(x->x[2][1].bottomprospects,allind)
 
 # ╔═╡ f84dba47-54da-4d5d-8f33-b59ed85382a2
 function plotprospects() 
-	plot(policyrange,topprospects, ylim=(0,1))
-	plot!(policyrange,bottomprospects)
+	plot(policyrange,tprospects, ylim=(0,1),title="top and bottom prospects", label="top prospects")
+	plot!(policyrange,bprospects, label="bottom prospects")
 end
 
 # ╔═╡ 4b44677e-791f-4809-990c-0e72bf69d22a
@@ -281,105 +367,48 @@ plotprospects()
 # ╔═╡ 80027a94-08dc-411a-8065-30f36289ea54
 allpwcs = map(x -> dopairwisecomparisons(runmodel(setpolicy,abilitylist)[1],runmodel(x,abilitylist)[1]),allpolicies)
 
-# ╔═╡ ec6d1c0b-19da-4a9c-845b-67f23ba57a28
-diffs1 = map(x -> x.weighteddifferences[1],allpwcs)
-
-# ╔═╡ bd505039-c0df-4ad1-a4c0-4c9a0e0594e6
-diffs2 = map(x -> x.weighteddifferences[2],allpwcs)
-
-# ╔═╡ df9afb2f-ffde-4746-86a9-e7ec8221ed24
-diffs3 = map(x -> x.weighteddifferences[3],allpwcs)
-
-# ╔═╡ 067b6ac9-a6aa-40fb-9149-eab3ce048273
-diffs4 = map(x -> x.weighteddifferences[4],allpwcs)
+# ╔═╡ 3ea224f1-5d99-4d4d-8562-765011f89638
+diffs0 = map(z -> map(x -> x.weighteddifferences[z],allpwcs),1:length(allpwcs[1].weighteddifferences))
 
 # ╔═╡ 62de8a05-a6a7-44ee-be92-0875acf44f78
 function plotdiffs()
 	theme(:dracula)
-	plot(policyrange,diffs1, xlabel="additional opportunities to lower class background",ylabel="weighted interests in improvement",label="upper high", size=(700, 400), title="weighted interests in alternatives")
-	plot!(policyrange,diffs2,label="upper low")
-	plot!(policyrange,diffs3,label="lower high")
-	plot!(policyrange,diffs4,label="lower low")
+	plot(policyrange,diffs0, xlabel="policy",ylabel="weighted interests in improvement", title="weighted interests in alternatives", labels=permutedims(namelist))
 end
 
 # ╔═╡ 6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
 plotdiffs()
 
-# ╔═╡ da4aa21b-baef-4a8a-98d0-b30b48edbf6a
-sums1 = map(x -> x.weightedsums[1],allpwcs)
-
-# ╔═╡ b1467ba7-d61c-4522-9ce2-a308309fe585
-r0(sums1)
-
-# ╔═╡ c8597145-e999-42d0-8c90-45e5f354b73b
-sums2 = map(x -> x.weightedsums[2],allpwcs)
-
-# ╔═╡ d67a8b87-a64b-4b9f-a7ca-f936203359e8
-sums3 = map(x -> x.weightedsums[3],allpwcs)
-
-# ╔═╡ 2092120d-4442-4506-a9d1-386762a0b6c3
-sums4 = map(x -> x.weightedsums[4],allpwcs)
+# ╔═╡ 84258b7e-35af-4591-8e86-2b82e21a52d1
+sums0 = map(z -> map(x -> x.weightedsums[z],allpwcs),1:length(allpwcs[1].weightedsums))
 
 # ╔═╡ 4ab4b692-d0cd-4044-b3fc-d9ab425bca65
 function plotsums()
-    plot(policyrange,r0(sums1),ylims=(0.0,0.05))
-	plot!(policyrange,r0(sums2))
-	plot!(policyrange,r0(sums3))
-	plot!(policyrange,r0(sums4))
+    plot(policyrange,map(r0,sums0),ylims=(-0.02,0.04),labels=permutedims(namelist)) 
+    plot!(policyrange,sums0,opacity=0.1,labels=false)
 end
 
 # ╔═╡ 0ba33293-5916-49b9-a5b3-1d14a9f1151d
 plotsums()
 
-# ╔═╡ 1009591d-6457-4a4a-a965-f342d782103b
-# ╠═╡ disabled = true
-#=╠═╡
-function find_combinations(target_sum, num_elements, current_combination=Float64[], current_sum=0.0, results=Vector{Vector{Float64}}())
-    if length(current_combination) == num_elements
-        if abs(current_sum - target_sum) < 1e-6  # Allowing for floating-point precision errors
-            push!(results, copy(current_combination))
-        end
-        return results
-    end
-
-    for i in 0.0:1:target_sum
-        if current_sum + i <= target_sum
-            push!(current_combination, i)
-            find_combinations(target_sum, num_elements, current_combination, current_sum + i, results)
-            pop!(current_combination)
-        end
-    end
-
-    return results
+# ╔═╡ 1ca1fa0a-21d7-4eed-812a-62a46ef20516
+function getbottompropspects(x,y) 
+	cb = costbenefit(y)(x) * 0.001 
+	BPROSPECTS + cb 
 end
-  ╠═╡ =#
+	
 
-# ╔═╡ f8ab4392-3d4d-4408-822f-805a163b1ae7
+# ╔═╡ 33ec02dd-f2fc-419d-9bab-b155a41c50c3
+function gettoppropspects(x,y) 
+	cb = costbenefit(y)(x) * 0.001 
+	TPROSPECTS + cb
+end
+
+# ╔═╡ 8492e09a-5203-40ce-8e88-4e8ddc1c4af8
 begin
-	plot((1:100),x -> logistic(x,100,0.1,50),ylims=(0,120))
-	plot!((1:100),x -> logistic(x,120,0.1,50))
-	plot!((1:100),x -> logistic(x,50,0.1,45))
-	plot!((1:100),x -> (x * ((x - 25)  * 0.025)))
+	plot((1:120),x -> gettoppropspects(x,abilitylist),xlims=(25,120)) 
+	plot!((1:120),x -> getbottompropspects(x, abilitylist))
 end
-
-# ╔═╡ 59aecc04-903e-46f9-9273-ccdd5586aef8
-function costofprovision(x) 
-	return(x * ((x - 25)  * 0.025) * 4)
-end
-
-# ╔═╡ bc0151b2-6eb1-473e-b3b0-c0815e37b928
-costofprovision(75)
-
-# ╔═╡ 6ab98134-832d-4cf1-b9b5-a1fb64809814
-begin
-	plot((1:100),x -> logistic(x,100,0.1,50) * 4,ylims=(0,700))
-	plot!((1:100),x -> logistic(x,120,0.1,50) * 4)
-	plot!((1:100),x -> logistic(x,50,0.1,45) * 4)
-	plot!((1:100),x -> (x * ((x - 25)  * 0.025)) * 4)
-end
-
-# ╔═╡ c756f24c-da1d-4d59-ace2-ca987d1989f2
-plot((1:100),x -> ((logistic(x,120,0.1,50) * 4) - (x * ((x - 25)  * 0.025)) * 4))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -400,7 +429,7 @@ QuadGK = "~2.11.1"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.1"
+julia_version = "1.11.2"
 manifest_format = "2.0"
 project_hash = "e8c602158c3309c0729a09a9d55d49b9e00854ee"
 
@@ -1674,7 +1703,12 @@ version = "1.4.1+1"
 # ╠═1c2cb753-2372-4307-915c-0f1a272c0ab9
 # ╠═cf4db89d-fc7a-4c98-809c-18da2755e3c2
 # ╠═fb9e0eae-b43f-11ef-2717-03c7a0402193
+# ╠═8fbaf828-615d-42e0-863d-a169a215083c
 # ╠═b49c798f-aac4-4a16-bc02-ed47c17a068f
+# ╠═be947608-a078-420b-a491-20727f36005c
+# ╠═4e42358b-ecd6-443b-b6d1-eafe8f61b358
+# ╠═d0314281-ebaa-452f-8741-8c59465afb2d
+# ╠═4c62bd7c-7c5c-4d81-a9b2-01a3ae04fcb9
 # ╠═2a7857dd-7050-4a88-9e19-2f03a8615158
 # ╠═5841ec57-48a8-466d-a521-2b6f0daa83d2
 # ╠═fec8f84e-48d9-4f40-94b7-49dbcc592ea6
@@ -1685,59 +1719,62 @@ version = "1.4.1+1"
 # ╠═0f19d840-ad37-4e90-a316-58a0a920a653
 # ╠═ef7cc9a9-c14f-4e44-96c6-8db0e56bca01
 # ╠═a5e2a78f-1bc0-41df-bf01-26b5392404d4
+# ╠═a8d8386c-bcf4-4ccc-b25f-21f605a74c90
+# ╠═8d6bd8de-7553-4738-9502-a2da898ae583
+# ╠═8ca35a19-97c2-421b-a212-d6760a14e681
+# ╠═3b23e2e1-3e66-4d5c-9377-2d1c68642ff8
+# ╠═c8f5fa88-6b97-4c56-ab82-317048839ce3
+# ╠═759347d5-2bbc-4501-af62-96d1b8eb22b5
+# ╠═c261f74a-b2b8-4013-8b7c-c561aa944c8f
+# ╠═c2618ffb-3b75-45bc-a8e5-302a91603442
 # ╠═f1f6baf7-fcba-4187-86dd-c383b549f57b
 # ╠═0b4c4e00-78ff-4eac-8a55-c69f51f36b5a
 # ╠═90b7ca81-53bc-4042-b10e-cf18923fd820
 # ╠═31b1f7f0-84f0-402d-8f14-e4b23cffa87b
 # ╠═eca15192-3693-405c-9eee-e1eef4232b41
 # ╠═b87ecdc4-538c-4b21-9d1f-b58a6282a0da
-# ╠═2500e6c3-da85-4c64-87b4-114cc34ebf33
-# ╠═f6140528-9b8f-4dff-a846-19d0e86d38b9
-# ╠═063f4581-21fe-48c5-9bb1-4c63b6cf68c1
-# ╠═057794fc-3b6f-4b45-8cdf-5033cd84c82a
+# ╠═ec8ac283-5593-4909-98e3-304666e691f1
 # ╠═e12a9f1e-87c1-4051-a1c2-62cd6b94088d
-# ╠═fa10f392-41c1-4bbe-9139-52969af0b091
-# ╠═2e4b8df6-cebd-4f16-9d46-c838887481eb
-# ╠═58288845-458c-450a-87a7-184866da8410
-# ╠═9a2f5104-af16-4521-a90b-6c0177a8a946
+# ╠═bcbfd960-8c9b-43ff-bca5-7288e4f200b5
+# ╠═3a9e797a-ecda-49ac-9e99-d8cad03936e9
 # ╠═736336c2-9be5-436d-b141-469686f0eac3
 # ╠═fc717766-a093-4f31-8994-fd55f604d839
 # ╠═e9450b42-ab32-40ac-98b5-797cb52306c1
 # ╠═1412e7a0-f61d-482c-abbf-5f30bbc1c93b
 # ╠═50b360b9-5b87-4b81-8e0c-7c8803fa77e6
-# ╠═be0286cc-f445-48d2-a595-e0b297b5657e
-# ╠═d9b22119-0736-40d0-8ec0-1bc5b1c01f18
+# ╠═d0fed50c-68cb-4e06-a609-52b592772f3e
+# ╠═f448c93c-c7c8-4224-9026-18c133652fba
 # ╠═f667ba70-f1ab-4912-8750-88f9bab4725f
 # ╠═e64052eb-f0f3-4bad-b079-b2f34405b98d
 # ╠═4b44677e-791f-4809-990c-0e72bf69d22a
 # ╠═f84dba47-54da-4d5d-8f33-b59ed85382a2
-# ╠═bcbfd960-8c9b-43ff-bca5-7288e4f200b5
 # ╠═bca92e66-e238-4525-8a55-15724a475421
 # ╠═80027a94-08dc-411a-8065-30f36289ea54
 # ╠═6930f5d4-b57c-4d35-86c6-0e69ae189d90
-# ╠═ec6d1c0b-19da-4a9c-845b-67f23ba57a28
-# ╠═bd505039-c0df-4ad1-a4c0-4c9a0e0594e6
-# ╠═df9afb2f-ffde-4746-86a9-e7ec8221ed24
-# ╠═067b6ac9-a6aa-40fb-9149-eab3ce048273
+# ╠═3ea224f1-5d99-4d4d-8562-765011f89638
 # ╠═62de8a05-a6a7-44ee-be92-0875acf44f78
 # ╠═6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
 # ╠═e2167084-82f6-4deb-9ec6-6e258a591058
 # ╠═0ba33293-5916-49b9-a5b3-1d14a9f1151d
-# ╠═da4aa21b-baef-4a8a-98d0-b30b48edbf6a
-# ╠═c8597145-e999-42d0-8c90-45e5f354b73b
-# ╠═d67a8b87-a64b-4b9f-a7ca-f936203359e8
-# ╠═2092120d-4442-4506-a9d1-386762a0b6c3
+# ╠═84258b7e-35af-4591-8e86-2b82e21a52d1
 # ╠═4ab4b692-d0cd-4044-b3fc-d9ab425bca65
 # ╠═d9a28eaf-299e-4453-8fb5-a6f47c46ec1d
-# ╠═b1467ba7-d61c-4522-9ce2-a308309fe585
 # ╠═bbc6da79-6742-4bbf-a484-35cdf3da39ce
 # ╠═7abfd9a4-ae00-4a23-b644-1e75755ac4a5
+# ╠═f0a38cb3-cd39-42bc-801c-d40bceeb6167
 # ╠═035a098e-cbbe-4edb-9dfb-f8bc0a00e231
-# ╠═1009591d-6457-4a4a-a965-f342d782103b
 # ╠═f8ab4392-3d4d-4408-822f-805a163b1ae7
 # ╠═59aecc04-903e-46f9-9273-ccdd5586aef8
-# ╠═bc0151b2-6eb1-473e-b3b0-c0815e37b928
+# ╠═74207beb-7b6d-4785-a070-75ee09efa617
 # ╠═6ab98134-832d-4cf1-b9b5-a1fb64809814
 # ╠═c756f24c-da1d-4d59-ace2-ca987d1989f2
+# ╠═924e2a28-9c1b-4534-a95c-daa731d20d95
+# ╠═c4b146b6-20ad-4f3d-868e-7b14d87fd38e
+# ╠═303b53af-869b-4de1-b784-1f5d3b805fa9
+# ╠═08029faa-7642-4b36-ae49-61b1a1772908
+# ╠═78383c96-080d-44c4-956d-ec719eb2ec2b
+# ╠═1ca1fa0a-21d7-4eed-812a-62a46ef20516
+# ╠═33ec02dd-f2fc-419d-9bab-b155a41c50c3
+# ╠═8492e09a-5203-40ce-8e88-4e8ddc1c4af8
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
