@@ -19,6 +19,53 @@ end
 # ╔═╡ 1c2cb753-2372-4307-915c-0f1a272c0ab9
 using Plots, Distributions, QuadGK, PlutoUI
 
+# ╔═╡ 33e587be-a4c7-47fd-8ad7-7d6b308c7328
+function defaultPolicyFunction(bl,av) 
+    map(x -> [x, av - x],0:av)
+end
+
+# ╔═╡ f7b542ef-7fd9-471b-b912-71cc5eb1efb6
+begin
+	struct Upper end
+	struct Middle end
+	struct Lower end
+	const Class = Union{Upper, Middle, Lower}
+end
+
+# ╔═╡ 8510973c-9698-4b1d-b845-265fa88ac023
+begin
+	struct High end
+	struct Average end
+	struct Low end
+	const Ability = Union{High, Average, Low}
+end
+
+# ╔═╡ 5ab3d169-e224-487d-b267-111ec0f7d0c9
+struct Individual 
+	identifier::String 
+	class::Class
+	ability::Ability 
+end
+
+# ╔═╡ 4b04824a-5804-46f7-b3a5-770fa83b0a3f
+struct ModelSettings 
+	setindividuals::Vector{Individual}
+	settopprospects::Float64
+	setbottomprospects::Float64 
+	setunitcost::Float64
+	setbaseline::Float64
+	setavailable::Float64
+	setpolicies::Function
+	setscale::Tuple{Float64,Float64,Float64,Float64}
+	sethighability::Tuple{Float64,Float64,Float64}
+	setaverageability::Tuple{Float64,Float64,Float64}
+	setlowability::Tuple{Float64,Float64,Float64}
+	setsigma::Float64
+	setupperclass::Float64 
+	setmiddleclass::Float64 
+	setlowerclass::Float64
+end
+
 # ╔═╡ cf4db89d-fc7a-4c98-809c-18da2755e3c2
 # a record type for individual statistics for a model
 struct IndividualStatistics 
@@ -41,11 +88,8 @@ struct GeneralStatistics
 	bottomprospects::Float64
 end
 
-# ╔═╡ 8fbaf828-615d-42e0-863d-a169a215083c
-const UNITCOST = 0.4
-
 # ╔═╡ be947608-a078-420b-a491-20727f36005c
-# life prospects as a function of the top and bottom income along with chances of bring among one or the other, with scope for individual outcomes, total outcomes, and the general size of the economy to affect one's prospects 
+# life prospects 
 
 function getlifeprospects(tp,bp,ch,outs,tot,cb)
     map(x -> (x * tp) + ((1 - x) * bp), ch) 
@@ -53,8 +97,8 @@ end
 	
 
 # ╔═╡ 4e42358b-ecd6-443b-b6d1-eafe8f61b358
-function scale_value(x, a, b, c, d)
-    return c + ((x - a) / (b - a)) * (d - c)
+function scale_value(x, y)
+    return y[3] + ((x - y[1]) / (y[2] - y[1])) * (y[4] - y[3])
 end
 
 # ╔═╡ d0314281-ebaa-452f-8741-8c59465afb2d
@@ -65,12 +109,6 @@ end
 # ╔═╡ 4c62bd7c-7c5c-4d81-a9b2-01a3ae04fcb9
 function toweighted(x)
 	return ((1 - x) ^ 2)
-end
-
-# ╔═╡ 2a7857dd-7050-4a88-9e19-2f03a8615158
-function getindoutcomes(xs,ys) 
-    zipped = zip(xs,ys) 
-	map(x -> x[2](x[1]),zipped) 
 end
 
 # ╔═╡ 5841ec57-48a8-466d-a521-2b6f0daa83d2
@@ -112,17 +150,77 @@ function getchances(pdfs::Vector{Distributions.Normal{Float64}})
 	chances / sum(chances)
 end
 
-# ╔═╡ 92f48dd7-8847-44ac-94f7-167621f8b1e5
-function getpdfs(x::Vector{Float64},y::Vector{Function}) 
-	zipper = zip(x,y) 
-	map(z -> Normal(z[2](z[1]),20),zipper)
-end
-
 # ╔═╡ 0f19d840-ad37-4e90-a316-58a0a920a653
 # this function gives unweighted life prospects given totalopportunities, totaloutcomes, and chances
 function getuwlifeprospects(t,b,ch)
 	return(t * ch + b * (1 - ch)) 
 end
+
+# ╔═╡ a8d8386c-bcf4-4ccc-b25f-21f605a74c90
+function namelist(xs)
+	map(x -> x.identifier,xs.setindividuals)
+end
+
+# ╔═╡ 8ca35a19-97c2-421b-a212-d6760a14e681
+UpperHigh = Individual(
+	"Upper High",
+	Upper(),
+	High()
+)
+
+# ╔═╡ 8ff1a43a-5d85-4c35-a747-2bd2ce43750c
+defaultSettings = ModelSettings(
+	[UpperHigh,UpperHigh], # individuals
+	0.7, # top prospects
+	0.5, # bottom prospects 
+	1.0, # unitcost
+	60,  # baseline opportunities
+	20,  # available opportunities
+	defaultPolicyFunction,
+	(60.0,63.0,0.0,0.005), # scale cost/benefits
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.01,45), # low ability 
+	30, # sigma 
+	20, # upper class background
+	10, # middle class background
+	0 # lower class background
+)
+
+# ╔═╡ c8f5fa88-6b97-4c56-ab82-317048839ce3
+UpperAverage = Individual(
+	"Upper Average",
+	Upper(),
+	Average()
+)
+
+# ╔═╡ 3b23e2e1-3e66-4d5c-9377-2d1c68642ff8
+UpperLow = Individual(
+	"Upper Low",
+	Upper(),
+	Low()
+)
+
+# ╔═╡ 759347d5-2bbc-4501-af62-96d1b8eb22b5
+LowerHigh = Individual(
+	"Lower High",
+	Lower(),
+	High()
+)
+
+# ╔═╡ c261f74a-b2b8-4013-8b7c-c561aa944c8f
+LowerAverage = Individual(
+	"Lower Average",
+	Lower(),
+	Average()
+)
+
+# ╔═╡ c2618ffb-3b75-45bc-a8e5-302a91603442
+LowerLow = Individual(
+	"Lower Low",
+	Lower(),
+	Low()
+)
 
 # ╔═╡ 0b4c4e00-78ff-4eac-8a55-c69f51f36b5a
 function weighteddiff(x, y)
@@ -161,20 +259,52 @@ end
 	
     
 
-# ╔═╡ 90b7ca81-53bc-4042-b10e-cf18923fd820
-policyrange = 0.0:0.1:20.0
+# ╔═╡ bcbfd960-8c9b-43ff-bca5-7288e4f200b5
+function plotchances(modelstats,settings)
+	plot(0:(length(modelstats[1][1])-1),modelstats[1], title="chances on policies",ylim=(0,1),labels=permutedims(namelist(settings)), xlabel="policy number",ylabel="chances")
+end
 
-# ╔═╡ 31b1f7f0-84f0-402d-8f14-e4b23cffa87b
-baseline = 60
+# ╔═╡ bca92e66-e238-4525-8a55-15724a475421
+function plotaverageoutcomes(modelstats,settings)
+	plot(0:(length(modelstats[1][1])-1),modelstats[2], title="average outcomes", labels=permutedims(namelist(settings)))
+end
 
-# ╔═╡ eca15192-3693-405c-9eee-e1eef4232b41
-allpolicies = [ [baseline + 10, baseline + x, baseline + 10 + (1 * x), baseline + x + (1 * x)] for x in policyrange]
+# ╔═╡ e9450b42-ab32-40ac-98b5-797cb52306c1
+function plotaveragetotaloutcomes(modelstats,settings)
+plot(0:(length(modelstats[1][1])-1),modelstats[5], title="average total outcomes", label=false)
+end
+
+# ╔═╡ 50b360b9-5b87-4b81-8e0c-7c8803fa77e6
+function plotcosts(modelstats,settings)
+    plot(0:(length(modelstats[1][1])-1),modelstats[6], title="cost of provision across policy range", label=false)
+end
+
+# ╔═╡ f448c93c-c7c8-4224-9026-18c133652fba
+function plotcostbenefits(modelstats,settings)
+plot(0:(length(modelstats[1][1])-1),modelstats[7], title="cost/benefit across policy range", label="cost/benefit")
+end
+
+# ╔═╡ f84dba47-54da-4d5d-8f33-b59ed85382a2
+function plotprospects(modelstats,settings) 
+	plot(0:(length(modelstats[1][1])-1),modelstats[8],title="top and bottom prospects", label="top prospects")
+	plot!(0:(length(modelstats[1][1])-1),modelstats[9], label="bottom prospects")
+end
+
+# ╔═╡ c896c63a-ae27-4f3d-ad26-7f175d3fd22a
+function plotlifeprospects(modelstats,settings)
+	plot(0:(length(modelstats[1][1])-1),modelstats[3], title="life prospects", labels=permutedims(namelist(settings)))
+end
+
+# ╔═╡ 1e2e1ba2-0ecf-4ebb-ba0d-76182e966c89
+function plotweightedlifeprospects(modelstats,settings)
+	plot(0:(length(modelstats[1][1])-1),modelstats[4], title="weighted life prospects", labels=permutedims(namelist(settings)))
+end
 
 # ╔═╡ e2167084-82f6-4deb-9ec6-6e258a591058
-@bind selected Slider(1:201, default=1)
+@bind selected Slider(1:length(defaultSettings.setpolicies(defaultSettings.setbaseline,defaultSettings.setavailable)), default=1.0)
 
 # ╔═╡ 6930f5d4-b57c-4d35-86c6-0e69ae189d90
-setpolicy = allpolicies[selected]
+setpolicy = selected
 
 # ╔═╡ d9a28eaf-299e-4453-8fb5-a6f47c46ec1d
 function r0(xs) 
@@ -187,228 +317,254 @@ function logistic(n, L, k, x0)
     return L / (1 + exp(-k * (n - x0)))
 end
 
-# ╔═╡ 7abfd9a4-ae00-4a23-b644-1e75755ac4a5
-function highlogistic(n)
-	logistic(n,120.0,0.08,60.0)
+# ╔═╡ afbae6e7-7d27-430f-882b-e392a74dc674
+function buildability(x,settings)
+	h = settings.sethighability
+	a = settings.setaverageability
+	l = settings.setlowability
+	if x isa High 
+		return(y -> logistic(y, h[1],h[2],h[3]))
+	elseif x isa Average 
+		return(y -> logistic(y, a[1],a[2],a[3]))
+	else 
+		return(y -> logistic(y, l[1],l[2],l[3]))
+	end
 end
 
-# ╔═╡ 8ca35a19-97c2-421b-a212-d6760a14e681
-UpperHigh = (20,highlogistic,"UpperHigh") 
-
-# ╔═╡ 759347d5-2bbc-4501-af62-96d1b8eb22b5
-LowerHigh = (0,highlogistic,"LowerHigh") 
-
-# ╔═╡ f0a38cb3-cd39-42bc-801c-d40bceeb6167
-function midlogistic(n) 
-	logistic(n,100.0,0.08,60.0)
+# ╔═╡ 58f978a3-e17d-4ad1-a390-411fa58178d8
+function getabilities(settings)::Vector{Function}
+	xs = settings.setindividuals
+	ys = map(x -> x.ability,xs) 
+	zs = map(x -> buildability(x,settings), ys) 
+	return (Vector{Function}(zs)) 
 end
 
-# ╔═╡ c8f5fa88-6b97-4c56-ab82-317048839ce3
-UpperAverage = (20,midlogistic,"UpperAverage") 
-
-# ╔═╡ c261f74a-b2b8-4013-8b7c-c561aa944c8f
-LowerAverage = (0,midlogistic,"LowerAverage") 
-
-# ╔═╡ 8d6bd8de-7553-4738-9502-a2da898ae583
-individuals = [UpperHigh,LowerHigh,UpperAverage,LowerAverage] 
-
-# ╔═╡ a5e2a78f-1bc0-41df-bf01-26b5392404d4
-abilitylist = Vector{Function}(map(x -> x[2],individuals))::Vector{Function}
-
-# ╔═╡ a8d8386c-bcf4-4ccc-b25f-21f605a74c90
-namelist = map(x -> x[3],individuals)
-
-# ╔═╡ 035a098e-cbbe-4edb-9dfb-f8bc0a00e231
-function lowlogistic(n) 
-	logistic(n,50.0,0.1,45.0)
+# ╔═╡ 2a7857dd-7050-4a88-9e19-2f03a8615158
+function getindoutcomes(xs,settings)
+	abs = getabilities(settings)
+    zipped = zip(xs,abs) 
+	map(x -> x[2](x[1]),zipped) 
 end
 
-# ╔═╡ 3b23e2e1-3e66-4d5c-9377-2d1c68642ff8
-UpperLow = (20,lowlogistic,"UpperLow") 
-
-# ╔═╡ c2618ffb-3b75-45bc-a8e5-302a91603442
-LowerLow = (0,lowlogistic,"LowerLow")
-
-# ╔═╡ 59aecc04-903e-46f9-9273-ccdd5586aef8
-function costofprovision(x) 
-	return(((x * 0.2) + ((x - 30) )))
+# ╔═╡ 92f48dd7-8847-44ac-94f7-167621f8b1e5
+function getpdfs(ops,settings)
+	abs = getabilities(settings)
+	zipper = zip(ops,abs) 
+	map(z -> Normal(z[2](z[1]),settings.setsigma),zipper)
 end
-
-# ╔═╡ f8ab4392-3d4d-4408-822f-805a163b1ae7
-begin
-	plot((1:100),highlogistic,ylims=(0,120))
-	plot!((1:100),midlogistic)
-	plot!((1:100),lowlogistic)
-	plot!((1:100),costofprovision)
-end
-
-# ╔═╡ 74207beb-7b6d-4785-a070-75ee09efa617
-
-
-# ╔═╡ 6ab98134-832d-4cf1-b9b5-a1fb64809814
-begin
-	plot((1:100),x -> logistic(x,100,0.1,50) * 4,ylims=(0,700))
-	plot!((1:100),x -> logistic(x,120,0.1,50) * 4)
-	plot!((1:100),x -> logistic(x,50,0.1,45) * 4)
-	plot!((1:100),x -> ((x * 0.6) + ((x - 40) )) * 4)
-end
-
-# ╔═╡ c756f24c-da1d-4d59-ace2-ca987d1989f2
-plot((1:100),x -> ((logistic(x,120,0.1,50) * 4) - ((x * 0.7) + ((x - 45) )) * 4))
-
-# ╔═╡ c4b146b6-20ad-4f3d-868e-7b14d87fd38e
-function benefitsofprovision(xs) 
-	y -> sum(map(x -> x(y),xs))
-end
-
-# ╔═╡ 924e2a28-9c1b-4534-a95c-daa731d20d95
-function costbenefit(xs) 
-	getl = length(xs)
-	return(x -> ((benefitsofprovision(xs)(x)) - (costofprovision(x) * getl )))
-end
-
-# ╔═╡ 303b53af-869b-4de1-b784-1f5d3b805fa9
-begin
-	plot((1:130),costbenefit(abilitylist),xlims=(25,130),title="cost/benefit",xlabel="opportunities",ylabel="cost/benefits")
-		
-end
-
-# ╔═╡ 08029faa-7642-4b36-ae49-61b1a1772908
-const BPROSPECTS = 0.5 
-
-# ╔═╡ 78383c96-080d-44c4-956d-ec719eb2ec2b
-const TPROSPECTS = 0.7
 
 # ╔═╡ b49c798f-aac4-4a16-bc02-ed47c17a068f
 # run the model on a list of opportunities 
-function runmodel(ops::Vector{Float64},y::Vector{Function})
+function runmodel(ops,settings)
 	sections = length(ops)
-	totalopportunities = sum(ops)  
-	pdfs = getpdfs(ops,y)
+	totalopportunities = sum(ops)
+	fullops = map(x -> x + settings.setbaseline,ops)
+	pdfs = getpdfs(fullops,settings)
 	chances = getchances(pdfs) 
-	outcomes = getindoutcomes(ops,y)
+	outcomes = getindoutcomes(fullops,settings)
 	totaloutcomes = sum(outcomes)
-	opscost = UNITCOST * (totalopportunities - (baseline * sections))
+	opscost = settings.setunitcost * totalopportunities
 	costbenefit = ((totaloutcomes / sections) - opscost)
-	topprospects = TPROSPECTS + setscale(costbenefit)
-    botprospects = BPROSPECTS + setscale(costbenefit)
+	setscale = x -> scale_value(x,settings.setscale)
+	topprospects = settings.settopprospects + setscale(costbenefit)
+    botprospects = settings.setbottomprospects + setscale(costbenefit)
 	uwlp = getlifeprospects(topprospects,botprospects,chances,outcomes,totaloutcomes,costbenefit)
 	wlp = map(toweighted,uwlp)
 	myzip = zip(ops,chances,outcomes,uwlp,wlp) 
 	indstats = [IndividualStatistics(x[1],x[2],x[3],x[4],x[5]) for x in myzip] 
-	gstats = [GeneralStatistics(totalopportunities,opscost,totaloutcomes,costbenefit,topprospects,botprospects)]
+	gstats = [GeneralStatistics(sum(fullops),opscost,totaloutcomes,costbenefit,topprospects,botprospects)]
     return (indstats,gstats) # return individual and general statistics
 end
 
 # ╔═╡ ef7cc9a9-c14f-4e44-96c6-8db0e56bca01
-runmodel([51.0,50.0,50.0,50.0],abilitylist)
+runmodel([51.0,50.0],defaultSettings)
 
 # ╔═╡ f1f6baf7-fcba-4187-86dd-c383b549f57b
-dopairwisecomparisons(runmodel([50.0,50.0,50.0,50.0],abilitylist)[1],runmodel([50.0,50.0,50.0,50.0],abilitylist)[1])
+dopairwisecomparisons(runmodel([50.0,50.0],defaultSettings)[1],runmodel([60.0,50.0],defaultSettings)[1])
 
-# ╔═╡ b87ecdc4-538c-4b21-9d1f-b58a6282a0da
-allind = map(x -> runmodel(x,abilitylist),allpolicies)
-
-# ╔═╡ ec8ac283-5593-4909-98e3-304666e691f1
-chall = map(z -> map(x -> x[1][z].chances, allind),1:(length(allind[1][1])))
-
-# ╔═╡ bcbfd960-8c9b-43ff-bca5-7288e4f200b5
-function plotchances()
-	plot(policyrange,chall, title="chances on policies",ylim=(0,1),labels=permutedims(namelist))
+# ╔═╡ 80ca0210-fc6f-436c-9e7e-600e46986189
+function getallchances(settings)
+	all = map(x -> runmodel(x,settings),settings.setpolicies(settings.setbaseline,settings.setavailable))
+	map(z -> map(x -> x[1][z].chances, all),1:(length(all[1][1])))
 end
 
-# ╔═╡ e12a9f1e-87c1-4051-a1c2-62cd6b94088d
-plotchances()
-
-# ╔═╡ 3a9e797a-ecda-49ac-9e99-d8cad03936e9
-oall = map(z -> map(x -> x[1][z].averageoutcomes, allind),1:(length(allind[1][1])))
-
-# ╔═╡ bca92e66-e238-4525-8a55-15724a475421
-function plotaverageoutcomes()
-	plot(policyrange,oall, title="average individual outcomes", labels=permutedims(namelist))
+# ╔═╡ de9d7a72-b449-4481-9d9c-7965c835bf54
+function getmodelstats(settings) 
+	allpolicies = settings.setpolicies(settings.setbaseline,settings.setavailable)
+	all = map(x -> runmodel(x,settings),allpolicies) 
+	allchances = map(z -> map(x -> x[1][z].chances, all),1:(length(all[1][1])))
+	alltotaloutcomes = map(z -> map(x -> x[1][z].averageoutcomes, all),1:(length(all[1][1])))
+	alllifeprospects = map(z -> map(x -> x[1][z].lifeprospects, all),1:(length(all[1][1])))
+	allweightedlifeprospects = map(z -> map(x -> x[1][z].weightedlifeprospects, all),1:(length(all[1][1])))
+	totaloutcomes = map(x->x[2][1].totaleducationaloutcomes,all) 
+	totalcosts = map(x->x[2][1].totalcostofopportunities,all) 
+	costbenefits = map(x->x[2][1].costbenefit,all) 
+	tp = map(x->x[2][1].topprospects,all)
+	bp = map(x->x[2][1].bottomprospects,all)
+	return(allchances,alltotaloutcomes,alllifeprospects,allweightedlifeprospects,totaloutcomes,totalcosts,costbenefits,tp,bp)
 end
 
-# ╔═╡ 736336c2-9be5-436d-b141-469686f0eac3
-plotaverageoutcomes()
+# ╔═╡ c75f8adb-ab9b-429f-9610-e37ca2edfa1d
+mymodelstats = getmodelstats(defaultSettings) 
 
-# ╔═╡ fc717766-a093-4f31-8994-fd55f604d839
-totaloutcomes = map(x->x[2][1].totaleducationaloutcomes,allind)
-
-# ╔═╡ e9450b42-ab32-40ac-98b5-797cb52306c1
-plot(policyrange,totaloutcomes, title="average total outcomes", label="average total outcomes")
-
-# ╔═╡ 1412e7a0-f61d-482c-abbf-5f30bbc1c93b
-totalcosts = map(x->x[2][1].totalcostofopportunities,allind)
-
-# ╔═╡ 50b360b9-5b87-4b81-8e0c-7c8803fa77e6
-plot(policyrange,totalcosts, title="cost of provision across policy range", label="costs")
-
-# ╔═╡ d0fed50c-68cb-4e06-a609-52b592772f3e
-getcostbenefit = map(x->x[2][1].costbenefit,allind)
-
-# ╔═╡ f448c93c-c7c8-4224-9026-18c133652fba
-plot(policyrange,getcostbenefit, title="cost/benefit across policy range", label="cost/benefit")
-
-# ╔═╡ f667ba70-f1ab-4912-8750-88f9bab4725f
-tprospects = map(x->x[2][1].topprospects,allind)
-
-# ╔═╡ e64052eb-f0f3-4bad-b079-b2f34405b98d
-bprospects = map(x->x[2][1].bottomprospects,allind)
-
-# ╔═╡ f84dba47-54da-4d5d-8f33-b59ed85382a2
-function plotprospects() 
-	plot(policyrange,tprospects, ylim=(0,1),title="top and bottom prospects", label="top prospects")
-	plot!(policyrange,bprospects, label="bottom prospects")
+# ╔═╡ f7af926b-e034-4969-911f-93645d352951
+function getallpairwisecomparisons(n,settings) 
+    allpolicies = settings.setpolicies(settings.setbaseline,settings.setavailable)
+	thepolicy = allpolicies[n] 
+	map(x -> dopairwisecomparisons(runmodel(thepolicy,settings)[1],runmodel(x,settings)[1]),allpolicies) 
 end
 
-# ╔═╡ 4b44677e-791f-4809-990c-0e72bf69d22a
-plotprospects()
-
-# ╔═╡ 80027a94-08dc-411a-8065-30f36289ea54
-allpwcs = map(x -> dopairwisecomparisons(runmodel(setpolicy,abilitylist)[1],runmodel(x,abilitylist)[1]),allpolicies)
-
-# ╔═╡ 3ea224f1-5d99-4d4d-8562-765011f89638
-diffs0 = map(z -> map(x -> x.weighteddifferences[z],allpwcs),1:length(allpwcs[1].weighteddifferences))
+# ╔═╡ 67167c3a-fc76-4397-8c10-05c6488cae94
+function getalldiffs(n,settings) 
+	allpwcs = getallpairwisecomparisons(n,settings)
+    map(z -> map(x -> x.weighteddifferences[z],allpwcs),1:length(allpwcs[1].weighteddifferences)) 
+end
 
 # ╔═╡ 62de8a05-a6a7-44ee-be92-0875acf44f78
-function plotdiffs()
-	theme(:dracula)
-	plot(policyrange,diffs0, xlabel="policy",ylabel="weighted interests in improvement", title="weighted interests in alternatives", labels=permutedims(namelist))
+function plotdiffs(n,settings)
+	theme(:dracula) 
+	thediffs = getalldiffs(n,settings)
+	plot(1:length(thediffs[1]),thediffs, xlabel="policy",ylabel="weighted interests in improvement", title="weighted interests in alternatives", labels=permutedims(namelist(settings)))
+	# vline!([setpolicy])
 end
 
 # ╔═╡ 6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
-plotdiffs()
+plotdiffs(setpolicy,defaultSettings)
 
-# ╔═╡ 84258b7e-35af-4591-8e86-2b82e21a52d1
-sums0 = map(z -> map(x -> x.weightedsums[z],allpwcs),1:length(allpwcs[1].weightedsums))
+# ╔═╡ 05edf56a-76ba-4b80-b8c1-053e6bc7b0a6
+function getallsums(n,settings) 
+	allpwcs = getallpairwisecomparisons(n,settings)
+    map(z -> map(x -> x.weightedsums[z],allpwcs),1:length(allpwcs[1].weightedsums))
+end
+
+# ╔═╡ 0cbdd4b3-3cd7-43b6-82d9-93131c1f1190
+function plotdiffchances(n,settings)
+	theme(:dracula)
+	thechances = getallchances(settings)[1]
+	plot(thechances,getalldiffs(n,settings), xlabel="chances",ylabel="weighted interests in improvement", title="weighted interests in alternatives", labels=permutedims(namelist(settings)))
+	plot!(thechances,map(r0,getallsums(n,settings)),labels=false) 
+	plot!(thechances,getallsums(n,settings),opacity=0.2,labels=false)
+	# vline!([setpolicy])
+end
+
+# ╔═╡ 08eacc7b-771e-4ae8-8183-3ea2efb47051
+plotdiffchances(setpolicy,defaultSettings)
 
 # ╔═╡ 4ab4b692-d0cd-4044-b3fc-d9ab425bca65
-function plotsums()
-    plot(policyrange,map(r0,sums0),ylims=(-0.02,0.04),labels=permutedims(namelist)) 
-    plot!(policyrange,sums0,opacity=0.1,labels=false)
+function plotsums(n,settings)
+    thesums = getallsums(n,settings)
+plot(1:length(thesums[1]),map(r0,thesums),ylims=(-0.02,0.04),labels=permutedims(namelist(defaultSettings))) 
+    plot!(1:length(thesums[1]),thesums,opacity=0.1,labels=false)
 end
 
 # ╔═╡ 0ba33293-5916-49b9-a5b3-1d14a9f1151d
-plotsums()
+plotsums(selected,defaultSettings)
 
-# ╔═╡ 1ca1fa0a-21d7-4eed-812a-62a46ef20516
-function getbottompropspects(x,y) 
-	cb = costbenefit(y)(x) * 0.001 
-	BPROSPECTS + cb 
+# ╔═╡ aa0dcd31-767d-41c7-ba7c-7fb797be1c16
+function getnotunfair(settings) 
+	allpolicies = settings.setpolicies(settings.setbaseline,settings.setavailable) 
+	onemap = y -> map(x -> dopairwisecomparisons(runmodel(y,settings)[1],runmodel(x,settings)[1]),allpolicies)
+	allmap = map(onemap,allpolicies)
+	anothermap = y -> map(z -> map(x -> x.weightedsums[z],y),1:length(y[1].weightedsums)) 
+	dasmap = map(anothermap,allmap)
+	nonegreater = y -> any(x -> x > 0.002, y)
+	innermap = z -> nonegreater(z[1]) && nonegreater(z[2])
+	applyinnermap = map(x-> map(innermap,x),dasmap)
+	# zipped = zip(allpolicies,dasmap)
 end
-	
 
-# ╔═╡ 33ec02dd-f2fc-419d-9bab-b155a41c50c3
-function gettoppropspects(x,y) 
-	cb = costbenefit(y)(x) * 0.001 
-	TPROSPECTS + cb
+# ╔═╡ 793782eb-df7c-4044-9c15-7ac21eb03f33
+eg = getnotunfair(defaultSettings)
+
+# ╔═╡ 4ce0bf30-1370-46e7-ae4e-cba3fedf6b8d
+function plotabilities(settings) 
+	policies = map(x -> map(y -> settings.setbaseline + y,x),settings.setpolicies(settings.setbaseline,settings.setavailable),)
+	lists = [map(x -> x[y],policies) for y in 1:length(policies[1])] 
+	maxes = map(maximum,lists)
+	mins = map(minimum,lists)
+	abs = getabilities(settings)
+	plot((1:100),abs, title="ability",labels=permutedims(namelist(settings)))
+	vline!([maxes,mins],label=["maximims" "minimums"])
 end
 
-# ╔═╡ 8492e09a-5203-40ce-8e88-4e8ddc1c4af8
-begin
-	plot((1:120),x -> gettoppropspects(x,abilitylist),xlims=(25,120)) 
-	plot!((1:120),x -> getbottompropspects(x, abilitylist))
+# ╔═╡ 2398e90f-43b3-4668-abc8-4e31cd7950cf
+function plotdashboard(settings) 
+	modelstats = getmodelstats(settings) 
+	p1 = plotchances(modelstats,settings)
+	p2 = plotaverageoutcomes(modelstats,settings)
+	p3 = plotaveragetotaloutcomes(modelstats,settings)
+	p4 = plotcosts(modelstats,settings)
+	p5 = plotcostbenefits(modelstats,settings)
+	p6 = plotprospects(modelstats,settings)
+	p7 = plotlifeprospects(modelstats,settings)
+	p8 = plotweightedlifeprospects(modelstats,settings) 
+	p9 = plotabilities(settings)
+	plot(p1, p2, p3, p4, p5, p6, p7, p8, p9, layout = (5, 2),size=(1000,1000))
 end
+
+# ╔═╡ ac207415-163b-43cc-bd7a-6145c9d5c9da
+plotdashboard(defaultSettings)
+
+# ╔═╡ 455b0654-35c2-457f-8e08-9fbe4cb03cf6
+function basicPolicyFunction(bl,av) 
+    map(x -> [x, av - x],0:0.1:av)
+end
+
+# ╔═╡ b6b58b1f-3e83-4780-9567-0da3a533d227
+basicmodel = ModelSettings(
+	[UpperHigh,UpperHigh], # individuals
+	0.7, # top prospects
+	0.5, # bottom prospects 
+	1.0, # unitcost
+	60,  # baseline opportunities
+	20,  # available opportunities
+	basicPolicyFunction,
+	(60.0,63.0,0.0,0.005), # scale cost/benefits
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.01,45), # low ability 
+	30, # sigma 
+	20, # upper class background
+	10, # middle class background
+	0 # lower class background
+)
+
+# ╔═╡ 843a5f0b-9a98-41ba-924d-fba9ddcbcce1
+plotdiffchances(100,basicmodel)
+
+# ╔═╡ ca2f5531-1b57-40b6-918d-30b89114a4cf
+plotdiffchances(50,basicmodel)
+
+# ╔═╡ 62254dcf-f31a-42f1-817e-5672e48bdb5a
+plotdiffchances(150,basicmodel)
+
+# ╔═╡ 8c74b9fd-68ba-4e2d-a61c-5074c0369646
+basicdiffabilitymodel = ModelSettings(
+	[UpperAverage,UpperHigh], # individuals
+	0.7, # top prospects
+	0.6, # bottom prospects 
+	1.0, # unitcost
+	50,  # baseline opportunities
+	20,  # available opportunities
+	basicPolicyFunction,
+	(33.0,37.0,0.0,0.005), # scale cost/benefits
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.01,45), # low ability 
+	20, # sigma 
+	20, # upper class background
+	10, # middle class background
+	0 # lower class background
+)
+
+# ╔═╡ 308e1d0d-24d9-4bb9-97f7-396057a7eb8f
+plotdashboard(basicdiffabilitymodel)
+
+# ╔═╡ 5e7a46a6-0d5e-49e2-a3e7-596648ce6486
+plotdiffchances(100,basicdiffabilitymodel)
+
+# ╔═╡ 89b3f8e8-f2fc-4b70-a797-63ce0ca52272
+plotdiffchances(60,basicdiffabilitymodel)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1701,9 +1857,14 @@ version = "1.4.1+1"
 
 # ╔═╡ Cell order:
 # ╠═1c2cb753-2372-4307-915c-0f1a272c0ab9
+# ╠═4b04824a-5804-46f7-b3a5-770fa83b0a3f
+# ╠═8ff1a43a-5d85-4c35-a747-2bd2ce43750c
+# ╠═33e587be-a4c7-47fd-8ad7-7d6b308c7328
+# ╠═5ab3d169-e224-487d-b267-111ec0f7d0c9
+# ╠═f7b542ef-7fd9-471b-b912-71cc5eb1efb6
+# ╠═8510973c-9698-4b1d-b845-265fa88ac023
 # ╠═cf4db89d-fc7a-4c98-809c-18da2755e3c2
 # ╠═fb9e0eae-b43f-11ef-2717-03c7a0402193
-# ╠═8fbaf828-615d-42e0-863d-a169a215083c
 # ╠═b49c798f-aac4-4a16-bc02-ed47c17a068f
 # ╠═be947608-a078-420b-a491-20727f36005c
 # ╠═4e42358b-ecd6-443b-b6d1-eafe8f61b358
@@ -1718,63 +1879,54 @@ version = "1.4.1+1"
 # ╠═92f48dd7-8847-44ac-94f7-167621f8b1e5
 # ╠═0f19d840-ad37-4e90-a316-58a0a920a653
 # ╠═ef7cc9a9-c14f-4e44-96c6-8db0e56bca01
-# ╠═a5e2a78f-1bc0-41df-bf01-26b5392404d4
+# ╠═58f978a3-e17d-4ad1-a390-411fa58178d8
+# ╠═afbae6e7-7d27-430f-882b-e392a74dc674
 # ╠═a8d8386c-bcf4-4ccc-b25f-21f605a74c90
-# ╠═8d6bd8de-7553-4738-9502-a2da898ae583
 # ╠═8ca35a19-97c2-421b-a212-d6760a14e681
-# ╠═3b23e2e1-3e66-4d5c-9377-2d1c68642ff8
 # ╠═c8f5fa88-6b97-4c56-ab82-317048839ce3
+# ╠═3b23e2e1-3e66-4d5c-9377-2d1c68642ff8
 # ╠═759347d5-2bbc-4501-af62-96d1b8eb22b5
 # ╠═c261f74a-b2b8-4013-8b7c-c561aa944c8f
 # ╠═c2618ffb-3b75-45bc-a8e5-302a91603442
 # ╠═f1f6baf7-fcba-4187-86dd-c383b549f57b
 # ╠═0b4c4e00-78ff-4eac-8a55-c69f51f36b5a
-# ╠═90b7ca81-53bc-4042-b10e-cf18923fd820
-# ╠═31b1f7f0-84f0-402d-8f14-e4b23cffa87b
-# ╠═eca15192-3693-405c-9eee-e1eef4232b41
-# ╠═b87ecdc4-538c-4b21-9d1f-b58a6282a0da
-# ╠═ec8ac283-5593-4909-98e3-304666e691f1
-# ╠═e12a9f1e-87c1-4051-a1c2-62cd6b94088d
+# ╠═80ca0210-fc6f-436c-9e7e-600e46986189
+# ╠═de9d7a72-b449-4481-9d9c-7965c835bf54
+# ╠═c75f8adb-ab9b-429f-9610-e37ca2edfa1d
+# ╟─ac207415-163b-43cc-bd7a-6145c9d5c9da
+# ╠═2398e90f-43b3-4668-abc8-4e31cd7950cf
 # ╠═bcbfd960-8c9b-43ff-bca5-7288e4f200b5
-# ╠═3a9e797a-ecda-49ac-9e99-d8cad03936e9
-# ╠═736336c2-9be5-436d-b141-469686f0eac3
-# ╠═fc717766-a093-4f31-8994-fd55f604d839
-# ╠═e9450b42-ab32-40ac-98b5-797cb52306c1
-# ╠═1412e7a0-f61d-482c-abbf-5f30bbc1c93b
-# ╠═50b360b9-5b87-4b81-8e0c-7c8803fa77e6
-# ╠═d0fed50c-68cb-4e06-a609-52b592772f3e
-# ╠═f448c93c-c7c8-4224-9026-18c133652fba
-# ╠═f667ba70-f1ab-4912-8750-88f9bab4725f
-# ╠═e64052eb-f0f3-4bad-b079-b2f34405b98d
-# ╠═4b44677e-791f-4809-990c-0e72bf69d22a
-# ╠═f84dba47-54da-4d5d-8f33-b59ed85382a2
 # ╠═bca92e66-e238-4525-8a55-15724a475421
-# ╠═80027a94-08dc-411a-8065-30f36289ea54
-# ╠═6930f5d4-b57c-4d35-86c6-0e69ae189d90
-# ╠═3ea224f1-5d99-4d4d-8562-765011f89638
+# ╠═e9450b42-ab32-40ac-98b5-797cb52306c1
+# ╠═50b360b9-5b87-4b81-8e0c-7c8803fa77e6
+# ╠═f448c93c-c7c8-4224-9026-18c133652fba
+# ╠═f84dba47-54da-4d5d-8f33-b59ed85382a2
+# ╠═c896c63a-ae27-4f3d-ad26-7f175d3fd22a
+# ╠═1e2e1ba2-0ecf-4ebb-ba0d-76182e966c89
+# ╠═4ce0bf30-1370-46e7-ae4e-cba3fedf6b8d
+# ╠═f7af926b-e034-4969-911f-93645d352951
+# ╠═aa0dcd31-767d-41c7-ba7c-7fb797be1c16
+# ╠═793782eb-df7c-4044-9c15-7ac21eb03f33
+# ╠═67167c3a-fc76-4397-8c10-05c6488cae94
 # ╠═62de8a05-a6a7-44ee-be92-0875acf44f78
-# ╠═6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
+# ╠═0cbdd4b3-3cd7-43b6-82d9-93131c1f1190
+# ╠═6930f5d4-b57c-4d35-86c6-0e69ae189d90
 # ╠═e2167084-82f6-4deb-9ec6-6e258a591058
+# ╠═08eacc7b-771e-4ae8-8183-3ea2efb47051
+# ╠═6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
 # ╠═0ba33293-5916-49b9-a5b3-1d14a9f1151d
-# ╠═84258b7e-35af-4591-8e86-2b82e21a52d1
+# ╠═05edf56a-76ba-4b80-b8c1-053e6bc7b0a6
 # ╠═4ab4b692-d0cd-4044-b3fc-d9ab425bca65
 # ╠═d9a28eaf-299e-4453-8fb5-a6f47c46ec1d
 # ╠═bbc6da79-6742-4bbf-a484-35cdf3da39ce
-# ╠═7abfd9a4-ae00-4a23-b644-1e75755ac4a5
-# ╠═f0a38cb3-cd39-42bc-801c-d40bceeb6167
-# ╠═035a098e-cbbe-4edb-9dfb-f8bc0a00e231
-# ╠═f8ab4392-3d4d-4408-822f-805a163b1ae7
-# ╠═59aecc04-903e-46f9-9273-ccdd5586aef8
-# ╠═74207beb-7b6d-4785-a070-75ee09efa617
-# ╠═6ab98134-832d-4cf1-b9b5-a1fb64809814
-# ╠═c756f24c-da1d-4d59-ace2-ca987d1989f2
-# ╠═924e2a28-9c1b-4534-a95c-daa731d20d95
-# ╠═c4b146b6-20ad-4f3d-868e-7b14d87fd38e
-# ╠═303b53af-869b-4de1-b784-1f5d3b805fa9
-# ╠═08029faa-7642-4b36-ae49-61b1a1772908
-# ╠═78383c96-080d-44c4-956d-ec719eb2ec2b
-# ╠═1ca1fa0a-21d7-4eed-812a-62a46ef20516
-# ╠═33ec02dd-f2fc-419d-9bab-b155a41c50c3
-# ╠═8492e09a-5203-40ce-8e88-4e8ddc1c4af8
+# ╠═b6b58b1f-3e83-4780-9567-0da3a533d227
+# ╠═455b0654-35c2-457f-8e08-9fbe4cb03cf6
+# ╠═843a5f0b-9a98-41ba-924d-fba9ddcbcce1
+# ╠═ca2f5531-1b57-40b6-918d-30b89114a4cf
+# ╠═62254dcf-f31a-42f1-817e-5672e48bdb5a
+# ╠═8c74b9fd-68ba-4e2d-a61c-5074c0369646
+# ╠═308e1d0d-24d9-4bb9-97f7-396057a7eb8f
+# ╠═5e7a46a6-0d5e-49e2-a3e7-596648ce6486
+# ╠═89b3f8e8-f2fc-4b70-a797-63ce0ca52272
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
