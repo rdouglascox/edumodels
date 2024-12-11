@@ -307,21 +307,6 @@ here is where we can change the ability settings available for the model.
 
 "
 
-# ╔═╡ 778a0587-959b-4ced-baff-c95defa65a27
-# ╠═╡ disabled = true
-#=╠═╡
-function ability()
-	plot(oprange, [A(i) for i in oprange], label=false)
-	plot!(oprange, [B(i) for i in oprange], label=false)
-	# Add titles and labels
-	title!("ability")
-	xlabel!("opportunities")
-	ylabel!("outcomes")
-	vline!([policy1[1]+baseline[1]], label=false, color=:blue)
-	vline!([policy1[2]+baseline[2]], label=false, color=:green)
-end
-  ╠═╡ =#
-
 # ╔═╡ b31e6846-16c1-426c-96db-b2db11cafdfe
 @bind mysigma NumberField(0:1:50, default=20)
 
@@ -420,38 +405,6 @@ function weighteddiff(x, y)
     end
 end
 
-# ╔═╡ 6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
-# ╠═╡ disabled = true
-#=╠═╡
-# using sampling
-function probability_x_greater_than_y(d1, d2)
-	num_samples=100000
-    count = 0
-    for _ in 1:num_samples
-        x = rand(d1)  # Draw a sample from distribution d1
-        y = rand(d2)  # Draw a sample from distribution d2
-        if x > y
-            count += 1
-        end
-    end
-    return count / num_samples  # Calculate the probability
-end
-  ╠═╡ =#
-
-# ╔═╡ 7374becb-cf8b-4416-8e4b-08fe2f62aceb
-# using numerical integration
-function probability_x_greater_than_y(d1, d2)
-    # Define the PDF of Y
-    pdf_y(y) = pdf(d2, y)
-
-    # Define the CDF of X
-    cdf_x(y) = cdf(d1, y)
-
-    # Calculate the integral
-    integral = quadgk(y -> (1 - cdf_x(y)) * pdf_y(y), -Inf, Inf)[1]
-    return integral
-end
-
 # ╔═╡ dfa36663-3f67-4809-9071-a68a0c985be1
 # Logistic function
 function logistic(n, L, k, x0)
@@ -501,6 +454,21 @@ function getaverageoutcomes(x,y)
    avout = A(totaltoAy) + B(totaltoBy)
    return avout
 end
+
+# ╔═╡ 778a0587-959b-4ced-baff-c95defa65a27
+# ╠═╡ disabled = true
+#=╠═╡
+function ability()
+	plot(oprange, [A(i) for i in oprange], label=false)
+	plot!(oprange, [B(i) for i in oprange], label=false)
+	# Add titles and labels
+	title!("ability")
+	xlabel!("opportunities")
+	ylabel!("outcomes")
+	vline!([policy1[1]+baseline[1]], label=false, color=:blue)
+	vline!([policy1[2]+baseline[2]], label=false, color=:green)
+end
+  ╠═╡ =#
 
 # ╔═╡ 3803eba4-a40d-4849-888f-2f3cd0ecc7d1
 begin
@@ -585,6 +553,7 @@ function getwdiffs(alp1,alp2,blp1,blp2)
 end
 
 # ╔═╡ 5e88a846-a6e1-490b-a946-afc9d3b65bb4
+#=╠═╡
 # this function calculates the unweighted difference between a pair of distributions
 function quickwsum(dt1,dt2) 
 	d1 = policy1
@@ -610,8 +579,10 @@ function quickwsum(dt1,dt2)
 	wsum =  wdiffs[2] + wdiffs[1]
 	return (wsum)
 end
+  ╠═╡ =#
 
 # ╔═╡ 7162b0d4-f9f6-4b98-abcd-08f6c26305d6
+#=╠═╡
 # compare some policy x, against some policy y.
 
 function getreporthelper(x,y)
@@ -626,6 +597,7 @@ function getreporthelper(x,y)
    report = quickwsum((totaltoAy,totaltoBy),(totaltoA,totaltoB))
    return (report) 
 end
+  ╠═╡ =#
 
 # ╔═╡ 35587cb6-f68a-4423-b524-43bc2d1da908
 # a record type for storing the results of running the model 
@@ -668,6 +640,7 @@ end
 	
 
 # ╔═╡ 14a6c1d8-48cf-4bfc-b7f9-f56fd0406ead
+#=╠═╡
 # this function calculates the unweighted difference between a pair of distributions
 function runmodel(dt1,dt2) 
 	d1 = policy1
@@ -740,8 +713,10 @@ function runmodel(dt1,dt2)
 		)
 	)
 end
+  ╠═╡ =#
 
 # ╔═╡ 2751cd9d-358f-4bf4-a8c2-bcdddeceabb7
+#=╠═╡
 # compare some policy x, against policy 1.
 
 function getreporthelper(x) 
@@ -752,187 +727,271 @@ function getreporthelper(x)
    report = runmodel(dt1,(totaltoA,totaltoB))
    return (report) 
 end
+  ╠═╡ =#
 
 # ╔═╡ 10a35a0d-433d-40db-bd0d-83ad1b16764d
+#=╠═╡
 allreports = map(getreporthelper,STANDARDRANGE)
+  ╠═╡ =#
 
 # ╔═╡ 022dfc14-6743-4f82-8710-ef281020c6f9
+#=╠═╡
 bschances = map(x -> x.chances_b_2,allreports)
+  ╠═╡ =#
 
 # ╔═╡ 1cb27925-26f4-44e6-ad00-05ddf647088e
+#=╠═╡
 getuwsums = map(x -> x.uw_sum,allreports)
+  ╠═╡ =#
 
 # ╔═╡ 88306a77-c85c-4dde-861e-f7ace7c0115c
+#=╠═╡
 getuwdiffsA = map(x -> x.uw_diffs[1],allreports)
+  ╠═╡ =#
 
 # ╔═╡ 92f08b2f-632a-4c2d-bbb0-2058d4dcf923
+#=╠═╡
 getuwdiffsB = map(x -> x.uw_diffs[2],allreports)
+  ╠═╡ =#
 
 # ╔═╡ 574bfcad-ef67-40ae-a7ad-ebfde093996f
+#=╠═╡
 getwsums = map(x -> x.w_sum,allreports)
+  ╠═╡ =#
 
 # ╔═╡ a7db1f6f-4350-4fef-bd5b-fae0de2421bf
+#=╠═╡
 getwdiffsA = map(x -> x.w_diffs[1],allreports)
+  ╠═╡ =#
 
 # ╔═╡ 8c88a658-512c-4a72-a252-5a245b3e791d
+#=╠═╡
 getwdiffsB = map(x -> x.w_diffs[2],allreports)
+  ╠═╡ =#
 
 # ╔═╡ 49d14f08-4bff-449a-9409-b15f79e15000
+#=╠═╡
 getAsprospects = map(x -> x.prospects_a_2,allreports)
+  ╠═╡ =#
 
 # ╔═╡ b5d86b21-a998-48ba-b330-30574d60f6be
+#=╠═╡
 getAswprospects = map(toweighted,getAsprospects)
+  ╠═╡ =#
 
 # ╔═╡ 5eec0844-9987-4fb9-bad2-104511629d4b
+#=╠═╡
 getBsprospects = map(x -> x.prospects_b_2,allreports)
+  ╠═╡ =#
 
 # ╔═╡ 6500c449-48d2-42ed-9d75-428d8dd35f70
+#=╠═╡
 # plot unweighted life prospects
 function plotprospects()
 	plot(bschances, getAsprospects, label="A's life propsects", xlabel="B's chances", legend=:outertopright, size=(600, 300), xlims=(0,1)) 
 	plot!(bschances, getBsprospects, label="B's life prospects")
 end
 
+  ╠═╡ =#
 
 # ╔═╡ e0671b51-bfdc-460a-a96d-c47464d2af38
+#=╠═╡
 plotprospects()
+  ╠═╡ =#
 
 # ╔═╡ 43b92d76-57dd-4a67-9152-1daf594eed3b
+#=╠═╡
 # plot unweighted life prospects
 function plotprospectsLATEX()
 	plot(bschances, getAsprospects, label="A's life propsects", xlabel="B's chances", legend=:outertopright, size=(300, 200), xlims=(0,1), color=:black, linestyle=:dot) 
 	plot!(bschances, getBsprospects, label="B's life prospects", color=:black, linestyle=:dash)
 end
+  ╠═╡ =#
 
 # ╔═╡ b1976137-7d12-41a8-928e-bb674e20afbb
+#=╠═╡
 plotprospectsLATEX()
+  ╠═╡ =#
 
 # ╔═╡ 2d57d65d-1fe3-4fda-9f41-5cf68746708b
+#=╠═╡
 savefig(plotprospectsLATEX(),  "prospects.tikz")
+  ╠═╡ =#
 
 # ╔═╡ f5de361e-29ef-4ac3-9f81-caa1c43104e2
+#=╠═╡
 getBswprospects = map(toweighted,getBsprospects)
+  ╠═╡ =#
 
 # ╔═╡ eb925a8b-1395-4a45-a805-d62814e9a2f4
+#=╠═╡
 # plot unweighted life prospects
 function plotwprospects()
 	plot(bschances, getAswprospects, label="A's weighted prospects", xlabel="B's chances", legend=:outertopright, size=(600, 300), xlims=(0,1))
 	plot!(bschances, getBswprospects, label="B's weighted prospects")
 end
+  ╠═╡ =#
 
 # ╔═╡ b67aadaf-567e-417a-9b87-6e661737db2d
+#=╠═╡
 plotwprospects()
+  ╠═╡ =#
 
 # ╔═╡ 1ee419ee-a39a-4e70-99af-c5a60a5239d2
+#=╠═╡
 # plot unweighted life prospects
 function plotwprospectsLATEX()
 	plot(bschances, getAswprospects, label="A's weighted prospects", xlabel="B's chances", legend=:outertopright, size=(300, 200), xlims=(0,1), color=:black, linestyle=:dot)
 	plot!(bschances, getBswprospects, label="B's weighted prospects", color=:black, linestyle=:dash)
 end
+  ╠═╡ =#
 
 # ╔═╡ ccc54dc9-4d8f-4b21-add2-92f9a8b0863b
+#=╠═╡
 plotwprospectsLATEX()
+  ╠═╡ =#
 
 # ╔═╡ 8db6baef-ee08-4ba7-a527-3acdff34294d
+#=╠═╡
 getallaverageoutcomes = map(y -> (scaleavout * y) + addavout,map(x -> x.av_out_2,allreports))
+  ╠═╡ =#
 
 # ╔═╡ 42e0f7de-40c6-41ec-9edd-ddde3ee51161
+#=╠═╡
 function plotoutcomes() 
 	plot(bschances,getallaverageoutcomes, label="total outcomes", xlabel="B's chances", legend=:outertopright, size=(600, 300), xlims=(0,1), ylims=(0,120))
 end
+  ╠═╡ =#
 
 # ╔═╡ cb5f1029-4a79-4c70-b7e1-6c938cf6d02f
+#=╠═╡
 plotoutcomes() 
+  ╠═╡ =#
 
 # ╔═╡ fa4ec057-8780-48cc-95cc-9af14778098e
+#=╠═╡
 function plotoutcomesLATEX() 
 	plot(bschances,getallaverageoutcomes, label="total outcomes", xlabel="B's chances", legend=:outertopright, size=(300, 200), xlims=(0,1), ylims=(0,120), color=:black)
 end
+  ╠═╡ =#
 
 # ╔═╡ b6dae495-9c4c-4251-88c6-147bc7b30e83
+#=╠═╡
 plotoutcomesLATEX()
+  ╠═╡ =#
 
 # ╔═╡ e56258ed-3334-402c-8cc3-4ccadd4340fd
+#=╠═╡
 function getBschances(x) 
    report = getreporthelper(x)
    return report.chances_b_2
 end
+  ╠═╡ =#
 
 # ╔═╡ 350fa1f3-1131-494a-810b-8eea294f2c43
+#=╠═╡
 function plotequalinputs() 
 	vline!([getBschances(0.5)], label="equal inputs")
 end
+  ╠═╡ =#
 
 # ╔═╡ b3732227-f2ac-4f1d-b9e0-9577a28fa563
+#=╠═╡
 function plotcurrentpolicy() 
 	vline!([getBschances(proportiontoB1_)], label="current policy")
 end
+  ╠═╡ =#
 
 # ╔═╡ f9ee30f1-e9a5-42eb-97bb-17aaaebae02b
+#=╠═╡
 function getcostbenefitsimple(x) 
    report = getreporthelper(x)
    return report.c_ben2
 end
+  ╠═╡ =#
 
 # ╔═╡ 50c57118-e9b6-4965-9d5a-39a365dae7b2
+#=╠═╡
 function getAsaverageoutcomes(x) 
    report = getreporthelper(x)
    return report.av_out_2A
 end
+  ╠═╡ =#
 
 # ╔═╡ 323d5571-f048-471a-af21-02fbbdd579ec
+#=╠═╡
 function getBsaverageoutcomes(x) 
    report = getreporthelper(x)
    return report.av_out_2B
 end
+  ╠═╡ =#
 
 # ╔═╡ 1fa12067-b14c-48e9-80a7-1d3a09ee7312
+#=╠═╡
 function getedubenefits(x) 
    report = getreporthelper(x)
    return map(edubenefits,report.av_out_2)
 end
+  ╠═╡ =#
 
 # ╔═╡ e8aacc9d-c3db-4325-98d6-51aaef395e26
+#=╠═╡
 function getweightedsum(x,y)
    wsum = getreporthelper(x,y)
    return wsum
 end
+  ╠═╡ =#
 
 # ╔═╡ ffa7810c-3ef0-44e3-bb0d-f87aea0fed57
+#=╠═╡
 allweightedsums = [(y,map(z -> getweightedsum(z,y),STANDARDRANGE)) for y in STANDARDRANGE]
+  ╠═╡ =#
 
 # ╔═╡ 38c72475-70e8-4f6e-a50b-5bec831ac436
+#=╠═╡
 allweightedsumsmins = map(getmin,allweightedsums) 
+  ╠═╡ =#
 
 # ╔═╡ 8fed40f0-79dc-4a5a-a403-ba13d8392521
+#=╠═╡
 # find the policy/policies where the weighted difference in interests is exactly balanced
 function findstrictlybalanced()
 	sorted = sort(allweightedsumsmins, by = x -> x[2])
     sorted[1][1]
 end
+  ╠═╡ =#
 
 # ╔═╡ 833c1db0-5ec9-49fe-b64b-da4370dd19b4
+#=╠═╡
 function plotstrictlybalancedCH() 
 	vline!([findstrictlybalanced()], label="strictly balanced")
 end
+  ╠═╡ =#
 
 # ╔═╡ 20fe2f9e-1acb-41bd-bbf8-846db2d4d9f2
+#=╠═╡
 findstrictlybalanced()
+  ╠═╡ =#
 
 # ╔═╡ a57f224b-7e94-4520-a533-96815f987cb0
+#=╠═╡
 # find the policy/policies where the weighted difference in interests is loosely balanced 
 function findlooselybalanced()
 	threshold = 0.002 # the threshold
 	[x for x in STANDARDRANGE if all(z -> z < threshold, map(z -> getweightedsum(z,x),STANDARDRANGE))]
 end
+  ╠═╡ =#
 
 # ╔═╡ 27dbca46-82e4-4afd-813e-3aa53796b424
+#=╠═╡
 function plotlooselybalancedCH() 
 	glfgroups = map(x -> map(getBschances,x),split_into_groups(findlooselybalanced(),0.01))
     vspan!([[minimum(i),maximum(i)] for i in glfgroups], opacity=0.1, label="loosely balanced")
 end
+  ╠═╡ =#
 
 # ╔═╡ 55e05e57-8f66-4de7-9f30-50ab13afa8e7
+#=╠═╡
 function gethighestfairchance()
 	lf = map(getBschances,findlooselybalanced())
 	mymax = maximum(lf) 
@@ -944,16 +1003,22 @@ function gethighestfairchance()
 	else 0.5 
 	end
 end
+  ╠═╡ =#
 
 # ╔═╡ a7362fe6-9f5d-405b-af96-ddb4bcef5f4e
+#=╠═╡
 md"plot description: strictly balanced is at $(findstrictlybalanced()), maximum loosely balanced is at $(tr(getBschances(maximum(findlooselybalanced())))), and highest fair chance is at $(tr(gethighestfairchance())), B's chances on equal inputs are at $(tr(getBschances(proportiontoB1_)))"
+  ╠═╡ =#
 
 # ╔═╡ 4a2fca11-fd3c-4895-8049-38f475bc6114
+#=╠═╡
 function plothighestfairchanceCH() 
 	vline!([gethighestfairchance()], label="highest fair chance")
 end
+  ╠═╡ =#
 
 # ╔═╡ c09bac89-58bf-4637-9765-5c26ffe3b79d
+#=╠═╡
 function plotweightedinterests()
 	plot(bschances,getwdiffsA , label="A's interests", legend=:outertopright, size=(600, 300), xlims=(0,1))
 	plot!(bschances,getwdiffsB, label="B's interests")
@@ -968,17 +1033,25 @@ function plotweightedinterests()
 	plot!(ticklabelstyle="font={Times New Roman, \\small}")
 end
  
+  ╠═╡ =#
 
 # ╔═╡ 3221520f-33d5-46d3-b715-88f7c4d0de11
+#=╠═╡
 plotweightedinterests()
+  ╠═╡ =#
 
 # ╔═╡ ff41c3b4-8953-4628-9722-3a8fae9a1e69
+#=╠═╡
 gethighestfairchance()
+  ╠═╡ =#
 
 # ╔═╡ 99a7a989-c37b-46d8-9d72-87d67b9d5d9f
+#=╠═╡
 report1 = runmodel(dt1,dt2)
+  ╠═╡ =#
 
 # ╔═╡ 722f971d-d8a7-4ea8-81e9-09bba8db8a90
+#=╠═╡
 md"## report 
 
 the following is a report comparing policy 1 and policy 2
@@ -1045,6 +1118,41 @@ here is an extended report:
 
 " 
 
+  ╠═╡ =#
+
+# ╔═╡ 7374becb-cf8b-4416-8e4b-08fe2f62aceb
+#=╠═╡
+# using numerical integration
+function probability_x_greater_than_y(d1, d2)
+    # Define the PDF of Y
+    pdf_y(y) = pdf(d2, y)
+
+    # Define the CDF of X
+    cdf_x(y) = cdf(d1, y)
+
+    # Calculate the integral
+    integral = quadgk(y -> (1 - cdf_x(y)) * pdf_y(y), -Inf, Inf)[1]
+    return integral
+end
+  ╠═╡ =#
+
+# ╔═╡ 6336fe43-a4e8-4d75-be6c-fbd9b6a6ba37
+# ╠═╡ disabled = true
+#=╠═╡
+# using sampling
+function probability_x_greater_than_y(d1, d2)
+	num_samples=100000
+    count = 0
+    for _ in 1:num_samples
+        x = rand(d1)  # Draw a sample from distribution d1
+        y = rand(d2)  # Draw a sample from distribution d2
+        if x > y
+            count += 1
+        end
+    end
+    return count / num_samples  # Calculate the probability
+end
+  ╠═╡ =#
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """

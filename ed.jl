@@ -420,17 +420,6 @@ function getalldiffs(n,settings)
     map(z -> map(x -> x.weighteddifferences[z],allpwcs),1:length(allpwcs[1].weighteddifferences)) 
 end
 
-# ╔═╡ 62de8a05-a6a7-44ee-be92-0875acf44f78
-function plotdiffs(n,settings)
-	theme(:dracula) 
-	thediffs = getalldiffs(n,settings)
-	plot(1:length(thediffs[1]),thediffs, xlabel="policy",ylabel="weighted interests in improvement", title="weighted interests in alternatives", labels=permutedims(namelist(settings)))
-	# vline!([setpolicy])
-end
-
-# ╔═╡ 6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
-plotdiffs(setpolicy,defaultSettings)
-
 # ╔═╡ 05edf56a-76ba-4b80-b8c1-053e6bc7b0a6
 function getallsums(n,settings) 
 	allpwcs = getallpairwisecomparisons(n,settings)
@@ -444,11 +433,21 @@ function plotdiffchances(n,settings)
 	plot(thechances,getalldiffs(n,settings), xlabel="chances",ylabel="weighted interests in improvement", title="weighted interests in alternatives", labels=permutedims(namelist(settings)))
 	plot!(thechances,map(r0,getallsums(n,settings)),labels=false) 
 	plot!(thechances,getallsums(n,settings),opacity=0.2,labels=false)
-	# vline!([setpolicy])
+	# nuf = policiestochances(getnotunfair(settings),settings)
+	# vspan!([minimum(nuf),maximum(nuf)],opacity=0.05)
 end
 
 # ╔═╡ 08eacc7b-771e-4ae8-8183-3ea2efb47051
 plotdiffchances(setpolicy,defaultSettings)
+
+# ╔═╡ 83097b26-4eec-43d6-8605-ca7bc9417499
+function plotdiffchancesquick(n,settings)
+	theme(:dracula)
+	thechances = getallchances(settings)[1]
+	plot(thechances,getalldiffs(n,settings), xlabel="chances",ylabel="weighted interests in improvement", title="weighted interests in alternatives", labels=permutedims(namelist(settings)))
+	plot!(thechances,map(r0,getallsums(n,settings)),labels=false) 
+	plot!(thechances,getallsums(n,settings),opacity=0.2,labels=false)
+end
 
 # ╔═╡ 4ab4b692-d0cd-4044-b3fc-d9ab425bca65
 function plotsums(n,settings)
@@ -467,14 +466,34 @@ function getnotunfair(settings)
 	allmap = map(onemap,allpolicies)
 	anothermap = y -> map(z -> map(x -> x.weightedsums[z],y),1:length(y[1].weightedsums)) 
 	dasmap = map(anothermap,allmap)
-	nonegreater = y -> any(x -> x > 0.002, y)
-	innermap = z -> nonegreater(z[1]) && nonegreater(z[2])
-	applyinnermap = map(x-> map(innermap,x),dasmap)
-	# zipped = zip(allpolicies,dasmap)
+	nonegreater = y -> (any(x -> x > 0.002, y))
+	innermap = z -> reduce((x, y) -> x || y,map(nonegreater,z)) 
+	# innermap = z -> nonegreater(z[1]) || nonegreater(z[2])
+	applyinnermap = map(innermap,dasmap)
+	zipped = zip(allpolicies,applyinnermap)
+	filtered = map(x -> x[1][1],collect(Iterators.filter(x -> (x[2] == false),zipped)))
 end
 
 # ╔═╡ 793782eb-df7c-4044-9c15-7ac21eb03f33
 eg = getnotunfair(defaultSettings)
+
+# ╔═╡ 62de8a05-a6a7-44ee-be92-0875acf44f78
+function plotdiffs(n,settings)
+	theme(:dracula) 
+	thediffs = getalldiffs(n,settings)
+	plot(1:length(thediffs[1]),thediffs, xlabel="policy",ylabel="weighted interests in improvement", title="weighted interests in alternatives", labels=permutedims(namelist(settings)))
+	nuf = getnotunfair(settings)
+	vspan!([minimum(nuf),maximum(nuf)],opacity=0.05)
+end
+
+# ╔═╡ 6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
+plotdiffs(setpolicy,defaultSettings)
+
+# ╔═╡ 6c59528c-737b-493a-b821-808dc9ff2a53
+function policiestochances(policies,settings)
+	all = map(x -> runmodel(x,settings),policies)
+	map(z -> map(x -> x[1][z].chances, all),1:(length(all[1][1])))
+end
 
 # ╔═╡ 4ce0bf30-1370-46e7-ae4e-cba3fedf6b8d
 function plotabilities(settings) 
@@ -530,13 +549,13 @@ basicmodel = ModelSettings(
 )
 
 # ╔═╡ 843a5f0b-9a98-41ba-924d-fba9ddcbcce1
-plotdiffchances(100,basicmodel)
+plotdiffchancesquick(100,basicmodel)
 
 # ╔═╡ ca2f5531-1b57-40b6-918d-30b89114a4cf
-plotdiffchances(50,basicmodel)
+plotdiffchancesquick(50,basicmodel)
 
 # ╔═╡ 62254dcf-f31a-42f1-817e-5672e48bdb5a
-plotdiffchances(150,basicmodel)
+plotdiffchancesquick(150,basicmodel)
 
 # ╔═╡ 8c74b9fd-68ba-4e2d-a61c-5074c0369646
 basicdiffabilitymodel = ModelSettings(
@@ -561,10 +580,10 @@ basicdiffabilitymodel = ModelSettings(
 plotdashboard(basicdiffabilitymodel)
 
 # ╔═╡ 5e7a46a6-0d5e-49e2-a3e7-596648ce6486
-plotdiffchances(100,basicdiffabilitymodel)
+plotdiffchancesquick(100,basicdiffabilitymodel)
 
 # ╔═╡ 89b3f8e8-f2fc-4b70-a797-63ce0ca52272
-plotdiffchances(60,basicdiffabilitymodel)
+plotdiffchancesquick(60,basicdiffabilitymodel)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1910,9 +1929,11 @@ version = "1.4.1+1"
 # ╠═67167c3a-fc76-4397-8c10-05c6488cae94
 # ╠═62de8a05-a6a7-44ee-be92-0875acf44f78
 # ╠═0cbdd4b3-3cd7-43b6-82d9-93131c1f1190
+# ╠═83097b26-4eec-43d6-8605-ca7bc9417499
+# ╠═6c59528c-737b-493a-b821-808dc9ff2a53
 # ╠═6930f5d4-b57c-4d35-86c6-0e69ae189d90
-# ╠═e2167084-82f6-4deb-9ec6-6e258a591058
 # ╠═08eacc7b-771e-4ae8-8183-3ea2efb47051
+# ╠═e2167084-82f6-4deb-9ec6-6e258a591058
 # ╠═6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
 # ╠═0ba33293-5916-49b9-a5b3-1d14a9f1151d
 # ╠═05edf56a-76ba-4b80-b8c1-053e6bc7b0a6
