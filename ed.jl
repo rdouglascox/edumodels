@@ -17,53 +17,28 @@ macro bind(def, element)
 end
 
 # ╔═╡ 1c2cb753-2372-4307-915c-0f1a272c0ab9
-using Plots, Distributions, QuadGK, PlutoUI, ColorSchemes, PlotThemes
+using Plots, 
+Distributions, 
+QuadGK, 
+PlutoUI, 
+ColorSchemes, 
+Printf,
+PlotThemes, 
+PGFPlotsX
+
+
+# ╔═╡ 89734a9c-1019-44ae-9e29-57c0e6c72dbf
+pgfplotsx()
 
 # ╔═╡ 55fac899-7c51-4ea1-9949-e46fe03c853c
 md"## playground"
 
-# ╔═╡ a62f41b0-fe22-4651-a68f-8329194e669d
-function highestfairchance(data::Vector{Vector{Float64}})::Float64
-    first_individual_chances = data[1]
-    num_policies = length(first_individual_chances)
-    num_individuals = length(data)
-    
-    highest_fair_chance = first_individual_chances[1]
-    
-    for policy in 1:num_policies
-        valid = true
-        for individual in 2:num_individuals
-            if (data[individual][policy] < first_individual_chances[policy] && data[individual][policy] < highest_fair_chance) ||
-               (data[individual][policy] > first_individual_chances[policy] && data[individual][policy] < highest_fair_chance)
-                valid = false
-                break
-            end
-        end
-        if valid && first_individual_chances[policy] > highest_fair_chance
-            highest_fair_chance = first_individual_chances[policy]
-        end
-    end
-    
-    return highest_fair_chance
-end
-
-# ╔═╡ 944a48b8-1f40-44b4-8293-dea85b1c8f94
-data = [
-    [0.177007, 0.188445, 0.200561, 0.213364, 0.226861, 0.241052, 0.255932],
-    [0.710453, 0.69814, 0.685332, 0.67203, 0.658238, 0.643963, 0.629218],
-    [0.11254, 0.113415, 0.114107, 0.114606, 0.114901, 0.114985, 0.114851]
-]
-
-
-# ╔═╡ 17ee05a3-8d96-4f72-b3de-040af38aa4bb
-highestfairchance(data)
-
 # ╔═╡ 9b294729-6005-4f57-9283-ccf70fdaf675
-md"### predefined models"
+md"## some predefined models"
 
 # ╔═╡ 737bdd1f-ba36-49e5-96df-cc5744374194
 function equalizingPolicyFunctionMixed3(bl,available)
-    map(x -> [x * 0.6 ,0,x * 0.4],0:available)
+    map(x -> [x * 0.8 ,0,x * 0.2],0:available)
 end
 
 # ╔═╡ 41ed7339-ddd0-4da0-8687-245227c41c37
@@ -335,7 +310,13 @@ end
 
 # ╔═╡ a8d8386c-bcf4-4ccc-b25f-21f605a74c90
 function namelist(xs)
-	map(x -> x.identifier,xs.setindividuals)
+	names = map(x -> x.identifier,xs.setindividuals)
+end
+
+# ╔═╡ c98f3b60-b138-4661-9ec6-01fb6d8fba79
+function namelist2(xs)
+	names = map(x -> x.identifier,xs.setindividuals)
+	namesplus = map(x -> string("Against ",x),names)
 end
 
 # ╔═╡ 8ca35a19-97c2-421b-a212-d6760a14e681
@@ -369,6 +350,9 @@ basic2=  ModelSettings(
 	0.0005, # individual benefits of education e.g. 0.0005
 	(0.0,0.0) # set job satisfaciton 
 )
+
+# ╔═╡ 392ac1b1-a327-4c60-b6a9-0e0cf4eb0542
+namelist2(basic2)
 
 # ╔═╡ b8bccef8-3775-4867-9e4c-4a6c89d83195
 basic4= ModelSettings(
@@ -801,11 +785,67 @@ function plotweightedlifeprospects(modelstats,settings)
 end
 
 # ╔═╡ 5a5dfea0-a716-4ae0-803f-65cc8455379b
-md"### policy finding"
+md"## policy finding"
+
+# ╔═╡ 49903354-a6ac-4bdb-a064-79c635113c15
+md"#### find the policies that are not unfair to others"
+
+# ╔═╡ e949db88-66fd-4fd6-b172-2c2d594ca80e
+md"#### find the highest fair chance"
+
+# ╔═╡ bf9f7929-cde0-4814-a72d-f17b9a5d8127
+function checkrow(cc,xs,ys)
+   [ cc < ys[i] || (xs[i] <= ys[i])  for i in 1:length(xs)]
+end
+
+# ╔═╡ d22d5031-5e55-4a65-8290-4651db6f67bd
+function myzip(lists)
+    shortest_length = minimum(length.(lists))
+    [tuple(map(i -> lists[i][j], 1:length(lists))...) for j in 1:shortest_length]
+end
+
+# ╔═╡ 1f2e4a96-cb38-44ce-9207-1d4c1f683a8d
+# here's the checking function. it takes the current chances, a list of alternative chances, and a list of list of chances 
+function hfchelper(cc,xs,yss)
+    yssrows = myzip(yss) 
+	boolmap = map(x -> checkrow(cc,xs,x),yssrows) 
+	reducedboolmap = map(x -> ~any(y -> y == false,x),boolmap ) 
+	answer = any(y -> y == true,reducedboolmap) # is there a fair higher chance? 
+end
+
+# ╔═╡ 3501dc47-d9da-4464-8b3e-0b07807096a0
+function highestfairchance(data)
+	if length(data[1]) == 1
+		return(data[1][1])
+	else
+	zipdata = sort(myzip(data),by=x->x[1])
+	ind1 = data[1][1] 
+	compheads = map(x -> zipdata[1][x],2:(length(zipdata[1])))
+	comptail = map(x -> x[2:end],data[2:end]) 
+	if hfchelper(ind1,compheads,comptail) 
+		datatails = map(x -> x[2:end],data) 
+		highestfairchance(datatails) 
+	else 
+		return(data[1][1])
+	end
+	end
+end
+
+
+# ╔═╡ 532c18e4-190e-478a-a59e-bbf6862f6604
+md"## plotting"
+
+# ╔═╡ 3d1a09fb-117e-4498-be3d-ea12cff6c86b
+theme(:vibrant) 
+
+# ╔═╡ bf8be2de-22b3-4a78-8a2f-43da2b478b9e
+function tr(x::Float64)
+        return @sprintf("%.2f", x)
+end
 
 # ╔═╡ d9a28eaf-299e-4453-8fb5-a6f47c46ec1d
 function r0(xs) 
-	map(x -> if x <= 0.0000000; NaN; else x;end,xs) 
+	map(x -> if x < 0.0000000; NaN; else x;end,xs) 
 end
 
 # ╔═╡ bbc6da79-6742-4bbf-a484-35cdf3da39ce
@@ -931,7 +971,6 @@ end
 
 # ╔═╡ 83097b26-4eec-43d6-8605-ca7bc9417499
 function plotdiffchancesquick(n,settings)
-	theme(:dracula)
 	thechances = getallchances(settings)[1]
 	plot(thechances,getalldiffs(n,settings), xlabel="chances",ylabel="weighted interests in improvement", title="weighted interests in alternatives", labels=permutedims(namelist(settings)))
 	plot!(thechances,map(r0,getallsums(n,settings)),labels=false) 
@@ -968,7 +1007,6 @@ notunfair = getnotunfair(currentmodel)
 
 # ╔═╡ 62de8a05-a6a7-44ee-be92-0875acf44f78
 function plotdiffs(n,settings)
-	theme(:dracula) 
 	thediffs = getalldiffs(n,settings)
 	plot(1:length(thediffs[1]),thediffs, xlabel="policy",ylabel="weighted interests in improvement", title="weighted interests in alternatives", labels=permutedims(namelist(settings)))
 	nuf = map(x -> x[1],getnotunfair(settings))
@@ -987,23 +1025,41 @@ end
 # ╔═╡ 76474fac-449d-403b-8f88-65da388e073c
 test = policiestochances(notunfair,currentmodel)
 
-# ╔═╡ 9c3d8f14-a535-41e4-bee1-fa3ba938916f
-maximum(policiestochances(getnotunfair(currentmodel),currentmodel)[1])
+# ╔═╡ ca4f2783-c903-4342-a948-6842571535fa
+highestfairchance(test)
 
 # ╔═╡ 0cbdd4b3-3cd7-43b6-82d9-93131c1f1190
 function plotdiffchances(n,settings)
-	theme(:dracula)
 	thechances = getallchances(settings)[1]
 	plot(thechances,getalldiffs(n,settings), xlabel="chances",ylabel="weighted interests", title="weighted interests in alternatives", labels=permutedims(namelist(settings)),xlims=(0,1),ylims=(-0.02,0.02))
 	plot!(thechances,map(r0,getallsums(n,settings)),labels=false) 
 	plot!(thechances,getallsums(n,settings),opacity=0.2,labels=false)
-	nuf = policiestochances(getnotunfair(settings),settings)[1]
+	f = policiestochances(getnotunfair(settings),settings)
+	nuf = f[1]
 	vspan!([minimum(nuf),maximum(nuf)],opacity=0.05,label="not unfair")
 	vline!([thechances[n]],label="selected policy")
+	vline!([highestfairchance(f)], label="highest fair chance")
 end
 
 # ╔═╡ 08eacc7b-771e-4ae8-8183-3ea2efb47051
 plotdiffchances(setpolicy,currentmodel)
+
+# ╔═╡ f56738d8-f502-4dd1-a60f-be2df5f95fc4
+function plotdiffchancesLATEX(n,settings)
+	thechances = getallchances(settings)[1]
+	plot(thechances,getalldiffs(n,settings), xlabel="chances",ylabel="weighted interests",  labels=permutedims(namelist(settings)),xlims=(0,1),ylims=(-0.02,0.02),legend=:outertopright, linewidth=0.5)
+	plot!(thechances,map(r0,getallsums(n,settings)), linewidth=0.5, size=(500,350),label=false) 
+	# plot!(thechances,getallsums(n,settings),opacity=0.2,labels=false)
+	f = policiestochances(getnotunfair(settings),settings)
+	nuf = f[1]
+	vspan!([minimum(nuf),maximum(nuf)],opacity=0.05,label=false,color=:grey)
+	vline!([thechances[n]],label=false,linewidth=0.5,color=:grey,opacity=0.5, linestyle=:dash)
+	vline!([highestfairchance(f)],  linewidth=0.5, label=false,color=:grey,opacity=0.5)
+	plot!(ticklabelstyle="font={Times New Roman, \\small}")
+	hline!([0.0],color=:grey,linewidth=0.5,label=false)
+	annotate!(highestfairchance(f) + 0.03, 0.019, text(tr(highestfairchance(f)),8,color=:grey))
+	annotate!(thechances[n] + 0.03, -0.019, text(tr(thechances[n]),8,color=:grey))
+end
 
 # ╔═╡ bb3247be-ad48-4176-b33d-48e2c181ac1d
 policiestochances([[20.0,20.0]],defaultSettings)
@@ -1070,21 +1126,33 @@ basicmodel = ModelSettings(
 
 # ╔═╡ 455b0654-35c2-457f-8e08-9fbe4cb03cf6
 function basicPolicyFunction(bl,av) 
-    map(x -> [x, av - x],0:0.1:av)
+    map(x -> [x, av - x],0:av)
 end
 
 # ╔═╡ 843a5f0b-9a98-41ba-924d-fba9ddcbcce1
-plotdiffchances(10,basicmodel)
+plotdiffchances(11,basicmodel)
+
+# ╔═╡ 1e4bb759-36ff-4ec7-b832-0589c39f06bf
+savefig(plotdiffchancesLATEX(11,basicmodel),"~/onedrive/research/a_fair_chance/tikz/fig1.tikz")
 
 # ╔═╡ ca2f5531-1b57-40b6-918d-30b89114a4cf
 plotdiffchances(5,basicmodel)
 
+# ╔═╡ 471952d2-b707-4a43-8ce2-81390ef14f61
+plotdiffchancesLATEX(5,basicmodel)
+
+# ╔═╡ 9f02475c-bef5-4226-a693-18670b2d8da3
+savefig(plotdiffchancesLATEX(5,basicmodel),"~/onedrive/research/a_fair_chance/tikz/fig2.tikz")
+
 # ╔═╡ 62254dcf-f31a-42f1-817e-5672e48bdb5a
 plotdiffchances(15,basicmodel)
 
+# ╔═╡ 98a5dca8-d3dd-4004-9714-ee6a6f9e8d0a
+savefig(plotdiffchancesLATEX(15,basicmodel),"~/onedrive/research/a_fair_chance/tikz/fig3.tikz")
+
 # ╔═╡ 8c74b9fd-68ba-4e2d-a61c-5074c0369646
 basicdiffabilitymodel = ModelSettings(
-	[UpperHigh,UpperHigh], # individuals
+	[UpperAverage,UpperHigh], # individuals
 	0.7, # top prospects
 	0.5, # bottom prospects 
 	1.0, # unitcost
@@ -1098,7 +1166,7 @@ basicdiffabilitymodel = ModelSettings(
 	10, # upper class background
 	5, # middle class background
 	0, # lower class background
-	(100.0,150.0,0.0,0.1), # scale cost/benefits
+	(100.0,120.0,0.0,0.1), # scale cost/benefits
 	false, # diminishing marginal 
 	false, # tax scheme progressive? 
 	false, # top boost?
@@ -1113,28 +1181,34 @@ plotdashboard(basicdiffabilitymodel)
 # ╔═╡ 5e7a46a6-0d5e-49e2-a3e7-596648ce6486
 plotdiffchances(10,basicdiffabilitymodel)
 
+# ╔═╡ 91cba954-b817-4c57-8a46-86df85df72a3
+savefig(plotdiffchancesLATEX(10,basicdiffabilitymodel),"~/onedrive/research/a_fair_chance/tikz/fig4.tikz")
+
 # ╔═╡ 89b3f8e8-f2fc-4b70-a797-63ce0ca52272
-plotdiffchances(6,basicdiffabilitymodel)
+plotdiffchances(5,basicdiffabilitymodel)
 
-# ╔═╡ c6709450-63b0-4b76-a771-63c43f22940e
-palette(:dracula)
+# ╔═╡ 5d634388-c0ec-4fcf-ae83-b4868d1ea27d
+savefig(plotdiffchancesLATEX(5,basicdiffabilitymodel),"~/onedrive/research/a_fair_chance/tikz/fig5.tikz")
 
-# ╔═╡ e0c4b307-9c5a-430e-b76e-37cef8685788
-palette(:dracula)[3]
+# ╔═╡ 7bbde039-07a2-4ad1-923d-f1374440de51
+savefig(plotdiffchancesLATEX(10,costofequalisingmixed1),"~/onedrive/research/a_fair_chance/tikz/fig6.tikz")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 PlotThemes = "ccf2f8ad-2431-5c83-bf29-c5338b663b6a"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 
 [compat]
 ColorSchemes = "~3.27.1"
 Distributions = "~0.25.113"
+PGFPlotsX = "~1.5.1"
 PlotThemes = "~3.3.0"
 Plots = "~1.40.9"
 PlutoUI = "~0.7.60"
@@ -1147,7 +1221,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.2"
 manifest_format = "2.0"
-project_hash = "6ea457865ec3097afd59cb9e30d12385d0831a19"
+project_hash = "2ea9a716ace9847081b44ad1f5cf7a37931d6199"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -1160,6 +1234,11 @@ deps = ["PtrArrays", "Random"]
 git-tree-sha1 = "9876e1e164b144ca45e9e3198d0b689cadfed9ff"
 uuid = "66dad0bd-aa9a-41b7-9441-69ab47430ed8"
 version = "1.1.3"
+
+[[deps.ArgCheck]]
+git-tree-sha1 = "a3a402a35a2f7e0b87828ccabbd5ebfbebe356b4"
+uuid = "dce04be8-c92d-5529-be00-80e4d2c0e197"
+version = "2.3.0"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -1261,6 +1340,11 @@ git-tree-sha1 = "1d0a14036acb104d9e89698bd408f63ab58cdc82"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 version = "0.18.20"
 
+[[deps.DataValueInterfaces]]
+git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
+uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
+version = "1.0.0"
+
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -1271,6 +1355,12 @@ deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "fc173b380865f70627d7dd1190dc2fce6cc105af"
 uuid = "ee1fde0b-3d02-5ea6-8484-8dfef6360eab"
 version = "1.14.10+0"
+
+[[deps.DefaultApplication]]
+deps = ["InteractiveUtils"]
+git-tree-sha1 = "c0dfa5a35710a193d83f03124356eef3386688fc"
+uuid = "3f0dd361-4fe0-5fc6-8523-80b14ec94d85"
+version = "1.1.0"
 
 [[deps.DelimitedFiles]]
 deps = ["Mmap"]
@@ -1466,6 +1556,11 @@ version = "1.11.0"
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.2.2"
+
+[[deps.IteratorInterfaceExtensions]]
+git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
+uuid = "82899510-4779-5014-852e-03e436cf321d"
+version = "1.0.0"
 
 [[deps.JLFzf]]
 deps = ["Pipe", "REPL", "Random", "fzf_jll"]
@@ -1756,11 +1851,23 @@ git-tree-sha1 = "949347156c25054de2db3b166c52ac4728cbad65"
 uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
 version = "0.11.31"
 
+[[deps.PGFPlotsX]]
+deps = ["ArgCheck", "DataStructures", "Dates", "DefaultApplication", "DocStringExtensions", "MacroTools", "Parameters", "Requires", "Tables"]
+git-tree-sha1 = "1d3729f2cd114a8150ce134f697d07f9ef2b9657"
+uuid = "8314cec4-20b6-5062-9cdb-752b83310925"
+version = "1.5.1"
+
 [[deps.Pango_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "e127b609fb9ecba6f201ba7ab753d5a605d53801"
 uuid = "36c8627f-9965-5494-a995-c6b170f724f3"
 version = "1.54.1+0"
+
+[[deps.Parameters]]
+deps = ["OrderedCollections", "UnPack"]
+git-tree-sha1 = "34c0e9ad262e5f7fc75b10a9952ca7692cfc5fbe"
+uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
@@ -2047,6 +2154,18 @@ deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
 
+[[deps.TableTraits]]
+deps = ["IteratorInterfaceExtensions"]
+git-tree-sha1 = "c06b2f539df1c6efa794486abfb6ed2022561a39"
+uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
+version = "1.0.1"
+
+[[deps.Tables]]
+deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "OrderedCollections", "TableTraits"]
+git-tree-sha1 = "598cd7c1f68d1e205689b1c2fe65a9f85846f297"
+uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+version = "1.12.0"
+
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
@@ -2082,6 +2201,11 @@ version = "1.5.1"
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 version = "1.11.0"
+
+[[deps.UnPack]]
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
+uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+version = "1.0.2"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
@@ -2417,6 +2541,7 @@ version = "1.4.1+1"
 
 # ╔═╡ Cell order:
 # ╠═1c2cb753-2372-4307-915c-0f1a272c0ab9
+# ╠═89734a9c-1019-44ae-9e29-57c0e6c72dbf
 # ╟─55fac899-7c51-4ea1-9949-e46fe03c853c
 # ╠═9064ca78-e759-4f5a-b8c7-c26cb25381de
 # ╟─e2167084-82f6-4deb-9ec6-6e258a591058
@@ -2424,10 +2549,7 @@ version = "1.4.1+1"
 # ╠═0d66f15a-5050-45f2-adaa-7093e8c135ed
 # ╠═793782eb-df7c-4044-9c15-7ac21eb03f33
 # ╠═76474fac-449d-403b-8f88-65da388e073c
-# ╠═a62f41b0-fe22-4651-a68f-8329194e669d
-# ╠═944a48b8-1f40-44b4-8293-dea85b1c8f94
-# ╠═17ee05a3-8d96-4f72-b3de-040af38aa4bb
-# ╠═9c3d8f14-a535-41e4-bee1-fa3ba938916f
+# ╠═ca4f2783-c903-4342-a948-6842571535fa
 # ╠═8675a4c1-58de-45c1-94bc-8eef1392aae3
 # ╟─9b294729-6005-4f57-9283-ccf70fdaf675
 # ╠═3615ddad-b51d-4a9d-9782-0f9115af5b2b
@@ -2475,6 +2597,8 @@ version = "1.4.1+1"
 # ╠═cd8631b4-581b-43e5-81a4-499ef15bf502
 # ╠═5775a766-c7be-4d3a-9b08-41ba380a9727
 # ╠═a8d8386c-bcf4-4ccc-b25f-21f605a74c90
+# ╠═c98f3b60-b138-4661-9ec6-01fb6d8fba79
+# ╠═392ac1b1-a327-4c60-b6a9-0e0cf4eb0542
 # ╠═8ca35a19-97c2-421b-a212-d6760a14e681
 # ╠═c8f5fa88-6b97-4c56-ab82-317048839ce3
 # ╠═3b23e2e1-3e66-4d5c-9377-2d1c68642ff8
@@ -2506,10 +2630,20 @@ version = "1.4.1+1"
 # ╠═4ce0bf30-1370-46e7-ae4e-cba3fedf6b8d
 # ╟─5a5dfea0-a716-4ae0-803f-65cc8455379b
 # ╠═f7af926b-e034-4969-911f-93645d352951
+# ╟─49903354-a6ac-4bdb-a064-79c635113c15
 # ╠═aa0dcd31-767d-41c7-ba7c-7fb797be1c16
+# ╠═e949db88-66fd-4fd6-b172-2c2d594ca80e
+# ╠═3501dc47-d9da-4464-8b3e-0b07807096a0
+# ╠═1f2e4a96-cb38-44ce-9207-1d4c1f683a8d
+# ╠═bf9f7929-cde0-4814-a72d-f17b9a5d8127
+# ╠═d22d5031-5e55-4a65-8290-4651db6f67bd
 # ╠═67167c3a-fc76-4397-8c10-05c6488cae94
+# ╟─532c18e4-190e-478a-a59e-bbf6862f6604
+# ╠═3d1a09fb-117e-4498-be3d-ea12cff6c86b
 # ╠═62de8a05-a6a7-44ee-be92-0875acf44f78
 # ╠═0cbdd4b3-3cd7-43b6-82d9-93131c1f1190
+# ╠═f56738d8-f502-4dd1-a60f-be2df5f95fc4
+# ╠═bf8be2de-22b3-4a78-8a2f-43da2b478b9e
 # ╠═83097b26-4eec-43d6-8605-ca7bc9417499
 # ╠═6c59528c-737b-493a-b821-808dc9ff2a53
 # ╠═bb3247be-ad48-4176-b33d-48e2c181ac1d
@@ -2522,13 +2656,18 @@ version = "1.4.1+1"
 # ╠═b6b58b1f-3e83-4780-9567-0da3a533d227
 # ╠═455b0654-35c2-457f-8e08-9fbe4cb03cf6
 # ╠═843a5f0b-9a98-41ba-924d-fba9ddcbcce1
+# ╠═1e4bb759-36ff-4ec7-b832-0589c39f06bf
 # ╠═ca2f5531-1b57-40b6-918d-30b89114a4cf
+# ╠═471952d2-b707-4a43-8ce2-81390ef14f61
+# ╠═9f02475c-bef5-4226-a693-18670b2d8da3
 # ╠═62254dcf-f31a-42f1-817e-5672e48bdb5a
+# ╠═98a5dca8-d3dd-4004-9714-ee6a6f9e8d0a
 # ╠═8c74b9fd-68ba-4e2d-a61c-5074c0369646
 # ╠═308e1d0d-24d9-4bb9-97f7-396057a7eb8f
 # ╠═5e7a46a6-0d5e-49e2-a3e7-596648ce6486
+# ╠═91cba954-b817-4c57-8a46-86df85df72a3
 # ╠═89b3f8e8-f2fc-4b70-a797-63ce0ca52272
-# ╠═c6709450-63b0-4b76-a771-63c43f22940e
-# ╠═e0c4b307-9c5a-430e-b76e-37cef8685788
+# ╠═5d634388-c0ec-4fcf-ae83-b4868d1ea27d
+# ╠═7bbde039-07a2-4ad1-923d-f1374440de51
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
