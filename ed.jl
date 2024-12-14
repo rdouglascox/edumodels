@@ -36,6 +36,11 @@ md"## playground"
 # ╔═╡ 9b294729-6005-4f57-9283-ccf70fdaf675
 md"## some predefined models"
 
+# ╔═╡ 4d3dcf03-88bc-4edc-904a-843243513ecc
+function privateinvestmentPolicyFunction1(bl,available)
+    map(x -> [0, -x],0:available)
+end
+
 # ╔═╡ 737bdd1f-ba36-49e5-96df-cc5744374194
 function equalizingPolicyFunctionMixed3(bl,available)
     map(x -> [x * 0.8 ,0,x * 0.2],0:available)
@@ -44,11 +49,6 @@ end
 # ╔═╡ 41ed7339-ddd0-4da0-8687-245227c41c37
 function equalizingPolicyFunction(bl,available)
     map(x -> [x,0],0:available)
-end
-
-# ╔═╡ 4d3dcf03-88bc-4edc-904a-843243513ecc
-function privateinvestmentPolicyFunction1(bl,available)
-    map(x -> [0, x],0:0.1:available)
 end
 
 # ╔═╡ 4f9a08f8-c10a-434f-a039-e0b7dc627f4b
@@ -468,6 +468,88 @@ UpperLow = Individual(
 	Low()
 )
 
+# ╔═╡ ecc23a2d-2164-443d-afe2-39f24a0a9d93
+A = Individual(
+	"A",
+	Middle(),
+	High()
+)
+
+# ╔═╡ ca2aa555-f6cb-4f25-98f3-5c421eaa6627
+B = Individual(
+	"B",
+	Middle(),
+	High()
+)
+
+# ╔═╡ 9071113f-26e3-4b3c-a10e-ac1430deb69d
+MiddleClass = Individual(
+	"Middle",
+	Middle(),
+	High()
+)
+
+# ╔═╡ ed5efa58-03ca-4c2b-98a2-2338a7426982
+UpperClass = Individual(
+	"Upper",
+	Upper(),
+	High()
+)
+
+# ╔═╡ a3612273-8ab6-4250-b93e-421f9e09a0a4
+# in this two individual model, life prospects for middle high fall off faster than any competitive gains they make. almost every alternative theory disagrees with equal chances for equal ability on this model. not only are the prospects for the bottom ranked decreasing as Middle High's chances rise, Middle's High's ex ante life prospects are also decreasing as her chance's rise.
+
+privateinvestment1 =  ModelSettings(
+	[MiddleClass, UpperClass], # individuals
+	0.7, # top prospects
+	0.5, # bottom prospects 
+	0.0, # unitcost
+	50,  # baseline opportunities
+	10,  # available opportunities
+	privateinvestmentPolicyFunction1,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	20, # sigma 
+	10, # upper class background
+	0, # middle class background
+	0, # lower class background
+	(40.0,80.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.0, # social benefits of education, e.g. 0.01
+	0.0, # individual benefits of education e.g. 0.0005
+	(0.0,0.0) # set job satisfaciton 
+)
+
+# ╔═╡ e6a87703-2fb7-42cc-bf53-b6736fb2c3bc
+# a small variation on 'privateinvestment1'. the prospects for the bottom ranked are still falling, but Middle High's prospects are increasing ever so slightly as her chances rise. It is unfairness to UpperHigh that argues against raising MiddleHigh's chances here.
+
+privateinvestment2 =  ModelSettings(
+	[MiddleClass, UpperClass], # individuals
+	0.7, # top prospects
+	0.4, # bottom prospects 
+	0.0, # unitcost
+	50,  # baseline opportunities
+	10,  # available opportunities
+	privateinvestmentPolicyFunction1,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	20, # sigma 
+	10, # upper class background
+	0, # middle class background
+	0, # lower class background
+	(40.0,120.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.0, # social benefits of education, e.g. 0.01
+	0.0, # individual benefits of education e.g. 0.0005
+	(0.0,0.0) # set job satisfaciton 
+)
+
 # ╔═╡ 99321ce7-edac-421d-8e3a-c06ff24ce351
 MiddleHigh = Individual(
 	"Middle High",
@@ -521,60 +603,6 @@ privateinvestment3 =  ModelSettings(
 	0, # middle class background
 	0, # lower class background
 	(40.0,110.0,0.0,0.1), # scale cost/benefits
-	false, # diminishing marginal 
-	false, # tax scheme progressive? 
-	false, # top boost?
-	0.0, # social benefits of education, e.g. 0.01
-	0.0, # individual benefits of education e.g. 0.0005
-	(0.0,0.0) # set job satisfaciton 
-)
-
-# ╔═╡ a3612273-8ab6-4250-b93e-421f9e09a0a4
-# in this two individual model, life prospects for middle high fall off faster than any competitive gains they make. almost every alternative theory disagrees with equal chances for equal ability on this model. not only are the prospects for the bottom ranked decreasing as Middle High's chances rise, Middle's High's ex ante life prospects are also decreasing as her chance's rise.
-
-privateinvestment1 =  ModelSettings(
-	[MiddleHigh, UpperHigh], # individuals
-	0.7, # top prospects
-	0.6, # bottom prospects 
-	0.0, # unitcost
-	50,  # baseline opportunities
-	10,  # available opportunities
-	privateinvestmentPolicyFunction1,
-	(120,0.08,60), # high ability 
-	(100,0.08,60), # average ability 
-	(50,0.1,45), # low ability 
-	20, # sigma 
-	0, # upper class background
-	0, # middle class background
-	0, # lower class background
-	(40.0,60.0,0.0,0.1), # scale cost/benefits
-	false, # diminishing marginal 
-	false, # tax scheme progressive? 
-	false, # top boost?
-	0.0, # social benefits of education, e.g. 0.01
-	0.0, # individual benefits of education e.g. 0.0005
-	(0.0,0.0) # set job satisfaciton 
-)
-
-# ╔═╡ e6a87703-2fb7-42cc-bf53-b6736fb2c3bc
-# a small variation on 'privateinvestment1'. the prospects for the bottom ranked are still falling, but Middle High's prospects are increasing ever so slightly as her chances rise. It is unfairness to UpperHigh that argues against raising MiddleHigh's chances here.
-
-privateinvestment2 =  ModelSettings(
-	[MiddleHigh, UpperHigh], # individuals
-	0.7, # top prospects
-	0.6, # bottom prospects 
-	0.0, # unitcost
-	50,  # baseline opportunities
-	10,  # available opportunities
-	privateinvestmentPolicyFunction1,
-	(120,0.08,60), # high ability 
-	(100,0.08,60), # average ability 
-	(50,0.1,45), # low ability 
-	20, # sigma 
-	0, # upper class background
-	0, # middle class background
-	0, # lower class background
-	(40.0,90.0,0.0,0.1), # scale cost/benefits
 	false, # diminishing marginal 
 	false, # tax scheme progressive? 
 	false, # top boost?
@@ -644,15 +672,6 @@ costofequalisingmixed1 =  ModelSettings(
 	0.0, # individual benefits of education e.g. 0.0005
 	(0.0,0.0) # set job satisfaciton 
 )
-
-# ╔═╡ 9064ca78-e759-4f5a-b8c7-c26cb25381de
-currentmodel = costofequalisingmixed1
-
-# ╔═╡ e2167084-82f6-4deb-9ec6-6e258a591058
-@bind setpolicy Slider(1:length(currentmodel.setpolicies(currentmodel.setbaseline,currentmodel.setavailable)), default=1.0)
-
-# ╔═╡ 0d66f15a-5050-45f2-adaa-7093e8c135ed
-setpolicy
 
 # ╔═╡ 820b05b7-3608-4fdb-98b3-de4f5960a66d
 mixed3= ModelSettings(
@@ -950,6 +969,13 @@ end
 # ╔═╡ c75f8adb-ab9b-429f-9610-e37ca2edfa1d
 mymodelstats = getmodelstats(defaultSettings) 
 
+# ╔═╡ 4ea01351-80e9-437e-8c9a-c09376df086d
+function plotlifeprospectsLATEX(n,settings) 
+	modelstats = getmodelstats(settings) 
+	thechances = getallchances(settings)[1]
+	plot(thechances,modelstats[3], xlabel="chances",ylabel="life prospects",  labels=permutedims(namelist(settings)),xlims=(0,1),legend=:outertopright, linewidth=0.5, size=(500,350))
+end
+
 # ╔═╡ f7af926b-e034-4969-911f-93645d352951
 function getallpairwisecomparisons(n,settings) 
     allpolicies = settings.setpolicies(settings.setbaseline,settings.setavailable)
@@ -984,9 +1010,6 @@ plot(1:length(thesums[1]),map(r0,thesums),ylims=(-0.02,0.04),labels=permutedims(
     plot!(1:length(thesums[1]),thesums,opacity=0.1,labels=false)
 end
 
-# ╔═╡ 0ba33293-5916-49b9-a5b3-1d14a9f1151d
-plotsums(setpolicy,defaultSettings)
-
 # ╔═╡ aa0dcd31-767d-41c7-ba7c-7fb797be1c16
 function getnotunfair(settings) 
 	allpolicies = settings.setpolicies(settings.setbaseline,settings.setavailable) 
@@ -1002,9 +1025,6 @@ function getnotunfair(settings)
 	filtered = map(x -> x[1],collect(Iterators.filter(x -> (x[2] == false),zipped)))
 end
 
-# ╔═╡ 793782eb-df7c-4044-9c15-7ac21eb03f33
-notunfair = getnotunfair(currentmodel)
-
 # ╔═╡ 62de8a05-a6a7-44ee-be92-0875acf44f78
 function plotdiffs(n,settings)
 	thediffs = getalldiffs(n,settings)
@@ -1013,20 +1033,11 @@ function plotdiffs(n,settings)
 	vspan!([minimum(nuf),maximum(nuf)],opacity=0.05)
 end
 
-# ╔═╡ 6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
-plotdiffs(setpolicy,defaultSettings)
-
 # ╔═╡ 6c59528c-737b-493a-b821-808dc9ff2a53
 function policiestochances(policies,settings)
 	all = map(x -> runmodel(x,settings),policies)
 	map(z -> map(x -> x[1][z].chances, all),1:(length(all[1][1])))
 end
-
-# ╔═╡ 76474fac-449d-403b-8f88-65da388e073c
-test = policiestochances(notunfair,currentmodel)
-
-# ╔═╡ ca4f2783-c903-4342-a948-6842571535fa
-highestfairchance(test)
 
 # ╔═╡ 0cbdd4b3-3cd7-43b6-82d9-93131c1f1190
 function plotdiffchances(n,settings)
@@ -1041,15 +1052,12 @@ function plotdiffchances(n,settings)
 	vline!([highestfairchance(f)], label="highest fair chance")
 end
 
-# ╔═╡ 08eacc7b-771e-4ae8-8183-3ea2efb47051
-plotdiffchances(setpolicy,currentmodel)
-
 # ╔═╡ f56738d8-f502-4dd1-a60f-be2df5f95fc4
 function plotdiffchancesLATEX(n,settings)
 	thechances = getallchances(settings)[1]
-	plot(thechances,getalldiffs(n,settings), xlabel="chances",ylabel="weighted interests",  labels=permutedims(namelist(settings)),xlims=(0,1),ylims=(-0.02,0.02),legend=:outertopright, linewidth=0.5)
-	plot!(thechances,map(r0,getallsums(n,settings)), linewidth=0.5, size=(500,350),label=false) 
-	# plot!(thechances,getallsums(n,settings),opacity=0.2,labels=false)
+	plot(thechances,getalldiffs(n,settings), xlabel="chances",ylabel="weighted interests",  labels=permutedims(namelist(settings)),xlims=(0,1),ylims=(-0.03,0.02),legend=:outertopright, linewidth=0.5, size=(500,350))
+	plot!(thechances,reverse(map(r0,getallsums(n,settings))), linewidth=0.5, label=false) 
+	# plot!(thechances,reverse(getallsums(n,settings)),opacity=0.2,labels=false)
 	f = policiestochances(getnotunfair(settings),settings)
 	nuf = f[1]
 	vspan!([minimum(nuf),maximum(nuf)],opacity=0.05,label=false,color=:grey)
@@ -1058,6 +1066,23 @@ function plotdiffchancesLATEX(n,settings)
 	plot!(ticklabelstyle="font={Times New Roman, \\small}")
 	hline!([0.0],color=:grey,linewidth=0.5,label=false)
 	annotate!(highestfairchance(f) + 0.03, 0.019, text(tr(highestfairchance(f)),8,color=:grey))
+	annotate!(thechances[n] + 0.03, -0.019, text(tr(thechances[n]),8,color=:grey))
+end
+
+# ╔═╡ 4ac8883b-2c54-40ba-8284-d322723833ac
+function plotdiffchancesLATEXMOD(n,settings)
+	thechances = getallchances(settings)[1]
+	plot(thechances,getalldiffs(n,settings), xlabel="chances",ylabel="weighted interests",  labels=permutedims(namelist(settings)),xlims=(0,1),ylims=(-0.02,0.03),legend=:outertopright, linewidth=0.5, size=(500,350))
+	plot!(thechances,reverse(map(r0,getallsums(n,settings))), linewidth=0.5, label=false) 
+	# plot!(thechances,reverse(getallsums(n,settings)),opacity=0.2,labels=false)
+	f = policiestochances(getnotunfair(settings),settings)
+	nuf = f[1]
+	# vspan!([minimum(nuf),maximum(nuf)],opacity=0.05,label=false,color=:grey)
+	vline!([thechances[n]],label=false,linewidth=0.5,color=:grey,opacity=0.5, linestyle=:dash)
+	# vline!([highestfairchance(f)],  linewidth=0.5, label=false,color=:grey,opacity=0.5)
+	plot!(ticklabelstyle="font={Times New Roman, \\small}")
+	hline!([0.0],color=:grey,linewidth=0.5,label=false)
+	# annotate!(highestfairchance(f) + 0.03, 0.019, text(tr(highestfairchance(f)),8,color=:grey))
 	annotate!(thechances[n] + 0.03, -0.019, text(tr(thechances[n]),8,color=:grey))
 end
 
@@ -1090,9 +1115,6 @@ function plotdashboard(settings)
 	plot(p1, p2, p3, p4, p5, p6, p7, p8, p9, layout = (5, 2),size=(1000,1000))
 end
 
-# ╔═╡ 8675a4c1-58de-45c1-94bc-8eef1392aae3
-plotdashboard(currentmodel)
-
 # ╔═╡ 46d593c3-22b2-4429-a6bc-2eede86b13cc
 plotdashboard(defaultrealisticSettings)
 
@@ -1101,7 +1123,7 @@ plotdashboard(defaultSettings)
 
 # ╔═╡ b6b58b1f-3e83-4780-9567-0da3a533d227
 basicmodel = ModelSettings(
-	[UpperHigh,UpperHigh], # individuals
+	[A,B], # individuals
 	0.7, # top prospects
 	0.5, # bottom prospects 
 	1.0, # unitcost
@@ -1116,6 +1138,56 @@ basicmodel = ModelSettings(
 	5, # middle class background
 	0, # lower class background
 	(100.0,150.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.0, # social benefits of education, e.g. 0.01
+	0.0005, # individual benefits of education e.g. 0.0005
+	(0.0,0.0) # set job satisfaciton 
+)
+
+# ╔═╡ f2fac6b6-ce0b-4131-aad4-7e4ce5fb1f4c
+extremes = ModelSettings(
+	[A,B], # individuals
+	0.7, # top prospects
+	0.5, # bottom prospects 
+	1.0, # unitcost
+	20,  # baseline opportunities
+	20,  # available opportunities
+	defaultPolicyFunction,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	30, # sigma 
+	10, # upper class background
+	5, # middle class background
+	0, # lower class background
+	(100.0,130.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.0, # social benefits of education, e.g. 0.01
+	0.0005, # individual benefits of education e.g. 0.0005
+	(0.0,0.0) # set job satisfaciton 
+)
+
+# ╔═╡ 7e75a99f-2bc5-47c4-968e-47aa79c0904f
+extremes2 = ModelSettings(
+	[A,B], # individuals
+	0.7, # top prospects
+	0.6, # bottom prospects 
+	1.0, # unitcost
+	20,  # baseline opportunities
+	20,  # available opportunities
+	defaultPolicyFunction,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	30, # sigma 
+	10, # upper class background
+	5, # middle class background
+	0, # lower class background
+	(0.0,8.0,0.0,0.1), # scale cost/benefits
 	false, # diminishing marginal 
 	false, # tax scheme progressive? 
 	false, # top boost?
@@ -1150,6 +1222,30 @@ plotdiffchances(15,basicmodel)
 # ╔═╡ 98a5dca8-d3dd-4004-9714-ee6a6f9e8d0a
 savefig(plotdiffchancesLATEX(15,basicmodel),"~/onedrive/research/a_fair_chance/tikz/fig3.tikz")
 
+# ╔═╡ 308e1d0d-24d9-4bb9-97f7-396057a7eb8f
+plotdashboard(basicmodel)
+
+# ╔═╡ 7bbde039-07a2-4ad1-923d-f1374440de51
+savefig(plotdiffchancesLATEX(10,costofequalisingmixed1),"~/onedrive/research/a_fair_chance/tikz/fig6.tikz")
+
+# ╔═╡ 976f575c-d57f-4fe0-a254-f9f50f892df3
+savefig(plotdiffchancesLATEX(11,privateinvestment1),"~/onedrive/research/a_fair_chance/tikz/fig_pi1.tikz")
+
+# ╔═╡ 977a5912-4a3b-4c33-bdef-dc1d2d70d766
+savefig(plotdiffchancesLATEX(11,privateinvestment2),"~/onedrive/research/a_fair_chance/tikz/fig_pi2.tikz")
+
+# ╔═╡ 6436f600-f065-4e67-ad7a-441af75ff4d2
+savefig(plotdiffchancesLATEXMOD(11,extremes),"~/onedrive/research/a_fair_chance/tikz/fig_extremes.tikz")
+
+# ╔═╡ 436e9249-9ee2-4444-ada8-255901ba6952
+savefig(plotdiffchancesLATEXMOD(11,extremes2),"~/onedrive/research/a_fair_chance/tikz/fig_extremes2.tikz")
+
+# ╔═╡ 197eefd1-1d1b-4741-9f18-1a89e4e0fe67
+savefig(plotdiffchancesLATEXMOD(1,extremes2),"~/onedrive/research/a_fair_chance/tikz/fig_extremes3.tikz")
+
+# ╔═╡ ee7cf8ef-7334-41b2-b7cc-07e205a55d86
+md"## unequal ability"
+
 # ╔═╡ 8c74b9fd-68ba-4e2d-a61c-5074c0369646
 basicdiffabilitymodel = ModelSettings(
 	[UpperAverage,UpperHigh], # individuals
@@ -1163,20 +1259,17 @@ basicdiffabilitymodel = ModelSettings(
 	(100,0.08,60), # average ability 
 	(50,0.1,45), # low ability 
 	30, # sigma 
-	10, # upper class background
-	5, # middle class background
+	0, # upper class background
+	0, # middle class background
 	0, # lower class background
 	(100.0,120.0,0.0,0.1), # scale cost/benefits
 	false, # diminishing marginal 
 	false, # tax scheme progressive? 
 	false, # top boost?
 	0.0, # social benefits of education, e.g. 0.01
-	0.0005, # individual benefits of education e.g. 0.0005
+	0.000, # individual benefits of education e.g. 0.0005
 	(0.0,0.0) # set job satisfaciton 
 )
-
-# ╔═╡ 308e1d0d-24d9-4bb9-97f7-396057a7eb8f
-plotdashboard(basicdiffabilitymodel)
 
 # ╔═╡ 5e7a46a6-0d5e-49e2-a3e7-596648ce6486
 plotdiffchances(10,basicdiffabilitymodel)
@@ -1190,8 +1283,306 @@ plotdiffchances(5,basicdiffabilitymodel)
 # ╔═╡ 5d634388-c0ec-4fcf-ae83-b4868d1ea27d
 savefig(plotdiffchancesLATEX(5,basicdiffabilitymodel),"~/onedrive/research/a_fair_chance/tikz/fig5.tikz")
 
-# ╔═╡ 7bbde039-07a2-4ad1-923d-f1374440de51
-savefig(plotdiffchancesLATEX(10,costofequalisingmixed1),"~/onedrive/research/a_fair_chance/tikz/fig6.tikz")
+# ╔═╡ e5cb7bf8-7e60-4815-a834-3866d9d97b76
+plotdiffchances(13,basicdiffabilitymodel)
+
+# ╔═╡ 13900b64-0d71-40de-a758-82a4f5190f16
+savefig(plotdiffchancesLATEX(8,basicdiffabilitymodel),"~/onedrive/research/a_fair_chance/tikz/fig_diffable1.tikz")
+
+# ╔═╡ 39218c87-6875-411f-8b5f-d28d10b23e4b
+savefig(plotdiffchancesLATEX(13,basicdiffabilitymodel),"~/onedrive/research/a_fair_chance/tikz/fig_diffable2.tikz")
+
+# ╔═╡ dd28b366-6596-4607-91ed-17db987c6385
+basicdiffabilitymodel2 = ModelSettings(
+	[UpperAverage,UpperHigh], # individuals
+	0.7, # top prospects
+	0.4, # bottom prospects 
+	1.0, # unitcost
+	50,  # baseline opportunities
+	20,  # available opportunities
+	defaultPolicyFunction,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	30, # sigma 
+	0, # upper class background
+	0, # middle class background
+	0, # lower class background
+	(100.0,120.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.0, # social benefits of education, e.g. 0.01
+	0.000, # individual benefits of education e.g. 0.0005
+	(0.0,0.0) # set job satisfaciton 
+)
+
+# ╔═╡ 7de6e50e-628d-4296-99ad-2a40de146319
+plotdiffchances(10,basicdiffabilitymodel2)
+
+# ╔═╡ bdedcd17-3117-44e9-a67d-d047e48a9a6c
+savefig(plotdiffchancesLATEX(13,basicdiffabilitymodel2),"~/onedrive/research/a_fair_chance/tikz/fig_diffable3.tikz")
+
+# ╔═╡ 409d37c8-fcf5-406d-ac42-9767573a41a6
+basicdiffabilitymodel3 = ModelSettings(
+	[UpperAverage,UpperHigh], # individuals
+	0.7, # top prospects
+	0.6, # bottom prospects 
+	1.0, # unitcost
+	50,  # baseline opportunities
+	20,  # available opportunities
+	defaultPolicyFunction,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	30, # sigma 
+	0, # upper class background
+	0, # middle class background
+	0, # lower class background
+	(100.0,110.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.0, # social benefits of education, e.g. 0.01
+	0.000, # individual benefits of education e.g. 0.0005
+	(0.0,0.0) # set job satisfaciton 
+)
+
+# ╔═╡ a5fe6137-f4ce-45af-8e41-8507999a9db2
+savefig(plotdiffchancesLATEX(13,basicdiffabilitymodel3),"~/onedrive/research/a_fair_chance/tikz/fig_diffable4.tikz")
+
+# ╔═╡ 92f2ef49-2729-4d0f-89d9-ac7a1f85cd1d
+savefig(plotdiffchancesLATEX(3,basicdiffabilitymodel2),"~/onedrive/research/a_fair_chance/tikz/fig_diffable5.tikz")
+
+# ╔═╡ f3fac7a9-5e35-478b-821e-3f2a13db8a1c
+basicdiffabilitymodel4 = ModelSettings(
+	[UpperAverage,UpperHigh], # individuals
+	0.7, # top prospects
+	0.6, # bottom prospects 
+	1.0, # unitcost
+	50,  # baseline opportunities
+	20,  # available opportunities
+	defaultPolicyFunction,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	30, # sigma 
+	0, # upper class background
+	0, # middle class background
+	0, # lower class background
+	(33.0,37.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.0, # social benefits of education, e.g. 0.01
+	0.000, # individual benefits of education e.g. 0.0005
+	(0.0,0.0) # set job satisfaciton 
+)
+
+# ╔═╡ 477120dc-48a3-4b0e-9ee1-f45061f197e2
+plotdashboard(basicdiffabilitymodel4)
+
+# ╔═╡ 0d8b7251-2598-4ecb-9d31-e3da92586e9c
+plotdiffchances(1,basicdiffabilitymodel4)
+
+# ╔═╡ c735dace-4287-482a-9ac4-0709762a2ef0
+savefig(plotdiffchancesLATEX(3,basicdiffabilitymodel4),"~/onedrive/research/a_fair_chance/tikz/fig_diffable6.tikz")
+
+# ╔═╡ 5565e3a1-21c7-4317-9fdc-b110dcd36b80
+plotlifeprospectsLATEX(3,basicdiffabilitymodel4)
+
+# ╔═╡ 276d10e7-381a-4309-b2a0-2516eddcaa97
+savefig(plotlifeprospectsLATEX(3,basicdiffabilitymodel4),"~/onedrive/research/a_fair_chance/tikz/fig_lp1.tikz")
+
+# ╔═╡ 644e02ea-60a3-45cf-8725-a9173bb2ee56
+extremediffabilitymodel = ModelSettings(
+	[UpperLow,UpperHigh], # individuals
+	0.7, # top prospects
+	0.6, # bottom prospects 
+	1.0, # unitcost
+	60,  # baseline opportunities
+	20,  # available opportunities
+	defaultPolicyFunction,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	30, # sigma 
+	0, # upper class background
+	0, # middle class background
+	0, # lower class background
+	(33.0,80.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.0, # social benefits of education, e.g. 0.01
+	0.000, # individual benefits of education e.g. 0.0005
+	(0.0,0.0) # set job satisfaciton 
+)
+
+# ╔═╡ 2465ae2a-a7c4-4306-8677-6756b07ec064
+plotdiffchances(20,extremediffabilitymodel)
+
+# ╔═╡ 55176c84-28f2-4536-ac7a-924d12b90523
+plotdashboard(extremediffabilitymodel)
+
+# ╔═╡ 06115f7f-e583-4831-a062-484967fa72ea
+mixed1= ModelSettings(
+	[UpperHigh,MiddleHigh,LowerLow], # individuals
+	0.7, # top prospects
+	0.5, # bottom prospects 
+	1.0, # unitcost
+	50,  # baseline opportunities
+	20,  # available opportunities
+	defaultPolicyFunction,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	30, # sigma 
+	10, # upper class background
+	5, # middle class background
+	0, # lower class background
+	(100.0,150.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.0, # social benefits of education, e.g. 0.01
+	0.0005, # individual benefits of education e.g. 0.0005
+	(0.0,0.0) # set job satisfaciton 
+)
+
+# ╔═╡ 690f46ec-21c4-41d9-bf08-f36a30c09020
+plotdashboard(costofequalisingmixed1)
+
+# ╔═╡ 4f083c2c-e59d-4d76-a5c1-ab6ea7a7f565
+function equalizingPolicyFunctionMixed32(bl,available)
+    map(x -> [x,0,available - x],0:available)
+end
+
+# ╔═╡ 294b4cbf-9f00-4e56-bb0e-f397ba68ec1c
+costofequalisingmixed2 =  ModelSettings(
+	[MiddleHigh, UpperHigh, LowerLow], # individuals
+	0.7, # top prospects
+	0.5, # bottom prospects 
+	1.5, # unitcost
+	60,  # baseline opportunities
+	20,  # available opportunities
+	equalizingPolicyFunctionMixed32,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	20, # sigma 
+	10, # upper class background
+	0, # middle class background
+	0, # lower class background
+	(40.0,110.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.0, # social benefits of education, e.g. 0.01
+	0.0, # individual benefits of education e.g. 0.0005
+	(0.0,0.0) # set job satisfaciton 
+)
+
+# ╔═╡ 52b11c5a-9c9a-4acf-8c72-5a5761dd7956
+plotdashboard(costofequalisingmixed2)
+
+# ╔═╡ 5dc4de84-cc27-4f08-9bae-6b6dfbcdc426
+plotdiffchancesLATEX(11,costofequalisingmixed2)
+
+# ╔═╡ 8692845c-a53e-4f44-a43f-c5fcb9b71b8a
+savefig(plotlifeprospectsLATEX(3,costofequalisingmixed2),"~/onedrive/research/a_fair_chance/tikz/fig_mixed1.tikz")
+
+# ╔═╡ 373dc7e8-431c-40e6-80b3-ac8e5842b279
+realon1 = ModelSettings(
+	[UpperAverage,UpperHigh], # individuals
+	0.2, # top prospects
+	0.3, # bottom prospects 
+	0.0, # unitcost
+	50,  # baseline opportunities
+	20,  # available opportunities
+	defaultPolicyFunction,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	30, # sigma 
+	0, # upper class background
+	0, # middle class background
+	0, # lower class background
+	(50.0,60.0,0.0,0.05), # scale cost/benefits
+	true, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.001, # social benefits of education, e.g. 0.01
+	0.005, # individual benefits of education e.g. 0.0005
+	(0.0,0.00) # set job satisfaciton 
+)
+
+# ╔═╡ 9064ca78-e759-4f5a-b8c7-c26cb25381de
+currentmodel = realon1
+
+# ╔═╡ e2167084-82f6-4deb-9ec6-6e258a591058
+@bind setpolicy Slider(1:length(currentmodel.setpolicies(currentmodel.setbaseline,currentmodel.setavailable)), default=1.0)
+
+# ╔═╡ 0d66f15a-5050-45f2-adaa-7093e8c135ed
+setpolicy
+
+# ╔═╡ 6bb81ffd-d0fa-4b3e-9128-4b5873e4be63
+plotdiffs(setpolicy,defaultSettings)
+
+# ╔═╡ 0ba33293-5916-49b9-a5b3-1d14a9f1151d
+plotsums(setpolicy,defaultSettings)
+
+# ╔═╡ 08eacc7b-771e-4ae8-8183-3ea2efb47051
+plotdiffchances(setpolicy,currentmodel)
+
+# ╔═╡ 793782eb-df7c-4044-9c15-7ac21eb03f33
+notunfair = getnotunfair(currentmodel)
+
+# ╔═╡ 76474fac-449d-403b-8f88-65da388e073c
+test = policiestochances(notunfair,currentmodel)
+
+# ╔═╡ ca4f2783-c903-4342-a948-6842571535fa
+highestfairchance(test)
+
+# ╔═╡ 8675a4c1-58de-45c1-94bc-8eef1392aae3
+plotdashboard(currentmodel)
+
+# ╔═╡ 38a5e003-15e4-4b57-a68d-5f9081b1d55e
+plotdashboard(realon1)
+
+# ╔═╡ 034c675a-75cc-4c28-959d-58c0c9b6f5bd
+realoff1 = ModelSettings(
+	[UpperAverage,UpperHigh], # individuals
+	0.65, # top prospects
+	0.45, # bottom prospects 
+	0.0, # unitcost
+	50,  # baseline opportunities
+	20,  # available opportunities
+	defaultPolicyFunction,
+	(120,0.08,60), # high ability 
+	(100,0.08,60), # average ability 
+	(50,0.1,45), # low ability 
+	30, # sigma 
+	0, # upper class background
+	0, # middle class background
+	0, # lower class background
+	(50.0,60.0,0.0,0.1), # scale cost/benefits
+	false, # diminishing marginal 
+	false, # tax scheme progressive? 
+	false, # top boost?
+	0.000, # social benefits of education, e.g. 0.01
+	0.000, # individual benefits of education e.g. 0.0005
+	(0.00,0.00) # set job satisfaciton 
+)
+
+# ╔═╡ a551a6ad-8d74-45a7-8a15-03d8cb8b5dd8
+plotdashboard(realoff1)
+
+# ╔═╡ b8d3beb8-7f33-4db6-9095-a9efe8016512
+plotdiffchancesLATEX(11,realon1)
+
+# ╔═╡ da1cc5a9-d150-4ea3-bf5a-38cbb8971b9c
+plotdiffchancesLATEX(11,realoff1)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2552,14 +2943,14 @@ version = "1.4.1+1"
 # ╠═ca4f2783-c903-4342-a948-6842571535fa
 # ╠═8675a4c1-58de-45c1-94bc-8eef1392aae3
 # ╟─9b294729-6005-4f57-9283-ccf70fdaf675
+# ╠═a3612273-8ab6-4250-b93e-421f9e09a0a4
+# ╠═4d3dcf03-88bc-4edc-904a-843243513ecc
 # ╠═3615ddad-b51d-4a9d-9782-0f9115af5b2b
 # ╠═737bdd1f-ba36-49e5-96df-cc5744374194
 # ╠═486eb821-9ea4-468e-9379-926de0cac7c9
 # ╠═41ed7339-ddd0-4da0-8687-245227c41c37
 # ╠═73a8a347-f0d3-4f3d-a002-a9a3204c32eb
-# ╠═a3612273-8ab6-4250-b93e-421f9e09a0a4
 # ╠═e6a87703-2fb7-42cc-bf53-b6736fb2c3bc
-# ╠═4d3dcf03-88bc-4edc-904a-843243513ecc
 # ╠═259c07d4-7b79-43d4-84b2-5568b01f3536
 # ╠═b8bccef8-3775-4867-9e4c-4a6c89d83195
 # ╠═d6b755c4-383b-44ea-95cc-3187096619a9
@@ -2602,6 +2993,10 @@ version = "1.4.1+1"
 # ╠═8ca35a19-97c2-421b-a212-d6760a14e681
 # ╠═c8f5fa88-6b97-4c56-ab82-317048839ce3
 # ╠═3b23e2e1-3e66-4d5c-9377-2d1c68642ff8
+# ╠═ecc23a2d-2164-443d-afe2-39f24a0a9d93
+# ╠═ca2aa555-f6cb-4f25-98f3-5c421eaa6627
+# ╠═9071113f-26e3-4b3c-a10e-ac1430deb69d
+# ╠═ed5efa58-03ca-4c2b-98a2-2338a7426982
 # ╠═99321ce7-edac-421d-8e3a-c06ff24ce351
 # ╠═81459edd-adc5-4071-883c-c1cb72802c32
 # ╠═a6d20165-89d8-40bf-bb41-e1242b239399
@@ -2643,6 +3038,8 @@ version = "1.4.1+1"
 # ╠═62de8a05-a6a7-44ee-be92-0875acf44f78
 # ╠═0cbdd4b3-3cd7-43b6-82d9-93131c1f1190
 # ╠═f56738d8-f502-4dd1-a60f-be2df5f95fc4
+# ╠═4ea01351-80e9-437e-8c9a-c09376df086d
+# ╠═4ac8883b-2c54-40ba-8284-d322723833ac
 # ╠═bf8be2de-22b3-4a78-8a2f-43da2b478b9e
 # ╠═83097b26-4eec-43d6-8605-ca7bc9417499
 # ╠═6c59528c-737b-493a-b821-808dc9ff2a53
@@ -2654,6 +3051,8 @@ version = "1.4.1+1"
 # ╠═d9a28eaf-299e-4453-8fb5-a6f47c46ec1d
 # ╠═bbc6da79-6742-4bbf-a484-35cdf3da39ce
 # ╠═b6b58b1f-3e83-4780-9567-0da3a533d227
+# ╠═f2fac6b6-ce0b-4131-aad4-7e4ce5fb1f4c
+# ╠═7e75a99f-2bc5-47c4-968e-47aa79c0904f
 # ╠═455b0654-35c2-457f-8e08-9fbe4cb03cf6
 # ╠═843a5f0b-9a98-41ba-924d-fba9ddcbcce1
 # ╠═1e4bb759-36ff-4ec7-b832-0589c39f06bf
@@ -2662,12 +3061,49 @@ version = "1.4.1+1"
 # ╠═9f02475c-bef5-4226-a693-18670b2d8da3
 # ╠═62254dcf-f31a-42f1-817e-5672e48bdb5a
 # ╠═98a5dca8-d3dd-4004-9714-ee6a6f9e8d0a
-# ╠═8c74b9fd-68ba-4e2d-a61c-5074c0369646
 # ╠═308e1d0d-24d9-4bb9-97f7-396057a7eb8f
 # ╠═5e7a46a6-0d5e-49e2-a3e7-596648ce6486
 # ╠═91cba954-b817-4c57-8a46-86df85df72a3
 # ╠═89b3f8e8-f2fc-4b70-a797-63ce0ca52272
 # ╠═5d634388-c0ec-4fcf-ae83-b4868d1ea27d
 # ╠═7bbde039-07a2-4ad1-923d-f1374440de51
+# ╠═976f575c-d57f-4fe0-a254-f9f50f892df3
+# ╠═977a5912-4a3b-4c33-bdef-dc1d2d70d766
+# ╠═6436f600-f065-4e67-ad7a-441af75ff4d2
+# ╠═436e9249-9ee2-4444-ada8-255901ba6952
+# ╠═197eefd1-1d1b-4741-9f18-1a89e4e0fe67
+# ╟─ee7cf8ef-7334-41b2-b7cc-07e205a55d86
+# ╠═8c74b9fd-68ba-4e2d-a61c-5074c0369646
+# ╠═477120dc-48a3-4b0e-9ee1-f45061f197e2
+# ╠═e5cb7bf8-7e60-4815-a834-3866d9d97b76
+# ╠═13900b64-0d71-40de-a758-82a4f5190f16
+# ╠═39218c87-6875-411f-8b5f-d28d10b23e4b
+# ╠═dd28b366-6596-4607-91ed-17db987c6385
+# ╠═7de6e50e-628d-4296-99ad-2a40de146319
+# ╠═bdedcd17-3117-44e9-a67d-d047e48a9a6c
+# ╠═409d37c8-fcf5-406d-ac42-9767573a41a6
+# ╠═0d8b7251-2598-4ecb-9d31-e3da92586e9c
+# ╠═a5fe6137-f4ce-45af-8e41-8507999a9db2
+# ╠═92f2ef49-2729-4d0f-89d9-ac7a1f85cd1d
+# ╠═f3fac7a9-5e35-478b-821e-3f2a13db8a1c
+# ╠═c735dace-4287-482a-9ac4-0709762a2ef0
+# ╠═5565e3a1-21c7-4317-9fdc-b110dcd36b80
+# ╠═276d10e7-381a-4309-b2a0-2516eddcaa97
+# ╠═644e02ea-60a3-45cf-8725-a9173bb2ee56
+# ╠═2465ae2a-a7c4-4306-8677-6756b07ec064
+# ╠═55176c84-28f2-4536-ac7a-924d12b90523
+# ╠═06115f7f-e583-4831-a062-484967fa72ea
+# ╠═690f46ec-21c4-41d9-bf08-f36a30c09020
+# ╠═294b4cbf-9f00-4e56-bb0e-f397ba68ec1c
+# ╠═4f083c2c-e59d-4d76-a5c1-ab6ea7a7f565
+# ╠═52b11c5a-9c9a-4acf-8c72-5a5761dd7956
+# ╠═5dc4de84-cc27-4f08-9bae-6b6dfbcdc426
+# ╠═8692845c-a53e-4f44-a43f-c5fcb9b71b8a
+# ╠═373dc7e8-431c-40e6-80b3-ac8e5842b279
+# ╠═38a5e003-15e4-4b57-a68d-5f9081b1d55e
+# ╠═034c675a-75cc-4c28-959d-58c0c9b6f5bd
+# ╠═a551a6ad-8d74-45a7-8a15-03d8cb8b5dd8
+# ╠═b8d3beb8-7f33-4db6-9095-a9efe8016512
+# ╠═da1cc5a9-d150-4ea3-bf5a-38cbb8971b9c
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
